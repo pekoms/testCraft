@@ -1057,9 +1057,6 @@
         <input type="password" id="authPassword" placeholder="Contraseña" autocomplete="current-password">
       </div>
       <button class="btn accent" id="authSubmit" onclick="submitAuth()">Entrar</button>
-      <div class="auth-toggle" id="authToggle">
-        ¿No tienes cuenta? <a onclick="toggleAuthMode()">Regístrate</a>
-      </div>
     </div>
   </div>
 
@@ -2053,7 +2050,6 @@
     // ──────────────────────────────────────────
     // AUTH (Supabase)
     // ──────────────────────────────────────────
-    let authMode = 'signin'; // 'signin' | 'signup'
     let appReady = false;
 
     function showAuthMsg(text, type)
@@ -2065,27 +2061,6 @@
     function clearAuthMsg()
     {
       document.getElementById('authMsg').className = 'auth-msg';
-    }
-
-    function toggleAuthMode()
-    {
-      authMode = authMode === 'signin' ? 'signup' : 'signin';
-      clearAuthMsg();
-      if (authMode === 'signup')
-      {
-        document.getElementById('authTitle').textContent = 'Crear cuenta';
-        document.getElementById('authSub').textContent = 'Regístrate para empezar a crear tests.';
-        document.getElementById('authSubmit').textContent = 'Registrarme';
-        document.getElementById('authToggle').innerHTML = '¿Ya tienes cuenta? <a onclick="toggleAuthMode()">Inicia sesión</a>';
-        document.getElementById('authPassword').setAttribute('autocomplete', 'new-password');
-      } else
-      {
-        document.getElementById('authTitle').textContent = 'Iniciar sesión';
-        document.getElementById('authSub').textContent = 'Accede para crear y hacer tus tests.';
-        document.getElementById('authSubmit').textContent = 'Entrar';
-        document.getElementById('authToggle').innerHTML = '¿No tienes cuenta? <a onclick="toggleAuthMode()">Regístrate</a>';
-        document.getElementById('authPassword').setAttribute('autocomplete', 'current-password');
-      }
     }
 
     async function submitAuth()
@@ -2102,19 +2077,8 @@
 
       try
       {
-        if (authMode === 'signup')
-        {
-          const { data, error } = await sbClient.auth.signUp({ email, password });
-          if (error) throw error;
-          if (data.user && !data.session)
-          {
-            showAuthMsg('Cuenta creada. Revisa tu correo para confirmarla antes de entrar.', 'info');
-          }
-        } else
-        {
-          const { error } = await sbClient.auth.signInWithPassword({ email, password });
-          if (error) throw error;
-        }
+        const { error } = await sbClient.auth.signInWithPassword({ email, password });
+        if (error) throw error;
       } catch (e)
       {
         const msg = e.message || 'Error de autenticación';
@@ -2129,8 +2093,6 @@
     {
       const m = msg.toLowerCase();
       if (m.includes('invalid login')) return 'Correo o contraseña incorrectos.';
-      if (m.includes('already registered') || m.includes('already exists')) return 'Este correo ya tiene cuenta. Inicia sesión.';
-      if (m.includes('email not confirmed')) return 'Confirma tu correo antes de entrar (revisa tu bandeja).';
       return msg;
     }
 
