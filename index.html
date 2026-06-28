@@ -1056,7 +1056,13 @@
       <div class="field-group">
         <input type="password" id="authPassword" placeholder="Contraseña" autocomplete="current-password">
       </div>
+      <div class="field-group" id="newPasswordGroup" style="display:none">
+        <input type="password" id="authNewPassword" placeholder="Nueva contraseña" autocomplete="new-password">
+      </div>
       <button class="btn accent" id="authSubmit" onclick="submitAuth()">Entrar</button>
+      <div class="auth-toggle" id="authToggle">
+        <a onclick="showForgotPanel()">¿Olvidaste tu contraseña?</a>
+      </div>
     </div>
   </div>
 
@@ -2051,6 +2057,94 @@
     // AUTH (Supabase)
     // ──────────────────────────────────────────
     let appReady = false;
+    let authPanel = 'login'; // 'login' | 'forgot' | 'reset'
+
+    function showLoginPanel()
+    {
+      authPanel = 'login';
+      clearAuthMsg();
+      document.getElementById('authTitle').textContent = 'Iniciar sesión';
+      document.getElementById('authSub').textContent = 'Accede para crear y hacer tus tests.';
+      document.getElementById('authEmail').closest('.field-group').style.display = '';
+      document.getElementById('authPassword').closest('.field-group').style.display = '';
+      document.getElementById('newPasswordGroup').style.display = 'none';
+      document.getElementById('authSubmit').textContent = 'Entrar';
+      document.getElementById('authToggle').innerHTML = '<a onclick="showForgotPanel()">¿Olvidaste tu contraseña?</a>';
+      document.getElementById('authToggle').style.display = '';
+    }
+
+    function showForgotPanel()
+    {
+      authPanel = 'forgot';
+      clearAuthMsg();
+      document.getElementById('authTitle').textContent = 'Recuperar contraseña';
+      document.getElementById('authSub').textContent = 'Te enviaremos un enlace para restablecer tu contraseña.';
+      document.getElementById('authEmail').closest('.field-group').style.display = '';
+      document.getElementById('authPassword').closest('.field-group').style.display = 'none';
+      document.getElementById('newPasswordGroup').style.display = 'none';
+      document.getElementById('authSubmit').textContent = 'Enviar enlace';
+      document.getElementById('authToggle').innerHTML = '<a onclick="showLoginPanel()">Volver al inicio de sesión</a>';
+      document.getElementById('authToggle').style.display = '';
+    }
+
+    function showResetPanel()
+    {
+      authPanel = 'reset';
+      clearAuthMsg();
+      document.body.classList.add('auth-locked');
+      document.body.classList.remove('logged-in');
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById('authTitle').textContent = 'Nueva contraseña';
+      document.getElementById('authSub').textContent = 'Introduce tu nueva contraseña.';
+      document.getElementById('authEmail').closest('.field-group').style.display = 'none';
+      document.getElementById('authPassword').closest('.field-group').style.display = 'none';
+      document.getElementById('newPasswordGroup').style.display = '';
+      document.getElementById('authNewPassword').value = '';
+      document.getElementById('authSubmit').textContent = 'Cambiar contraseña';
+      document.getElementById('authToggle').style.display = 'none';
+    }
+
+    async function sendResetEmail()
+    {
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) { showAuthMsg('Introduce tu correo electrónico', 'error'); return; }
+      const btn = document.getElementById('authSubmit');
+      btn.disabled = true; btn.style.opacity = '0.6';
+      clearAuthMsg();
+      try
+      {
+        const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+        if (error) throw error;
+        showAuthMsg('Enlace enviado. Revisa tu correo.', 'info');
+      } catch (e)
+      {
+        showAuthMsg(e.message || 'Error al enviar el enlace', 'error');
+      } finally
+      {
+        btn.disabled = false; btn.style.opacity = '1';
+      }
+    }
+
+    async function updatePassword()
+    {
+      const password = document.getElementById('authNewPassword').value;
+      if (password.length < 6) { showAuthMsg('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
+      const btn = document.getElementById('authSubmit');
+      btn.disabled = true; btn.style.opacity = '0.6';
+      clearAuthMsg();
+      try
+      {
+        const { error } = await sbClient.auth.updateUser({ password });
+        if (error) throw error;
+        showAuthMsg('Contraseña actualizada correctamente.', 'info');
+      } catch (e)
+      {
+        showAuthMsg(e.message || 'Error al actualizar la contraseña', 'error');
+      } finally
+      {
+        btn.disabled = false; btn.style.opacity = '1';
+      }
+    }
 
     function showAuthMsg(text, type)
     {
@@ -2066,6 +2160,8 @@
     async function submitAuth()
     {
       if (!sbClient) { showAuthMsg('Login no configurado', 'error'); return; }
+      if (authPanel === 'forgot') { await sendResetEmail(); return; }
+      if (authPanel === 'reset') { await updatePassword(); return; }
       const email = document.getElementById('authEmail').value.trim();
       const password = document.getElementById('authPassword').value;
       if (!email || !password) { showAuthMsg('Introduce correo y contraseña', 'error'); return; }
@@ -2131,6 +2227,7 @@
       document.body.classList.remove('logged-in');
       document.getElementById('authPassword').value = '';
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      showLoginPanel();
     }
 
     // ──────────────────────────────────────────
@@ -2160,12 +2257,13 @@
 
       sbClient.auth.onAuthStateChange((_event, session) =>
       {
-        if (session) onLogin(session.user);
+        if (_event === 'PASSWORD_RECOVERY') showResetPanel();
+        else if (session) onLogin(session.user);
         else showLogin();
       });
 
       // Enter para enviar el formulario
-      ['authEmail', 'authPassword'].forEach(id =>
+      ['authEmail', 'authPassword', 'authNewPassword'].forEach(id =>
       {
         document.getElementById(id).addEventListener('keydown', e =>
         {
