@@ -1559,12 +1559,13 @@
       const ok = await persistTest(test);
       if (!ok) return;
 
+      const testWithOwner = { ...test, _ownerId: currentUser?.id };
       if (editingId)
       {
-        tests = tests.map(x => x.id === editingId ? test : x);
+        tests = tests.map(x => x.id === editingId ? testWithOwner : x);
       } else
       {
-        tests.unshift(test);
+        tests.unshift(testWithOwner);
       }
       renderHome();
       showView('home');
