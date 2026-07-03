@@ -1423,6 +1423,7 @@
 
     let currentUser = null;
     let isTeacher = false; // se determina tras el login según la tabla profiles
+    let _authFlow = null;  // 'recovery' | 'newaccount' | null
 
     // Almacenamiento local (fallback cuando no hay login configurado)
     function loadTestsLocal()
@@ -2304,17 +2305,20 @@
       const btn = document.getElementById('authSubmit');
       btn.disabled = true; btn.style.opacity = '0.6';
       clearAuthMsg();
+      let success = false;
       try
       {
-        const { error } = await sbClient.auth.updateUser({ password });
+        const { data, error } = await sbClient.auth.updateUser({ password });
         if (error) throw error;
-        showAuthMsg('Contraseña actualizada correctamente.', 'info');
+        success = true;
+        showAuthMsg('Contraseña establecida. Entrando…', 'info');
+        setTimeout(async () => { appReady = false; await onLogin(data.user); }, 900);
       } catch (e)
       {
         showAuthMsg(e.message || 'Error al actualizar la contraseña', 'error');
       } finally
       {
-        btn.disabled = false; btn.style.opacity = '1';
+        if (!success) { btn.disabled = false; btn.style.opacity = '1'; }
       }
     }
 
@@ -2606,18 +2610,32 @@
         return;
       }
 
+      // Leer el hash ANTES de que Supabase lo procese
+      const _urlHash = new URLSearchParams(window.location.hash.slice(1));
+      const _hashType = _urlHash.get('type');
+      if (_hashType === 'recovery') _authFlow = 'recovery';
+      else if (_hashType === 'signup' || _hashType === 'invite') _authFlow = 'newaccount';
+
       sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      const { data } = await sbClient.auth.getSession();
-      if (data.session) onLogin(data.session.user);
-      else showLogin();
-
+      // Registrar ANTES de getSession() para no perder el evento PASSWORD_RECOVERY
       sbClient.auth.onAuthStateChange((_event, session) =>
       {
-        if (_event === 'PASSWORD_RECOVERY') showResetPanel();
+        if (_event === 'PASSWORD_RECOVERY' || (_event === 'SIGNED_IN' && _authFlow === 'recovery'))
+        {
+          _authFlow = null;
+          showResetPanel();
+        }
+        else if (session && _authFlow === 'newaccount')
+        {
+          _authFlow = null;
+          showResetPanel();
+        }
         else if (session) onLogin(session.user);
         else showLogin();
       });
+
+      await sbClient.auth.getSession();
 
       // Enter para enviar el formulario
       ['authEmail', 'authPassword', 'authNewPassword'].forEach(id =>
