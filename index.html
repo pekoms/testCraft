@@ -1143,6 +1143,44 @@
       color: var(--ink3);
       font-size: 0.9rem;
     }
+
+    /* ── TOPICS ──────────────────────────── */
+    .topic-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .topic-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .topic-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+
+    .topic-meta {
+      font-size: 12px;
+      color: var(--ink3);
+    }
+
+    .topic-breadcrumb {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0.5rem;
+    }
   </style>
 </head>
 
@@ -1151,7 +1189,7 @@
   <nav>
     <div class="logo">Test<span>Craft</span></div>
     <div class="nav-actions" id="navActions">
-      <button class="btn" onclick="showView('home')">
+      <button class="btn" onclick="goHome()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
           <polyline points="9 22 9 12 15 12 15 22" />
@@ -1219,6 +1257,12 @@
       </button>
     </div>
 
+    <div class="topic-breadcrumb" id="topicBreadcrumb">
+      <button class="btn sm" onclick="backToTopics()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        Todos los temas
+      </button>
+    </div>
     <div class="section-title" id="testsSectionTitle">Mis tests</div>
     <div class="tests-grid" id="testsGrid"></div>
   </div>
@@ -1243,6 +1287,11 @@
     <div class="field-group">
       <label>Título del test</label>
       <input type="text" id="testTitle" placeholder="Ej: Historia de España Tema 4" maxlength="80">
+    </div>
+    <div class="field-group">
+      <label>Tema</label>
+      <input type="text" id="testTopic" placeholder="Ej: Historia, Matemáticas…" maxlength="60" list="topicsList" autocomplete="off">
+      <datalist id="topicsList"></datalist>
     </div>
     <div class="field-group">
       <label>Descripción (opcional)</label>
@@ -1503,6 +1552,7 @@
     // ──────────────────────────────────────────
     let tests = [];
     let editingId = null;
+    let currentTopic = null; // null = vista de temas, string = tests de ese tema
     let editingQuestions = [];
     let playerState = {
       test: null,
@@ -1547,26 +1597,39 @@
     // ──────────────────────────────────────────
     function renderHome()
     {
-      // Ajustar textos y botones según el rol
       const newBtn = document.getElementById('newTestBtn');
       const title = document.getElementById('homeTitle');
       const subtitle = document.getElementById('homeSubtitle');
-      const sectionTitle = document.getElementById('testsSectionTitle');
       if (isTeacher)
       {
         newBtn.style.display = 'inline-flex';
         title.innerHTML = 'Crea y comparte<br>tus <span style="color:var(--accent)">tests</span>';
         subtitle.textContent = 'Diseña tests y publícalos para que los vean tus alumnos.';
-        sectionTitle.textContent = 'Todos los tests';
       } else
       {
         newBtn.style.display = 'none';
         title.innerHTML = 'Tus <span style="color:var(--accent)">tests</span>';
         subtitle.textContent = 'Estos son los tests que tu profesor ha publicado.';
-        sectionTitle.textContent = 'Tests disponibles';
       }
+      updateTopicsDatalist();
+      if (currentTopic === null) renderTopicsView();
+      else renderTestsInTopic();
+    }
 
+    function updateTopicsDatalist()
+    {
+      const dl = document.getElementById('topicsList');
+      if (!dl) return;
+      const topics = [...new Set(tests.map(t => t.topic).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+      dl.innerHTML = topics.map(t => `<option value="${escHtml(t)}">`).join('');
+    }
+
+    function renderTopicsView()
+    {
+      document.getElementById('testsSectionTitle').textContent = isTeacher ? 'Temas' : 'Temas disponibles';
+      document.getElementById('topicBreadcrumb').style.display = 'none';
       const grid = document.getElementById('testsGrid');
+
       if (!tests.length)
       {
         grid.innerHTML = `<div class="empty-state">
@@ -1576,32 +1639,83 @@
         return;
       }
 
-      grid.innerHTML = tests.map(t =>
+      // Agrupar por tema
+      const topicMap = {};
+      tests.forEach(t =>
       {
-        const meta = `
+        const key = t.topic || '';
+        if (!topicMap[key]) topicMap[key] = [];
+        topicMap[key].push(t);
+      });
+
+      // Orden alfabético, "Sin tema" al final
+      const entries = Object.entries(topicMap).sort(([a], [b]) =>
+      {
+        if (!a && b) return 1;
+        if (a && !b) return -1;
+        return a.localeCompare(b, 'es');
+      });
+
+      const cards = entries.map(([topic, topicTests]) =>
+      {
+        const visibleCount = isTeacher ? topicTests.length : topicTests.filter(t => t.published).length;
+        if (!isTeacher && visibleCount === 0) return '';
+        const label = topic || 'Sin tema';
+        const draftCount = isTeacher ? topicTests.filter(t => !t.published).length : 0;
+        const draftText = draftCount ? ` · ${draftCount} borrador${draftCount !== 1 ? 'es' : ''}` : '';
+        return `<div class="topic-card" data-topic="${escHtml(topic)}" onclick="showTopic(this.dataset.topic)">
+  <div class="topic-title">
+    <span>${escHtml(label)}</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+  <div class="topic-meta">${visibleCount} test${visibleCount !== 1 ? 's' : ''}${draftText}</div>
+</div>`;
+      }).filter(Boolean);
+
+      grid.innerHTML = cards.length ? cards.join('') : `<div class="empty-state"><strong>No hay tests disponibles</strong></div>`;
+    }
+
+    function renderTestsInTopic()
+    {
+      const label = currentTopic || 'Sin tema';
+      document.getElementById('testsSectionTitle').textContent = label;
+      document.getElementById('topicBreadcrumb').style.display = 'flex';
+
+      const topicTests = tests.filter(t => (t.topic || '') === currentTopic);
+      const visibleTests = isTeacher ? topicTests : topicTests.filter(t => t.published);
+      const grid = document.getElementById('testsGrid');
+
+      if (!visibleTests.length)
+      {
+        grid.innerHTML = `<div class="empty-state">
+      <strong>${isTeacher ? 'No hay tests en este tema' : 'No hay tests disponibles en este tema'}</strong>
+      <p>${isTeacher ? 'Crea un test y asígnale este tema.' : ''}</p></div>`;
+        return;
+      }
+      grid.innerHTML = visibleTests.map(t => renderTestCard(t)).join('');
+    }
+
+    function renderTestCard(t)
+    {
+      const meta = `
       <h3>${escHtml(t.title)}</h3>
       <p>${escHtml(t.description || 'Sin descripción')}</p>
       <span class="badge">${t.questions.length} pregunta${t.questions.length !== 1 ? 's' : ''}</span>
       ${t.timeLimit ? `<span class="badge" style="background:var(--accent2-light);color:var(--accent2);margin-left:4px">⏱ ${t.timeLimit} min</span>` : ''}`;
 
-        if (!isTeacher)
-        {
-          return `<div class="test-card" onclick="startTest('${t.id}')">${meta}</div>`;
-        }
+      if (!isTeacher) return `<div class="test-card" onclick="startTest('${t.id}')">${meta}</div>`;
 
-        const pubBadge = t.published
-          ? `<span class="badge" style="background:var(--accent2-light);color:var(--accent2);margin-left:4px">Publicado</span>`
-          : `<span class="badge" style="background:var(--surface2);color:var(--ink3);margin-left:4px">Borrador</span>`;
+      const pubBadge = t.published
+        ? `<span class="badge" style="background:var(--accent2-light);color:var(--accent2);margin-left:4px">Publicado</span>`
+        : `<span class="badge" style="background:var(--surface2);color:var(--ink3);margin-left:4px">Borrador</span>`;
+      const isOwner = !usingCloud() || t._ownerId === currentUser?.id;
 
-        const isOwner = !usingCloud() || t._ownerId === currentUser?.id;
-
-        return `
-    <div class="test-card" onclick="startTest('${t.id}')">
+      return `<div class="test-card" onclick="startTest('${t.id}')">
       ${isOwner ? `<div class="actions" onclick="event.stopPropagation()">
         <button class="btn sm" onclick="togglePublish('${t.id}')" title="${t.published ? 'Ocultar a los alumnos' : 'Publicar para los alumnos'}">
           ${t.published
-            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
-            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'}
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'}
         </button>
         <button class="btn sm" onclick="editTest('${t.id}')" title="Editar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -1613,7 +1727,25 @@
       ${meta}
       <div style="margin-top:8px">${pubBadge}</div>
     </div>`;
-      }).join('');
+    }
+
+    function goHome()
+    {
+      currentTopic = null;
+      showView('home');
+      renderHome();
+    }
+
+    function showTopic(topic)
+    {
+      currentTopic = topic;
+      renderHome();
+    }
+
+    function backToTopics()
+    {
+      currentTopic = null;
+      renderHome();
     }
 
     async function togglePublish(id)
@@ -1649,6 +1781,7 @@
       editingId = null;
       editingQuestions = [];
       document.getElementById('testTitle').value = '';
+      document.getElementById('testTopic').value = currentTopic || '';
       document.getElementById('testDesc').value = '';
       document.getElementById('testTime').value = 0;
       document.getElementById('testShuffle').value = 0;
@@ -1665,6 +1798,7 @@
       editingId = id;
       editingQuestions = JSON.parse(JSON.stringify(t.questions));
       document.getElementById('testTitle').value = t.title;
+      document.getElementById('testTopic').value = t.topic || '';
       document.getElementById('testDesc').value = t.description || '';
       document.getElementById('testTime').value = t.timeLimit || 0;
       document.getElementById('testShuffle').value = t.shuffle ? 1 : 0;
@@ -1718,6 +1852,7 @@
       const test = {
         id: editingId || genId(),
         title,
+        topic: document.getElementById('testTopic').value.trim(),
         description: document.getElementById('testDesc').value.trim(),
         timeLimit: parseInt(document.getElementById('testTime').value) || 0,
         shuffle: document.getElementById('testShuffle').value === '1',
