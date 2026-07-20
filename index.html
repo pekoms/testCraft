@@ -147,7 +147,8 @@
     }
 
     /* ── HOME ────────────────────────────── */
-    #home {
+    #home,
+    #users {
       max-width: 860px;
       margin: 0 auto;
       padding: 2.5rem 1.5rem;
@@ -856,12 +857,50 @@
     }
 
     /* ── RESPONSIVE ──────────────────────── */
-    @media(max-width: 600px) {
+
+    /* Touch devices: always show card action buttons (no hover) */
+    @media (hover: none) {
+      .test-card .actions {
+        opacity: 1;
+      }
+    }
+
+    /* Tablet (≤768px): tighten grid minimum */
+    @media (max-width: 768px) {
+      .tests-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      }
+    }
+
+    /* Mobile (≤600px) */
+    @media (max-width: 600px) {
       nav {
         padding: 0 1rem;
+        gap: 6px;
       }
 
+      /* Collapse nav button text – keep only the icon */
+      .nav-actions .btn {
+        font-size: 0;
+        padding: 8px 10px;
+        gap: 0;
+        min-width: 38px;
+        justify-content: center;
+      }
+
+      .nav-actions .btn svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* User badge – hide email to save space */
+      .user-badge .email {
+        display: none;
+      }
+
+      /* Main sections padding */
       #home,
+      #users,
       #editor,
       #player,
       #results {
@@ -869,12 +908,112 @@
       }
 
       .home-header {
-        padding: 2rem 0.5rem 1.75rem;
+        padding: 1.75rem 0.5rem 1.5rem;
       }
 
+      /* Tests grid: single column on mobile */
+      .tests-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Always show card actions on touch screens */
+      .test-card .actions {
+        opacity: 1;
+      }
+
+      /* Editor header: stack actions below title */
       .editor-header {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
+      }
+
+      .editor-header .actions {
+        display: flex;
+        width: 100%;
+      }
+
+      .editor-header .actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+
+      /* Question header: wrap when tight */
+      .question-header {
+        flex-wrap: wrap;
+      }
+
+      /* Player nav: full-width buttons */
+      .player-nav {
+        flex-direction: column;
+      }
+
+      .player-nav .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Results actions: full-width buttons */
+      .results-actions {
+        flex-direction: column;
+      }
+
+      .results-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Modal: tighter padding */
+      .modal {
+        padding: 1.25rem;
+      }
+
+      /* Toast: stretch full width at bottom */
+      .toast {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        max-width: none;
+        text-align: center;
+      }
+
+      /* Student row: allow wrapping */
+      .student-row {
+        flex-wrap: wrap;
+      }
+
+      .student-row .student-meta {
+        width: 100%;
+        order: 4;
+      }
+
+      /* Invite panel: stack vertically */
+      .invite-panel {
+        flex-direction: column;
+      }
+
+      .invite-panel .field-group {
+        min-width: 0;
+        width: 100%;
+      }
+
+      .invite-panel-actions {
+        width: 100%;
+      }
+
+      .invite-panel-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+
+    /* Very small screens (≤380px) */
+    @media (max-width: 380px) {
+      .auth-card {
+        padding: 1.5rem 1.25rem;
+      }
+
+      .btn {
+        padding: 7px 12px;
       }
     }
 
