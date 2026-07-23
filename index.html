@@ -2534,20 +2534,22 @@
       document.getElementById('authToggle').style.display = '';
     }
 
-    function showResetPanel()
+    function showResetPanel(isNewAccount = false)
     {
       authPanel = 'reset';
       clearAuthMsg();
       document.body.classList.add('auth-locked');
       document.body.classList.remove('logged-in');
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      document.getElementById('authTitle').textContent = 'Nueva contraseña';
-      document.getElementById('authSub').textContent = 'Introduce tu nueva contraseña.';
+      document.getElementById('authTitle').textContent = isNewAccount ? 'Crea tu contraseña' : 'Nueva contraseña';
+      document.getElementById('authSub').textContent = isNewAccount
+        ? 'Bienvenido. Elige una contraseña para acceder a TestCraft.'
+        : 'Introduce tu nueva contraseña.';
       document.getElementById('authEmail').closest('.field-group').style.display = 'none';
       document.getElementById('authPassword').closest('.field-group').style.display = 'none';
       document.getElementById('newPasswordGroup').style.display = '';
       document.getElementById('authNewPassword').value = '';
-      document.getElementById('authSubmit').textContent = 'Cambiar contraseña';
+      document.getElementById('authSubmit').textContent = isNewAccount ? 'Acceder' : 'Cambiar contraseña';
       document.getElementById('authToggle').style.display = 'none';
     }
 
@@ -2746,20 +2748,39 @@
       const btn = document.getElementById('inviteBtn');
       btn.disabled = true; btn.style.opacity = '0.6';
       msgEl.className = 'auth-msg';
+      let invited = false;
       try
       {
         await callManageUsers('invite', { email, redirectTo: window.location.href });
+        invited = true;
         msgEl.textContent = `Invitación enviada a ${email}.`;
         msgEl.className = 'auth-msg show info';
         document.getElementById('inviteEmail').value = '';
         renderUsers();
       } catch (e)
       {
-        msgEl.textContent = e.message;
+        const msg = e.message || '';
+        if (msg.toLowerCase().includes('rate') || msg.includes('429') || msg.includes('limit')) {
+          msgEl.textContent = 'Límite de emails alcanzado. Espera unos minutos e inténtalo de nuevo.';
+        } else {
+          msgEl.textContent = msg;
+        }
         msgEl.className = 'auth-msg show error';
       } finally
       {
-        btn.disabled = false; btn.style.opacity = '1';
+        if (invited) {
+          // Cooldown: prevents hitting the Supabase email rate limit with rapid re-sends
+          let secs = 60;
+          const tick = () => {
+            if (secs <= 0) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = 'Enviar invitación'; return; }
+            btn.textContent = `Espera ${secs}s`;
+            secs--;
+            setTimeout(tick, 1000);
+          };
+          tick();
+        } else {
+          btn.disabled = false; btn.style.opacity = '1';
+        }
       }
     }
 
@@ -2884,13 +2905,21 @@
         return;
       }
 
-      // Leer el hash ANTES de que Supabase lo procese
-      const _urlHash = new URLSearchParams(window.location.hash.slice(1));
-      const _hashType = _urlHash.get('type');
+      // Leer hash Y query-string ANTES de que Supabase los procese.
+      // supabase-js v2 usa PKCE por defecto: el código va en ?code= (query string),
+      // no en el hash. Las invitaciones admin siguen enviando tokens en el hash (#type=invite),
+      // pero forzamos flowType:'implicit' para que el cliente los procese correctamente.
+      const _urlHash   = new URLSearchParams(window.location.hash.slice(1));
+      const _urlSearch = new URLSearchParams(window.location.search);
+      const _hashType  = _urlHash.get('type') || _urlSearch.get('type');
       if (_hashType === 'recovery') _authFlow = 'recovery';
       else if (_hashType === 'signup' || _hashType === 'invite') _authFlow = 'newaccount';
+      // PKCE invite/signup: solo hay ?code= en la URL, sin tipo explícito
+      else if (_urlSearch.has('code')) _authFlow = 'newaccount';
 
-      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { flowType: 'implicit' },
+      });
 
       // Registrar ANTES de getSession() para no perder el evento PASSWORD_RECOVERY
       sbClient.auth.onAuthStateChange((_event, session) =>
@@ -2903,7 +2932,7 @@
         else if (session && _authFlow === 'newaccount')
         {
           _authFlow = null;
-          showResetPanel();
+          showResetPanel(true);
         }
         else if (session) onLogin(session.user);
         else showLogin();

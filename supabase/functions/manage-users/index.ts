@@ -76,10 +76,26 @@ Deno.serve(async (req) => {
       const { email, redirectTo } = body
       if (!email) throw new Error('Email requerido')
 
+      // Check if a user with this email already exists to avoid wasting rate-limit quota
+      const { data: { users: allUsers } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
+      const alreadyExists = allUsers.some(u => u.email?.toLowerCase() === email.toLowerCase())
+      if (alreadyExists) {
+        return new Response(JSON.stringify({ error: 'Este correo ya tiene una cuenta registrada.' }), {
+          status: 409,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
       const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
         redirectTo: redirectTo ?? Deno.env.get('SUPABASE_URL'),
       })
-      if (error) throw error
+      if (error) {
+        const msg: string = (error as any).message ?? String(error)
+        if (msg.toLowerCase().includes('rate') || (error as any).status === 429) {
+          throw new Error('Límite de emails alcanzado. Espera unos minutos e inténtalo de nuevo.')
+        }
+        throw error
+      }
 
       await supabaseAdmin.from('profiles').upsert({
         id: data.user.id,
