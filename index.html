@@ -2933,19 +2933,21 @@
       // Registrar ANTES de getSession() para no perder el evento PASSWORD_RECOVERY
       sbClient.auth.onAuthStateChange((_event, session) =>
       {
-        if (_event === 'PASSWORD_RECOVERY' || (_event === 'SIGNED_IN' && _authFlow === 'recovery'))
+        // PASSWORD_RECOVERY cubre el caso habitual; (_authFlow==='recovery' && session)
+        // cubre INITIAL_SESSION cuando el cliente ya procesó el hash sincrónicamente.
+        if (_event === 'PASSWORD_RECOVERY' || (_authFlow === 'recovery' && session))
         {
           _authFlow = null;
           showResetPanel();
         }
+        // Igual para invitaciones: cualquier evento con sesión y _authFlow='newaccount'
         else if (session && _authFlow === 'newaccount')
         {
           _authFlow = null;
           showResetPanel(true);
         }
         // Ignorar eventos de sesión mientras el usuario está en el panel de contraseña
-        // (Supabase dispara SIGNED_IN después de INITIAL_SESSION con el token invite,
-        //  lo que sobrescribiría showResetPanel si no lo filtramos aquí)
+        // (Supabase puede disparar SIGNED_IN después del evento principal)
         else if (session && authPanel !== 'reset') onLogin(session.user);
         else if (!session) showLogin();
       });
