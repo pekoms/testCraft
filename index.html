@@ -2915,20 +2915,19 @@
       }
 
       // Leer hash Y query-string ANTES de que Supabase los procese.
-      // supabase-js v2 usa PKCE por defecto: el código va en ?code= (query string),
-      // no en el hash. Las invitaciones admin siguen enviando tokens en el hash (#type=invite),
-      // pero forzamos flowType:'implicit' para que el cliente los procese correctamente.
+      // Las invitaciones admin van en el hash (#type=invite); la recuperación de contraseña
+      // puede ir en hash (#type=recovery) o en query-string con ?code= (PKCE).
+      // supabase-js v2 procesa ambos formatos independientemente del flowType.
       const _urlHash   = new URLSearchParams(window.location.hash.slice(1));
       const _urlSearch = new URLSearchParams(window.location.search);
       const _hashType  = _urlHash.get('type') || _urlSearch.get('type');
       if (_hashType === 'recovery') _authFlow = 'recovery';
       else if (_hashType === 'signup' || _hashType === 'invite') _authFlow = 'newaccount';
-      // PKCE invite/signup: solo hay ?code= en la URL, sin tipo explícito
+      // ?code= sin tipo explícito → puede ser recovery (PKCE) o invite; PASSWORD_RECOVERY
+      // lo distinguirá en onAuthStateChange.
       else if (_urlSearch.has('code')) _authFlow = 'newaccount';
 
-      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        auth: { flowType: 'implicit' },
-      });
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       // Registrar ANTES de getSession() para no perder el evento PASSWORD_RECOVERY
       sbClient.auth.onAuthStateChange((_event, session) =>
