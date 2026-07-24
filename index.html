@@ -2562,7 +2562,8 @@
       clearAuthMsg();
       try
       {
-        const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+        const cleanUrl = window.location.origin + window.location.pathname;
+        const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: cleanUrl });
         if (error) throw error;
         showAuthMsg('Enlace enviado. Revisa tu correo.', 'info');
       } catch (e)
@@ -2760,7 +2761,8 @@
       let invited = false;
       try
       {
-        await callManageUsers('invite', { email, redirectTo: window.location.href });
+        const cleanUrl = window.location.origin + window.location.pathname;
+        await callManageUsers('invite', { email, redirectTo: cleanUrl });
         invited = true;
         msgEl.textContent = `Invitación enviada a ${email}.`;
         msgEl.className = 'auth-msg show info';
