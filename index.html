@@ -2568,13 +2568,10 @@
 
       try
       {
-        const cleanUrl = window.location.origin + window.location.pathname;
-        const { data, error: fnError } = await sbClient.functions.invoke('resolve-login', {
-          body: { email, redirectTo: cleanUrl },
-        });
-        if (fnError) throw fnError;
+        const { data: role, error } = await sbClient.rpc('get_profile_role', { p_email: email });
+        if (error) throw error;
 
-        if (data.role === 'teacher')
+        if (role === 'teacher')
         {
           resolvedEmail = email;
           authStep = 'password';
@@ -2586,14 +2583,9 @@
           document.getElementById('authToggle').style.display = '';
           document.getElementById('authPassword').focus();
         }
-        else if (data.role === 'student')
+        else if (role === 'student')
         {
-          btn.textContent = 'Entrando…';
-          window.location.href = data.link;
-        }
-        else if (data.role === 'blocked')
-        {
-          showAuthMsg('Tu cuenta está bloqueada. Contacta con tu profesor.', 'error');
+          showAuthMsg('Para acceder usa el enlace que te proporcionó tu profesor.', 'info');
         }
         else
         {
@@ -2699,12 +2691,24 @@
           const isPending = !s.last_sign_in_at;
           const statusLabel = s.is_blocked ? 'Bloqueado' : isPending ? 'Pendiente' : 'Activo';
           const statusClass = s.is_blocked ? 'blocked' : isPending ? 'pending' : 'active';
+          const base = window.location.origin + window.location.pathname;
+          const loginUrl = s.login_key
+            ? `${base}?k=${s.login_key}&e=${encodeURIComponent(s.email)}`
+            : null;
           return `
             <div class="student-row ${s.is_blocked ? 'blocked' : ''}">
               <div class="student-email" title="${s.email}">${s.email}</div>
               <span class="student-status ${statusClass}">${statusLabel}</span>
               <div class="student-meta">${lastLogin ? 'Último acceso: ' + lastLogin : 'Sin acceso aún'}</div>
               <div class="student-actions">
+                ${loginUrl ? `<button class="btn sm" title="Copiar enlace de acceso"
+                  onclick="navigator.clipboard.writeText(${JSON.stringify(loginUrl)}).then(()=>showToast('Enlace copiado'))">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  Enlace
+                </button>` : ''}
                 <button class="btn sm" onclick="toggleBlockStudent('${s.id}', ${s.is_blocked})" title="${s.is_blocked ? 'Desbloquear' : 'Bloquear'}">
                   ${s.is_blocked ? `
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
@@ -2759,10 +2763,16 @@
       let invited = false;
       try
       {
-        const cleanUrl = window.location.origin + window.location.pathname;
-        await callManageUsers('invite', { email });
+        const base = window.location.origin + window.location.pathname;
+        const { loginKey, email: confirmedEmail } = await callManageUsers('invite', { email });
         invited = true;
-        msgEl.textContent = `Invitación enviada a ${email}.`;
+        const loginUrl = `${base}?k=${loginKey}&e=${encodeURIComponent(confirmedEmail)}`;
+        msgEl.innerHTML = `Alumno añadido. Comparte este enlace con ${confirmedEmail}:<br>
+          <span style="font-size:11px;word-break:break-all;color:var(--ink)">${loginUrl}</span><br>
+          <button class="btn sm" style="margin-top:8px"
+            onclick="navigator.clipboard.writeText(${JSON.stringify(loginUrl)}).then(()=>showToast('Enlace copiado'))">
+            Copiar enlace
+          </button>`;
         msgEl.className = 'auth-msg show info';
         document.getElementById('inviteEmail').value = '';
         renderUsers();
@@ -2777,19 +2787,7 @@
         msgEl.className = 'auth-msg show error';
       } finally
       {
-        if (invited) {
-          // Cooldown: prevents hitting the Supabase email rate limit with rapid re-sends
-          let secs = 60;
-          const tick = () => {
-            if (secs <= 0) { btn.disabled = false; btn.style.opacity = '1'; btn.textContent = 'Enviar invitación'; return; }
-            btn.textContent = `Espera ${secs}s`;
-            secs--;
-            setTimeout(tick, 1000);
-          };
-          tick();
-        } else {
-          btn.disabled = false; btn.style.opacity = '1';
-        }
+        btn.disabled = false; btn.style.opacity = '1';
       }
     }
 
@@ -2922,7 +2920,21 @@
         else showLogin();
       });
 
-      await sbClient.auth.getSession();
+      // Auto-login de alumno por URL (?k=loginKey&e=email)
+      const _p = new URLSearchParams(window.location.search);
+      const _k = _p.get('k'), _e = _p.get('e');
+      if (_k && _e)
+      {
+        window.history.replaceState({}, '', location.pathname);
+        const { error: _err } = await sbClient.auth.signInWithPassword({
+          email: decodeURIComponent(_e), password: _k,
+        });
+        if (_err) { showLogin(); showAuthMsg('El enlace no es válido o ha expirado.', 'error'); }
+      }
+      else
+      {
+        await sbClient.auth.getSession();
+      }
 
       // Enter para enviar el formulario
       ['authEmail', 'authPassword'].forEach(id =>

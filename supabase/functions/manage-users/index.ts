@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
       if (error) throw error
 
       const { data: profiles } = await supabaseAdmin
-        .from('profiles').select('id, is_teacher, is_blocked')
+        .from('profiles').select('id, is_teacher, is_blocked, login_key')
 
       const studentProfileIds = new Set(
         (profiles ?? []).filter(p => !p.is_teacher).map(p => p.id)
@@ -65,6 +65,7 @@ Deno.serve(async (req) => {
           created_at: u.created_at,
           last_sign_in_at: u.last_sign_in_at ?? null,
           is_blocked: profileMap[u.id]?.is_blocked ?? false,
+          login_key: profileMap[u.id]?.login_key ?? null,
         }))
 
       return new Response(JSON.stringify({ students }), {
@@ -89,9 +90,13 @@ Deno.serve(async (req) => {
         })
       }
 
-      // Create user with email confirmed — no email sent
+      // Generate a random key that acts as the student's password
+      const loginKey = crypto.randomUUID()
+
+      // Create user — no email sent
       const { data, error } = await supabaseAdmin.auth.admin.createUser({
         email: normalizedEmail,
+        password: loginKey,
         email_confirm: true,
       })
       if (error) throw error
@@ -99,11 +104,12 @@ Deno.serve(async (req) => {
       await supabaseAdmin.from('profiles').upsert({
         id: data.user.id,
         email: normalizedEmail,
+        login_key: loginKey,
         is_teacher: false,
         is_blocked: false,
       })
 
-      return new Response(JSON.stringify({ ok: true }), {
+      return new Response(JSON.stringify({ ok: true, loginKey, email: normalizedEmail }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
