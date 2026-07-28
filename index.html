@@ -2709,24 +2709,14 @@
               <span class="student-status ${statusClass}">${statusLabel}</span>
               <div class="student-meta">${lastLogin ? 'Último acceso: ' + lastLogin : 'Sin acceso aún'}</div>
               <div class="student-actions">
-                ${loginUrl
-                  ? `<button class="btn sm" title="Copiar enlace de acceso"
-                      onclick="navigator.clipboard.writeText(${JSON.stringify(loginUrl)}).then(()=>showToast('Enlace copiado'))">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                      </svg>
-                      Copiar enlace
-                    </button>`
-                  : `<button class="btn sm" title="Generar enlace de acceso"
-                      onclick="regenerateStudentLink('${s.id}')">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-                        <polyline points="23 4 23 10 17 10"/>
-                        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
-                      </svg>
-                      Generar enlace
-                    </button>`
-                }
+                ${loginUrl ? `<button class="btn sm" title="Copiar enlace de acceso"
+                  onclick="navigator.clipboard.writeText(${JSON.stringify(loginUrl)}).then(()=>showToast('Enlace copiado'))">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  Copiar enlace
+                </button>` : ''}
                 <button class="btn sm" onclick="toggleBlockStudent('${s.id}', ${s.is_blocked})" title="${s.is_blocked ? 'Desbloquear' : 'Bloquear'}">
                   ${s.is_blocked ? `
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
@@ -2848,22 +2838,6 @@
         'Eliminar',
         true
       );
-    }
-
-    async function regenerateStudentLink(userId)
-    {
-      try
-      {
-        const { loginKey } = await callManageUsers('regenerate', { userId });
-        const base = window.location.origin + window.location.pathname;
-        // Necesitamos el email del alumno — lo buscamos en la lista ya renderizada
-        const emailEl = document.querySelector(`[data-student-id="${userId}"] .student-email`);
-        const email = emailEl ? emailEl.title : '';
-        const loginUrl = `${base}?k=${loginKey}&e=${encodeURIComponent(email)}`;
-        await navigator.clipboard.writeText(loginUrl);
-        showToast('Enlace generado y copiado.');
-        renderUsers();
-      } catch (e) { showToast('Error: ' + e.message); }
     }
 
     async function doSignOut()

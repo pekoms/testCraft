@@ -114,25 +114,6 @@ Deno.serve(async (req) => {
       })
     }
 
-    // ── REGENERATE KEY ───────────────────────────────────────────
-    if (action === 'regenerate') {
-      const { userId } = body
-      if (!userId) throw new Error('userId requerido')
-
-      const loginKey = crypto.randomUUID()
-
-      const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-        password: loginKey,
-      })
-      if (authErr) throw authErr
-
-      await supabaseAdmin.from('profiles').update({ login_key: loginKey }).eq('id', userId)
-
-      return new Response(JSON.stringify({ ok: true, loginKey }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      })
-    }
-
     // ── BLOCK / UNBLOCK ───────────────────────────────────────────
     if (action === 'block') {
       const { userId, block } = body
