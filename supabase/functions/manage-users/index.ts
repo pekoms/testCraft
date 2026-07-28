@@ -73,12 +73,14 @@ Deno.serve(async (req) => {
 
     // ── INVITE ────────────────────────────────────────────────────
     if (action === 'invite') {
-      const { email, redirectTo } = body
+      const { email } = body
       if (!email) throw new Error('Email requerido')
 
-      // Check if a user with this email already exists to avoid wasting rate-limit quota
+      const normalizedEmail = email.toLowerCase().trim()
+
+      // Check if already exists
       const { data: { users: allUsers } } = await supabaseAdmin.auth.admin.listUsers({ perPage: 1000 })
-      const alreadyExists = allUsers.some(u => u.email?.toLowerCase() === email.toLowerCase())
+      const alreadyExists = allUsers.some(u => u.email?.toLowerCase() === normalizedEmail)
       if (alreadyExists) {
         return new Response(JSON.stringify({ error: 'Este correo ya tiene una cuenta registrada.' }), {
           status: 409,
@@ -86,19 +88,16 @@ Deno.serve(async (req) => {
         })
       }
 
-      const { data, error } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
-        redirectTo: redirectTo ?? Deno.env.get('SUPABASE_URL'),
+      // Create user with email confirmed — no email sent
+      const { data, error } = await supabaseAdmin.auth.admin.createUser({
+        email: normalizedEmail,
+        email_confirm: true,
       })
-      if (error) {
-        const msg: string = (error as any).message ?? String(error)
-        if (msg.toLowerCase().includes('rate') || (error as any).status === 429) {
-          throw new Error('Límite de emails alcanzado. Espera unos minutos e inténtalo de nuevo.')
-        }
-        throw error
-      }
+      if (error) throw error
 
       await supabaseAdmin.from('profiles').upsert({
         id: data.user.id,
+        email: normalizedEmail,
         is_teacher: false,
         is_blocked: false,
       })

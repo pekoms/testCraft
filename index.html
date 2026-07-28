@@ -979,11 +979,22 @@
       /* Student row: allow wrapping */
       .student-row {
         flex-wrap: wrap;
+        gap: 8px;
       }
 
       .student-row .student-meta {
         width: 100%;
         order: 4;
+      }
+
+      .student-row .student-actions {
+        width: 100%;
+        order: 3;
+      }
+
+      .student-row .student-actions .btn {
+        flex: 1;
+        justify-content: center;
       }
 
       /* Invite panel: stack vertically */
@@ -1004,12 +1015,29 @@
         flex: 1;
         justify-content: center;
       }
+
+      /* Auth card: less padding, fills screen better */
+      .auth-card {
+        padding: 1.75rem 1.25rem;
+      }
+
+      #login {
+        padding: 1.5rem 1rem;
+        align-items: flex-start;
+        padding-top: 3rem;
+      }
+
+      /* Bigger touch targets for auth buttons */
+      .auth-card .btn {
+        padding: 13px;
+        font-size: 15px;
+      }
     }
 
     /* Very small screens (≤380px) */
     @media (max-width: 380px) {
       .auth-card {
-        padding: 1.5rem 1.25rem;
+        padding: 1.5rem 1rem;
       }
 
       .btn {
@@ -1363,21 +1391,18 @@
   <!-- LOGIN -->
   <div id="login">
     <div class="auth-card">
-      <h2 id="authTitle">Iniciar sesión</h2>
-      <p class="sub" id="authSub">Accede para crear y hacer tus tests.</p>
+      <h2 id="authTitle">Bienvenido</h2>
+      <p class="sub" id="authSub">Introduce tu correo para continuar.</p>
       <div class="auth-msg" id="authMsg"></div>
-      <div class="field-group">
+      <div class="field-group" id="emailGroup">
         <input type="email" id="authEmail" placeholder="Correo electrónico" autocomplete="email">
       </div>
-      <div class="field-group">
+      <div class="field-group" id="passwordGroup" style="display:none">
         <input type="password" id="authPassword" placeholder="Contraseña" autocomplete="current-password">
       </div>
-      <div class="field-group" id="newPasswordGroup" style="display:none">
-        <input type="password" id="authNewPassword" placeholder="Nueva contraseña" autocomplete="new-password">
-      </div>
-      <button class="btn accent" id="authSubmit" onclick="submitAuth()">Entrar</button>
-      <div class="auth-toggle" id="authToggle">
-        <a onclick="showForgotPanel()">¿Olvidaste tu contraseña?</a>
+      <button class="btn accent" id="authSubmit" onclick="submitAuth()">Continuar</button>
+      <div class="auth-toggle" id="authToggle" style="display:none">
+        <a onclick="goBackToEmail()">← Cambiar correo</a>
       </div>
     </div>
   </div>
@@ -1611,7 +1636,6 @@
 
     let currentUser = null;
     let isTeacher = false; // se determina tras el login según la tabla profiles
-    let _authFlow = null;  // 'recovery' | 'newaccount' | null
 
     // Almacenamiento local (fallback cuando no hay login configurado)
     function loadTestsLocal()
@@ -2504,100 +2528,8 @@
     // AUTH (Supabase)
     // ──────────────────────────────────────────
     let appReady = false;
-    let authPanel = 'login'; // 'login' | 'forgot' | 'reset'
-
-    function showLoginPanel()
-    {
-      authPanel = 'login';
-      clearAuthMsg();
-      document.getElementById('authTitle').textContent = 'Iniciar sesión';
-      document.getElementById('authSub').textContent = 'Accede para crear y hacer tus tests.';
-      document.getElementById('authEmail').closest('.field-group').style.display = '';
-      document.getElementById('authPassword').closest('.field-group').style.display = '';
-      document.getElementById('newPasswordGroup').style.display = 'none';
-      document.getElementById('authSubmit').textContent = 'Entrar';
-      document.getElementById('authToggle').innerHTML = '<a onclick="showForgotPanel()">¿Olvidaste tu contraseña?</a>';
-      document.getElementById('authToggle').style.display = '';
-    }
-
-    function showForgotPanel()
-    {
-      authPanel = 'forgot';
-      clearAuthMsg();
-      document.getElementById('authTitle').textContent = 'Recuperar contraseña';
-      document.getElementById('authSub').textContent = 'Te enviaremos un enlace para restablecer tu contraseña.';
-      document.getElementById('authEmail').closest('.field-group').style.display = '';
-      document.getElementById('authPassword').closest('.field-group').style.display = 'none';
-      document.getElementById('newPasswordGroup').style.display = 'none';
-      document.getElementById('authSubmit').textContent = 'Enviar enlace';
-      document.getElementById('authToggle').innerHTML = '<a onclick="showLoginPanel()">Volver al inicio de sesión</a>';
-      document.getElementById('authToggle').style.display = '';
-    }
-
-    function showResetPanel(isNewAccount = false)
-    {
-      authPanel = 'reset';
-      clearAuthMsg();
-      document.body.classList.add('auth-locked');
-      document.body.classList.remove('logged-in');
-      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      document.getElementById('authTitle').textContent = isNewAccount ? 'Crea tu contraseña' : 'Nueva contraseña';
-      document.getElementById('authSub').textContent = isNewAccount
-        ? 'Bienvenido. Elige una contraseña para acceder a TestCraft.'
-        : 'Introduce tu nueva contraseña.';
-      document.getElementById('authEmail').closest('.field-group').style.display = 'none';
-      document.getElementById('authPassword').closest('.field-group').style.display = 'none';
-      document.getElementById('newPasswordGroup').style.display = '';
-      document.getElementById('authNewPassword').value = '';
-      document.getElementById('authSubmit').textContent = isNewAccount ? 'Acceder' : 'Cambiar contraseña';
-      document.getElementById('authToggle').style.display = 'none';
-    }
-
-    async function sendResetEmail()
-    {
-      const email = document.getElementById('authEmail').value.trim();
-      if (!email) { showAuthMsg('Introduce tu correo electrónico', 'error'); return; }
-      const btn = document.getElementById('authSubmit');
-      btn.disabled = true; btn.style.opacity = '0.6';
-      clearAuthMsg();
-      try
-      {
-        const cleanUrl = window.location.origin + window.location.pathname;
-        const { error } = await sbClient.auth.resetPasswordForEmail(email, { redirectTo: cleanUrl });
-        if (error) throw error;
-        showAuthMsg('Enlace enviado. Revisa tu correo.', 'info');
-      } catch (e)
-      {
-        showAuthMsg(e.message || 'Error al enviar el enlace', 'error');
-      } finally
-      {
-        btn.disabled = false; btn.style.opacity = '1';
-      }
-    }
-
-    async function updatePassword()
-    {
-      const password = document.getElementById('authNewPassword').value;
-      if (password.length < 6) { showAuthMsg('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
-      const btn = document.getElementById('authSubmit');
-      btn.disabled = true; btn.style.opacity = '0.6';
-      clearAuthMsg();
-      let success = false;
-      try
-      {
-        const { data, error } = await sbClient.auth.updateUser({ password });
-        if (error) throw error;
-        success = true;
-        showAuthMsg('Contraseña establecida. Entrando…', 'info');
-        setTimeout(async () => { appReady = false; await onLogin(data.user); }, 900);
-      } catch (e)
-      {
-        showAuthMsg(e.message || 'Error al actualizar la contraseña', 'error');
-      } finally
-      {
-        if (!success) { btn.disabled = false; btn.style.opacity = '1'; }
-      }
-    }
+    let authStep = 'email'; // 'email' | 'password'
+    let resolvedEmail = '';
 
     function showAuthMsg(text, type)
     {
@@ -2610,15 +2542,81 @@
       document.getElementById('authMsg').className = 'auth-msg';
     }
 
-    async function submitAuth()
+    function goBackToEmail()
     {
-      if (!sbClient) { showAuthMsg('Login no configurado', 'error'); return; }
-      if (authPanel === 'forgot') { await sendResetEmail(); return; }
-      if (authPanel === 'reset') { await updatePassword(); return; }
+      authStep = 'email';
+      resolvedEmail = '';
+      clearAuthMsg();
+      document.getElementById('authTitle').textContent = 'Bienvenido';
+      document.getElementById('authSub').textContent = 'Introduce tu correo para continuar.';
+      document.getElementById('emailGroup').style.display = '';
+      document.getElementById('passwordGroup').style.display = 'none';
+      document.getElementById('authPassword').value = '';
+      document.getElementById('authSubmit').textContent = 'Continuar';
+      document.getElementById('authToggle').style.display = 'none';
+    }
+
+    async function checkEmailRole()
+    {
       const email = document.getElementById('authEmail').value.trim();
+      if (!email) { showAuthMsg('Introduce tu correo electrónico', 'error'); return; }
+
+      const btn = document.getElementById('authSubmit');
+      btn.disabled = true; btn.style.opacity = '0.6';
+      btn.textContent = 'Comprobando…';
+      clearAuthMsg();
+
+      try
+      {
+        const cleanUrl = window.location.origin + window.location.pathname;
+        const res = await fetch(`${SUPABASE_URL}/functions/v1/resolve-login`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, redirectTo: cleanUrl }),
+        });
+        const data = await res.json();
+
+        if (data.role === 'teacher')
+        {
+          resolvedEmail = email;
+          authStep = 'password';
+          document.getElementById('authTitle').textContent = 'Acceso de profesor';
+          document.getElementById('authSub').textContent = 'Introduce tu contraseña para entrar.';
+          document.getElementById('emailGroup').style.display = 'none';
+          document.getElementById('passwordGroup').style.display = '';
+          document.getElementById('authSubmit').textContent = 'Entrar';
+          document.getElementById('authToggle').style.display = '';
+          document.getElementById('authPassword').focus();
+        }
+        else if (data.role === 'student')
+        {
+          btn.textContent = 'Entrando…';
+          window.location.href = data.link;
+        }
+        else if (data.role === 'blocked')
+        {
+          showAuthMsg('Tu cuenta está bloqueada. Contacta con tu profesor.', 'error');
+        }
+        else
+        {
+          showAuthMsg('Este correo no está registrado en la plataforma.', 'error');
+        }
+      }
+      catch (e)
+      {
+        showAuthMsg('Error de conexión. Inténtalo de nuevo.', 'error');
+      }
+      finally
+      {
+        btn.disabled = false; btn.style.opacity = '1';
+        if (authStep !== 'password') btn.textContent = 'Continuar';
+      }
+    }
+
+    async function signInTeacher()
+    {
       const password = document.getElementById('authPassword').value;
-      if (!email || !password) { showAuthMsg('Introduce correo y contraseña', 'error'); return; }
-      if (password.length < 6) { showAuthMsg('La contraseña debe tener al menos 6 caracteres', 'error'); return; }
+      if (!password) { showAuthMsg('Introduce tu contraseña', 'error'); return; }
 
       const btn = document.getElementById('authSubmit');
       btn.disabled = true; btn.style.opacity = '0.6';
@@ -2626,31 +2624,33 @@
 
       try
       {
-        const { error } = await sbClient.auth.signInWithPassword({ email, password });
+        const { error } = await sbClient.auth.signInWithPassword({ email: resolvedEmail, password });
         if (error) throw error;
-      } catch (e)
+      }
+      catch (e)
       {
-        const msg = e.message || 'Error de autenticación';
-        showAuthMsg(translateAuthError(msg), 'error');
-      } finally
+        showAuthMsg(translateAuthError(e.message || ''), 'error');
+      }
+      finally
       {
         btn.disabled = false; btn.style.opacity = '1';
       }
+    }
+
+    async function submitAuth()
+    {
+      if (!sbClient) { showAuthMsg('Login no configurado', 'error'); return; }
+      if (authStep === 'password') { await signInTeacher(); return; }
+      await checkEmailRole();
     }
 
     function translateAuthError(msg)
     {
       const m = msg.toLowerCase();
       if (m.includes('invalid login') || m.includes('invalid credentials'))
-        return 'Correo o contraseña incorrectos.';
-      if (m.includes('email not confirmed'))
-        return 'Confirma tu correo electrónico antes de entrar.';
-      if (m.includes('user not found') || m.includes('no user found'))
-        return 'No existe ninguna cuenta con ese correo.';
+        return 'Contraseña incorrecta.';
       if (m.includes('rate limit') || m.includes('too many'))
-        return 'Demasiados intentos. Espera un momento e inténtalo de nuevo.';
-      if (m.includes('network') || m.includes('fetch'))
-        return 'Error de conexión. Comprueba tu internet.';
+        return 'Demasiados intentos. Espera un momento.';
       return msg;
     }
 
@@ -2762,7 +2762,7 @@
       try
       {
         const cleanUrl = window.location.origin + window.location.pathname;
-        await callManageUsers('invite', { email, redirectTo: cleanUrl });
+        await callManageUsers('invite', { email });
         invited = true;
         msgEl.textContent = `Invitación enviada a ${email}.`;
         msgEl.className = 'auth-msg show info';
@@ -2894,7 +2894,7 @@
       document.getElementById('authPassword').value = '';
       document.getElementById('usersNavBtn').style.display = 'none';
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-      showLoginPanel();
+      goBackToEmail();
     }
 
     // ──────────────────────────────────────────
@@ -2916,47 +2916,18 @@
         return;
       }
 
-      // Leer hash Y query-string ANTES de que Supabase los procese.
-      // Las invitaciones admin van en el hash (#type=invite); la recuperación de contraseña
-      // puede ir en hash (#type=recovery) o en query-string con ?code= (PKCE).
-      // supabase-js v2 procesa ambos formatos independientemente del flowType.
-      const _urlHash   = new URLSearchParams(window.location.hash.slice(1));
-      const _urlSearch = new URLSearchParams(window.location.search);
-      const _hashType  = _urlHash.get('type') || _urlSearch.get('type');
-      if (_hashType === 'recovery') _authFlow = 'recovery';
-      else if (_hashType === 'signup' || _hashType === 'invite') _authFlow = 'newaccount';
-      // ?code= sin tipo explícito → puede ser recovery (PKCE) o invite; PASSWORD_RECOVERY
-      // lo distinguirá en onAuthStateChange.
-      else if (_urlSearch.has('code')) _authFlow = 'newaccount';
-
       sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-      // Registrar ANTES de getSession() para no perder el evento PASSWORD_RECOVERY
       sbClient.auth.onAuthStateChange((_event, session) =>
       {
-        // PASSWORD_RECOVERY cubre el caso habitual; (_authFlow==='recovery' && session)
-        // cubre INITIAL_SESSION cuando el cliente ya procesó el hash sincrónicamente.
-        if (_event === 'PASSWORD_RECOVERY' || (_authFlow === 'recovery' && session))
-        {
-          _authFlow = null;
-          showResetPanel();
-        }
-        // Igual para invitaciones: cualquier evento con sesión y _authFlow='newaccount'
-        else if (session && _authFlow === 'newaccount')
-        {
-          _authFlow = null;
-          showResetPanel(true);
-        }
-        // Ignorar eventos de sesión mientras el usuario está en el panel de contraseña
-        // (Supabase puede disparar SIGNED_IN después del evento principal)
-        else if (session && authPanel !== 'reset') onLogin(session.user);
-        else if (!session) showLogin();
+        if (session) onLogin(session.user);
+        else showLogin();
       });
 
       await sbClient.auth.getSession();
 
       // Enter para enviar el formulario
-      ['authEmail', 'authPassword', 'authNewPassword'].forEach(id =>
+      ['authEmail', 'authPassword'].forEach(id =>
       {
         document.getElementById(id).addEventListener('keydown', e =>
         {
