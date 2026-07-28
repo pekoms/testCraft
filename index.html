@@ -2571,7 +2571,11 @@
         const cleanUrl = window.location.origin + window.location.pathname;
         const res = await fetch(`${SUPABASE_URL}/functions/v1/resolve-login`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          },
           body: JSON.stringify({ email, redirectTo: cleanUrl }),
         });
         const data = await res.json();
