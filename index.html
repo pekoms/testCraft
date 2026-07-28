@@ -2585,7 +2585,15 @@
         }
         else if (role === 'student')
         {
-          showAuthMsg('Para acceder usa el enlace que te proporcionó tu profesor.', 'info');
+          btn.textContent = 'Entrando…';
+          const { data: loginKey, error: keyErr } = await sbClient.rpc('get_student_login_key', { p_email: email });
+          if (keyErr || !loginKey) throw new Error('No se pudo obtener acceso. Contacta con tu profesor.');
+          const { error: signInErr } = await sbClient.auth.signInWithPassword({ email, password: loginKey });
+          if (signInErr) throw new Error('Error al acceder. Contacta con tu profesor.');
+        }
+        else if (role === 'blocked')
+        {
+          showAuthMsg('Tu cuenta está bloqueada. Contacta con tu profesor.', 'error');
         }
         else
         {
@@ -2594,7 +2602,7 @@
       }
       catch (e)
       {
-        showAuthMsg('Error de conexión. Inténtalo de nuevo.', 'error');
+        showAuthMsg(e.message || 'Error de conexión. Inténtalo de nuevo.', 'error');
       }
       finally
       {
