@@ -1349,6 +1349,28 @@
       margin-bottom: 0.5rem;
     }
 
+    /* ── DEADLINE / ATTEMPTS BADGES ─────── */
+    .badge.deadline-soon    { background: #FFF3CD; color: #856404; }
+    .badge.deadline-expired { background: #FDF0EE; color: #C0392B; }
+
+    /* ── ANSWER DETAIL ROWS (stats modal) ─ */
+    .answer-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .answer-row:last-child { border-bottom: none; }
+    .answer-icon { flex-shrink: 0; width: 16px; text-align: center; margin-top: 1px; }
+    .answer-q-text { color: var(--ink2); display: block; margin-bottom: 2px; }
+    .answer-ok   { color: var(--accent2); font-weight: 500; }
+    .answer-fail { color: #C0392B; font-weight: 500; }
+    .answer-open { color: var(--ink); font-style: italic; }
+    .answer-corr { color: var(--accent2); }
+
     /* ── STATS ───────────────────────────── */
     #stats {
       max-width: 900px;
@@ -1635,6 +1657,14 @@
           <option value="1">Sí — publicado</option>
         </select>
       </div>
+      <div class="field-group">
+        <label>Máx. intentos</label>
+        <input type="number" id="testMaxAttempts" min="0" value="0" placeholder="0 = ilimitados">
+      </div>
+      <div class="field-group">
+        <label>Fecha límite</label>
+        <input type="datetime-local" id="testDeadline">
+      </div>
     </div>
 
     <hr class="divider">
@@ -1753,7 +1783,17 @@
       <p id="statsSubtitle"></p>
     </div>
     <div class="stats-summary" id="statsSummary"></div>
-    <div class="section-title" id="statsListTitle" style="margin-bottom:0.75rem"></div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem">
+      <div class="section-title" id="statsListTitle" style="margin-bottom:0"></div>
+      <button class="btn sm" id="statsExportBtn" style="display:none" onclick="exportResultsCSV()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Exportar CSV
+      </button>
+    </div>
     <div id="statsContent"></div>
   </div>
 
@@ -2041,17 +2081,31 @@
 
     function renderTestCard(t)
     {
+      const deadlineBadge = (() => {
+        if (!t.deadline) return '';
+        const d = new Date(t.deadline), now = new Date();
+        const expired = d < now;
+        const soon = !expired && (d - now) < 24 * 3600 * 1000;
+        const cls = expired ? 'deadline-expired' : soon ? 'deadline-soon' : '';
+        const label = expired ? 'Plazo vencido' : `Plazo: ${d.toLocaleDateString('es-ES', { day:'numeric', month:'short' })}`;
+        return `<span class="badge ${cls}" style="margin-left:4px">${label}</span>`;
+      })();
+
       const meta = `
       <h3>${escHtml(t.title)}</h3>
       <p>${escHtml(t.description || 'Sin descripción')}</p>
       <span class="badge">${t.questions.length} pregunta${t.questions.length !== 1 ? 's' : ''}</span>
-      ${t.timeLimit ? `<span class="badge" style="background:var(--accent2-light);color:var(--accent2);margin-left:4px">⏱ ${t.timeLimit} min</span>` : ''}`;
+      ${t.timeLimit ? `<span class="badge" style="background:var(--accent2-light);color:var(--accent2);margin-left:4px">⏱ ${t.timeLimit} min</span>` : ''}
+      ${deadlineBadge}`;
 
       if (!isTeacher) return `<div class="test-card" onclick="startTest('${t.id}')">${meta}</div>`;
 
       const pubBadge = t.published
         ? `<span class="badge" style="background:var(--accent2-light);color:var(--accent2);margin-left:4px">Publicado</span>`
         : `<span class="badge" style="background:var(--surface2);color:var(--ink3);margin-left:4px">Borrador</span>`;
+      const attemptsBadge = t.maxAttempts
+        ? `<span class="badge" style="background:var(--surface2);color:var(--ink3);margin-left:4px">${t.maxAttempts} intento${t.maxAttempts !== 1 ? 's' : ''} máx.</span>`
+        : '';
       const isOwner = !usingCloud() || t._ownerId === currentUser?.id;
 
       return `<div class="test-card" onclick="startTest('${t.id}')">
@@ -2061,6 +2115,9 @@
           ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
           : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'}
         </button>
+        <button class="btn sm" onclick="duplicateTest('${t.id}')" title="Duplicar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
         <button class="btn sm" onclick="editTest('${t.id}')" title="Editar">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
         </button>
@@ -2069,7 +2126,7 @@
         </button>
       </div>` : ''}
       ${meta}
-      <div style="margin-top:8px">${pubBadge}</div>
+      <div style="margin-top:8px">${pubBadge}${attemptsBadge}</div>
     </div>`;
     }
 
@@ -2130,6 +2187,8 @@
       document.getElementById('testTime').value = 0;
       document.getElementById('testShuffle').value = 0;
       document.getElementById('testPublished').value = 0;
+      document.getElementById('testMaxAttempts').value = 0;
+      document.getElementById('testDeadline').value = '';
       document.getElementById('editorTitle').textContent = 'Nuevo test';
       renderQuestions();
       addQuestion();
@@ -2147,6 +2206,9 @@
       document.getElementById('testTime').value = t.timeLimit || 0;
       document.getElementById('testShuffle').value = t.shuffle ? 1 : 0;
       document.getElementById('testPublished').value = t.published ? 1 : 0;
+      document.getElementById('testMaxAttempts').value = t.maxAttempts || 0;
+      document.getElementById('testDeadline').value = t.deadline
+        ? new Date(t.deadline).toISOString().slice(0, 16) : '';
       document.getElementById('editorTitle').textContent = 'Editar test';
       renderQuestions();
       showView('editor');
@@ -2201,6 +2263,9 @@
         timeLimit: parseInt(document.getElementById('testTime').value) || 0,
         shuffle: document.getElementById('testShuffle').value === '1',
         published: document.getElementById('testPublished').value === '1',
+        maxAttempts: parseInt(document.getElementById('testMaxAttempts').value) || 0,
+        deadline: document.getElementById('testDeadline').value
+          ? new Date(document.getElementById('testDeadline').value).toISOString() : null,
         questions,
         createdAt: editingId ? (tests.find(x => x.id === editingId)?.createdAt || Date.now()) : Date.now(),
         updatedAt: Date.now()
@@ -2340,10 +2405,33 @@
     // ──────────────────────────────────────────
     // PLAYER
     // ──────────────────────────────────────────
-    function startTest(id)
+    async function startTest(id)
     {
       const t = tests.find(x => x.id === id);
       if (!t || !t.questions.length) { showToast('Este test no tiene preguntas'); return; }
+
+      // Solo aplicar restricciones a alumnos
+      if (!isTeacher)
+      {
+        if (t.deadline && new Date() > new Date(t.deadline))
+        {
+          showToast('El plazo de entrega ha vencido'); return;
+        }
+        if (t.maxAttempts > 0 && usingCloud() && currentUser)
+        {
+          const { count } = await sbClient
+            .from('test_results')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', currentUser.id)
+            .eq('test_id', id);
+          if (count >= t.maxAttempts)
+          {
+            showToast(`Has alcanzado el límite de ${t.maxAttempts} intento${t.maxAttempts !== 1 ? 's' : ''} para este test`);
+            return;
+          }
+        }
+      }
+
       let qs = JSON.parse(JSON.stringify(t.questions));
       if (t.shuffle) qs = qs.sort(() => Math.random() - 0.5);
       playerState = {
@@ -2539,7 +2627,21 @@
       });
 
       const pct = total > 0 ? Math.round((correct / total) * 100) : null;
-      saveTestResult(pct, correct, total); // fire-and-forget
+
+      // Compact answer summary for detailed view
+      const answerSummary = reviewItems.map(item =>
+      {
+        if (item.type === 'open')
+          return { q: item.q.text, type: 'open', ok: null, ans: item.ans || '' };
+        const selLabels  = item.ans.map(j => item.q.options[j]?.text).filter(Boolean);
+        const corrLabels = item.correctIndices.map(j => item.q.options[j]?.text).filter(Boolean);
+        return {
+          q: item.q.text, type: item.q.type, ok: item.isCorrect,
+          ans: selLabels.join(', ') || '—',
+          correct: corrLabels.join(', ')
+        };
+      });
+      saveTestResult(pct, correct, total, answerSummary); // fire-and-forget
       document.getElementById('scoreNum').textContent = pct !== null ? pct + '%' : '—';
       document.getElementById('scoreLabel').textContent =
         pct !== null
@@ -2578,7 +2680,7 @@
     // STATISTICS
     // ──────────────────────────────────────────
 
-    async function saveTestResult(score, correct, total)
+    async function saveTestResult(score, correct, total, answers = [])
     {
       if (!usingCloud() || !currentUser) return;
       try
@@ -2587,9 +2689,10 @@
           user_id: currentUser.id,
           test_id: playerState.test.id,
           test_title: playerState.test.title,
-          score: score,    // null for all-open-question tests
+          score: score,
           correct: correct,
           total: total,
+          answers: answers,
         });
       } catch (e) { console.error('Stats save error:', e); }
     }
@@ -2654,6 +2757,7 @@
       document.getElementById('statsSummary').innerHTML = '';
       document.getElementById('statsContent').innerHTML = '<div class="students-empty">Cargando…</div>';
       document.getElementById('statsListTitle').textContent = '';
+      document.getElementById('statsExportBtn').style.display = 'none';
       isTeacher ? await renderTeacherStats() : await renderStudentStats();
     }
 
@@ -2756,6 +2860,7 @@
           .sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
 
         document.getElementById('statsListTitle').textContent = 'Por alumno';
+        document.getElementById('statsExportBtn').style.display = results?.length ? 'inline-flex' : 'none';
 
         if (!active.length)
         {
@@ -2842,19 +2947,52 @@
       document.getElementById('statsDetailContent').innerHTML =
         Object.values(byTest).map(({ title, results: rs }) =>
         {
-          const scores  = rs.filter(r => r.score !== null).map(r => r.score);
+          const scores   = rs.filter(r => r.score !== null).map(r => r.score);
           const attempts = scores.map(s => s + '%').join(' → ');
-          const meta = [
+          const meta     = [
             `${rs.length} intento${rs.length !== 1 ? 's' : ''}`,
             scores.length ? attempts : 'Respuesta abierta',
           ].join(' · ');
-          return `<div class="stats-test-card" style="padding:0.9rem 1.1rem;margin-bottom:6px">
-            <div class="stats-test-info">
-              <div class="stats-test-name">${escHtml(title)}</div>
-              <div class="stats-test-meta">${meta}</div>
+
+          // Per-question breakdown from the latest attempt
+          const latest    = rs[rs.length - 1];
+          const answersHtml = (latest.answers && latest.answers.length)
+            ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">
+                  Último intento
+                  ${latest.completed_at ? `· ${new Date(latest.completed_at).toLocaleDateString('es-ES')}` : ''}
+                </div>
+                ${latest.answers.map((a, i) =>
+                {
+                  if (a.type === 'open') return `<div class="answer-row">
+                    <span class="answer-icon" style="color:var(--accent)">✎</span>
+                    <div><span class="answer-q-text">P${i+1}: ${escHtml(a.q)}</span>
+                    <span class="answer-open">${escHtml(a.ans) || '<em>Sin respuesta</em>'}</span></div>
+                  </div>`;
+                  return `<div class="answer-row">
+                    <span class="answer-icon ${a.ok ? 'answer-ok' : 'answer-fail'}">${a.ok ? '✓' : '✗'}</span>
+                    <div><span class="answer-q-text">P${i+1}: ${escHtml(a.q)}</span>
+                    ${a.ok
+                      ? `<span class="answer-ok">${escHtml(a.ans)}</span>`
+                      : `<span class="answer-fail">${escHtml(a.ans)}</span>
+                         <span style="color:var(--ink3)"> → </span>
+                         <span class="answer-corr">${escHtml(a.correct)}</span>`}
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>`
+            : '';
+
+          return `<div class="stats-test-card" style="padding:0.9rem 1.1rem;margin-bottom:6px;flex-direction:column;align-items:stretch">
+            <div style="display:flex;align-items:center;gap:1rem">
+              <div class="stats-test-info">
+                <div class="stats-test-name">${escHtml(title)}</div>
+                <div class="stats-test-meta">${meta}</div>
+              </div>
+              ${scores.length ? sparkline(scores, 100, 36) : ''}
+              ${trendBadge(scores)}
             </div>
-            ${scores.length ? sparkline(scores, 100, 36) : ''}
-            ${trendBadge(scores)}
+            ${answersHtml}
           </div>`;
         }).join('') || '<div class="students-empty">Sin resultados.</div>';
     }
@@ -2862,6 +3000,64 @@
     function closeStatsDetail()
     {
       document.getElementById('statsDetailOverlay').classList.remove('open');
+    }
+
+    async function duplicateTest(id)
+    {
+      const t = tests.find(x => x.id === id);
+      if (!t) return;
+      const copy = {
+        ...JSON.parse(JSON.stringify(t)),
+        id: genId(),
+        title: 'Copia de ' + t.title,
+        published: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      delete copy._ownerId;
+      const ok = await persistTest(copy);
+      if (!ok) return;
+      tests.unshift({ ...copy, _ownerId: currentUser?.id });
+      renderHome();
+      showToast('Test duplicado ✓');
+    }
+
+    async function exportResultsCSV()
+    {
+      try
+      {
+        const [{ students }, { data: results }] = await Promise.all([
+          callManageUsers('list'),
+          sbClient.from('test_results').select('*').order('completed_at', { ascending: true })
+        ]);
+
+        if (!results?.length) { showToast('No hay resultados para exportar'); return; }
+
+        const emailMap = Object.fromEntries(students.map(s => [s.id, s.email]));
+        const csvEsc   = s => `"${String(s ?? '').replace(/"/g, '""')}"`;
+        const headers  = ['Email', 'Test', 'Nota (%)', 'Correctas', 'Total preguntas', 'Fecha'];
+        const rows     = results.map(r => [
+          emailMap[r.user_id] || r.user_id,
+          r.test_title,
+          r.score ?? '',
+          r.correct,
+          r.total,
+          new Date(r.completed_at).toLocaleString('es-ES'),
+        ].map(csvEsc).join(','));
+
+        const csv  = '﻿' + [headers.map(csvEsc).join(','), ...rows].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url;
+        a.download = `testcraft_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('CSV descargado ✓');
+      }
+      catch (e) { showToast('Error al exportar: ' + e.message); }
     }
 
     // ──────────────────────────────────────────
