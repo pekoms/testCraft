@@ -369,6 +369,75 @@ nav {
 .user-badge { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink2); }
 .user-badge .email { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
+.role-pill {
+  background: var(--accent-light); color: var(--accent);
+  padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; white-space: nowrap;
+}
+.role-pill.admin {
+  background: #E8D5F7; color: #7B2FBE;
+}
+html[data-theme="dark"] .role-pill.admin { background: #3B1A5A; color: #C084FC; }
+html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA; }
+
+/* ── HAMBURGER ───────────────────────── */
+.hamburger {
+  display: none;
+  width: 36px; height: 36px;
+  align-items: center; justify-content: center;
+  border: 1.5px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: transparent; color: var(--ink);
+  cursor: pointer; transition: all 0.15s; flex-shrink: 0;
+}
+.hamburger:hover { background: var(--surface2); }
+.hamburger.open { background: var(--surface2); }
+
+/* ── MOBILE MENU ─────────────────────── */
+.mobile-menu {
+  position: fixed;
+  top: 56px; left: 0; right: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.14);
+  z-index: 150;
+  padding: 0.5rem;
+  display: flex; flex-direction: column; gap: 2px;
+}
+
+.mobile-menu-user {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px 8px;
+}
+.mobile-user-email {
+  font-size: 12px; color: var(--ink2);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.mobile-menu-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+.mobile-link {
+  display: flex; align-items: center; gap: 12px;
+  width: 100%; padding: 12px 14px;
+  border: none; border-radius: var(--radius-sm);
+  background: transparent; color: var(--ink);
+  font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500;
+  cursor: pointer; text-align: left; transition: background 0.15s;
+}
+.mobile-link:hover { background: var(--surface2); }
+.mobile-link.danger { color: #C0392B; }
+
+.mobile-menu-backdrop {
+  position: fixed; inset: 0;
+  background: rgba(26, 24, 20, 0.4);
+  z-index: 149;
+}
+
+/* Transitions */
+.slide-down-enter-active, .slide-down-leave-active { transition: transform 0.2s ease, opacity 0.2s ease; }
+.slide-down-enter-from, .slide-down-leave-to { transform: translateY(-8px); opacity: 0; }
+.fade-enter-active, .fade-leave-active { transition: opacity 0.2s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
 /* ── THEME SWITCHER ──────────────────── */
 .theme-switcher { display: flex; gap: 2px; background: var(--surface2); border-radius: 8px; padding: 3px; }
 .theme-btn {
@@ -484,46 +553,78 @@ nav {
 
 @media (max-width: 768px) {
   .tests-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  #stats { max-width: 100%; }
 }
 
+/* Tablet (601–900px): keep desktop nav, minor tweaks */
+@media (max-width: 900px) and (min-width: 601px) {
+  .user-badge .email { max-width: 110px; }
+}
+
+/* Mobile (≤600px): hamburger replaces nav-actions */
 @media (max-width: 600px) {
   nav { padding: 0 1rem; gap: 6px; }
-  .nav-actions .btn { font-size: 0; padding: 8px 10px; gap: 0; min-width: 38px; justify-content: center; }
-  .nav-actions .btn svg { width: 18px; height: 18px; }
-  .user-badge .email { display: none; }
+  .nav-actions { display: none; }
+  .user-badge { display: none; }
+  .hamburger { display: flex; }
+
   #home, #users, #editor, #player, #results { padding: 1.25rem 1rem; }
   .home-header { padding: 1.75rem 0.5rem 1.5rem; }
   .tests-grid { grid-template-columns: 1fr; }
   .test-card .actions { opacity: 1; }
+
   .editor-header { flex-direction: column; align-items: stretch; }
   .editor-header .actions { display: flex; width: 100%; }
   .editor-header .actions .btn { flex: 1; justify-content: center; }
   .question-header { flex-wrap: wrap; }
+
   .player-nav { flex-direction: column; }
   .player-nav .btn { width: 100%; justify-content: center; }
+
   .results-actions { flex-direction: column; }
   .results-actions .btn { width: 100%; justify-content: center; }
+
   .modal { padding: 1.25rem; }
   .toast { bottom: 1rem; right: 1rem; left: 1rem; max-width: none; text-align: center; }
+
   .student-row { flex-wrap: wrap; gap: 8px; }
+  .student-row .student-email { font-size: 0.85rem; }
   .student-row .student-meta { width: 100%; order: 4; }
-  .student-row .student-actions { width: 100%; order: 3; }
-  .student-row .student-actions .btn { flex: 1; justify-content: center; }
+  .student-row .student-actions { width: 100%; order: 3; flex-wrap: wrap; }
+  .student-row .student-actions .btn { flex: 1; justify-content: center; min-width: 80px; }
+
   .invite-panel { flex-direction: column; }
   .invite-panel .field-group { min-width: 0; width: 100%; }
   .invite-panel-actions { width: 100%; }
   .invite-panel-actions .btn { flex: 1; justify-content: center; }
+
   #login { padding: 1.5rem 1rem; align-items: flex-start; padding-top: 3rem; }
   .auth-card { padding: 1.75rem 1.25rem; }
   .auth-card .btn { padding: 13px; font-size: 15px; }
+
   #stats { padding: 1.25rem 1rem; }
-  .stats-test-card { flex-wrap: wrap; gap: 0.75rem; }
   .stats-summary { grid-template-columns: repeat(2, 1fr); }
-  .stats-student-card { flex-wrap: wrap; }
+  .stats-test-card { flex-wrap: wrap; gap: 0.5rem; padding: 1rem; }
+  .stats-test-info { min-width: 0; }
+
+  .stats-student-card { flex-wrap: wrap; gap: 6px; }
+  .stats-student-email { width: 100%; font-size: 0.85rem; }
+  .stats-student-score { font-size: 1.1rem; }
   .stats-student-meta { width: 100%; text-align: left; }
+  .stats-student-card .btn { flex: 1; justify-content: center; }
+
+  .stats-detail-modal { padding: 1.25rem; }
+}
+
+@media (max-width: 440px) {
+  .stats-summary { grid-template-columns: repeat(2, 1fr); }
+  .stats-kpi { padding: 1rem 0.75rem; }
+  .stats-kpi-num { font-size: 1.5rem; }
 }
 
 @media (max-width: 380px) {
   .auth-card { padding: 1.5rem 1rem; }
   .btn { padding: 7px 12px; }
+  .theme-switcher { padding: 2px; }
+  .theme-btn { width: 24px; height: 24px; }
 }

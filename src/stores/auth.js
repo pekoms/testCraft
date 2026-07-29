@@ -2,9 +2,12 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '@/lib/supabase'
 
+const ADMIN_EMAIL = 'alejandropi301196@gmail.com'
+
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref(null)
   const isTeacher = ref(false)
+  const isAdmin = ref(false)
   const appReady = ref(false)
   const authLocked = ref(true)
   const authStep = ref('email') // 'email' | 'password'
@@ -28,6 +31,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function onLogin(user) {
     currentUser.value = user
+    isAdmin.value = user.email?.toLowerCase() === ADMIN_EMAIL
     if (!appReady.value) {
       appReady.value = true
       isTeacher.value = await fetchRole()
@@ -56,6 +60,7 @@ export const useAuthStore = defineStore('auth', () => {
     currentUser.value = null
     appReady.value = false
     isTeacher.value = false
+    isAdmin.value = false
     authLocked.value = true
     authStep.value = 'email'
     resolvedEmail.value = ''
@@ -149,7 +154,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    currentUser, isTeacher, appReady, authLocked, authStep, resolvedEmail, authMsg,
+    currentUser, isTeacher, isAdmin, appReady, authLocked, authStep, resolvedEmail, authMsg,
     showAuthMsg, clearAuthMsg, goBackToEmail, checkEmailRole, signInTeacher, doSignOut, init, onLogin, showLogin,
   }
 })

@@ -165,7 +165,9 @@ async function load() {
         supabase.from('test_results').select('*').order('completed_at', { ascending: true }),
       ])
       students.value = list
-      results.value = res || []
+      // Only keep results that belong to actual students (excludes admin and other teachers)
+      const studentIds = new Set(list.map(s => s.id))
+      results.value = (res || []).filter(r => studentIds.has(r.user_id))
     } else {
       const { data: res, error } = await supabase
         .from('test_results').select('*').order('completed_at', { ascending: true })
