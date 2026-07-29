@@ -1,0 +1,3642 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TestCraft — Crea tus tests.</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #F5F3EE;
+      --surface: #FFFCF7;
+      --surface2: #F0EDE6;
+      --ink: #1A1814;
+      --ink2: #5A5650;
+      --ink3: #9A968F;
+      --accent: #D4571C;
+      --accent-light: #FBE9DF;
+      --accent2: #2A6049;
+      --accent2-light: #E0F0E8;
+      --border: rgba(26, 24, 20, 0.1);
+      --border-strong: rgba(26, 24, 20, 0.2);
+      --radius: 12px;
+      --radius-sm: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    /* ── NAV ─────────────────────────────── */
+    nav {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.25rem;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+
+    .logo span {
+      color: var(--accent);
+    }
+
+    .nav-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    /* ── BUTTONS ─────────────────────────── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: var(--radius-sm);
+      border: 1.5px solid var(--border-strong);
+      background: transparent;
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn:hover {
+      background: var(--surface2);
+    }
+
+    .btn.primary {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    .btn.primary:hover {
+      background: #333;
+      border-color: #333;
+    }
+
+    .btn.accent {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+    }
+
+    .btn.accent:hover {
+      background: #b8461a;
+    }
+
+    .btn.danger {
+      color: #C0392B;
+      border-color: rgba(192, 57, 43, 0.3);
+    }
+
+    .btn.danger:hover {
+      background: #FDF0EE;
+    }
+
+    .btn.sm {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+
+    .btn svg {
+      width: 15px;
+      height: 15px;
+      flex-shrink: 0;
+    }
+
+    /* ── VIEWS ───────────────────────────── */
+    .view {
+      display: none;
+    }
+
+    .view.active {
+      display: block;
+    }
+
+    /* ── HOME ────────────────────────────── */
+    #home,
+    #users {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .home-header {
+      text-align: center;
+      padding: 3rem 1rem 2.5rem;
+    }
+
+    .home-header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 6vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 0.75rem;
+    }
+
+    .home-header p {
+      color: var(--ink2);
+      font-size: 1rem;
+      max-width: 400px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .section-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ink3);
+      margin-bottom: 0.75rem;
+    }
+
+    .tests-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 12px;
+    }
+
+    .test-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+    }
+
+    .test-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .test-card h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+      padding-right: 2rem;
+    }
+
+    .test-card p {
+      font-size: 12px;
+      color: var(--ink3);
+    }
+
+    .test-card .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 500;
+      margin-top: 8px;
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .test-card .actions {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      display: flex;
+      gap: 4px;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+
+    .test-card:hover .actions {
+      opacity: 1;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--ink3);
+      border: 1.5px dashed var(--border-strong);
+      border-radius: var(--radius);
+    }
+
+    .empty-state p {
+      font-size: 0.9rem;
+      margin-top: 0.5rem;
+    }
+
+    /* ── EDITOR ──────────────────────────── */
+    #editor {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .editor-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .editor-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+    }
+
+    .editor-header .actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .field-group {
+      margin-bottom: 1.25rem;
+    }
+
+    .field-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink2);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 5px;
+    }
+
+    .field-group input[type="text"],
+    .field-group input[type="number"],
+    .field-group textarea,
+    .field-group select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+
+    .field-group input:focus,
+    .field-group textarea:focus,
+    .field-group select:focus {
+      border-color: var(--accent);
+    }
+
+    .field-group textarea {
+      resize: vertical;
+      min-height: 70px;
+    }
+
+    .settings-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media(max-width: 480px) {
+      .settings-row {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.75rem 0;
+    }
+
+    /* Questions */
+    .questions-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .question-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      position: relative;
+    }
+
+    .question-card.dragging {
+      opacity: 0.5;
+    }
+
+    .question-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .question-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.75rem;
+      color: var(--accent);
+      background: var(--accent-light);
+      padding: 3px 8px;
+      border-radius: 99px;
+      white-space: nowrap;
+    }
+
+    .question-actions {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+    }
+
+    .options-list {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-top: 10px;
+    }
+
+    .option-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .option-row input[type="text"] {
+      flex: 1;
+      padding: 7px 10px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .option-row input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    .option-row .correct-check {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--accent2);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .option-row .del-opt {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--ink3);
+      padding: 4px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      transition: color 0.15s, background 0.15s;
+      flex-shrink: 0;
+    }
+
+    .option-row .del-opt:hover {
+      color: #C0392B;
+      background: #FDF0EE;
+    }
+
+    .type-toggle {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .type-btn {
+      padding: 5px 12px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 99px;
+      background: transparent;
+      color: var(--ink2);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .type-btn.active {
+      background: var(--ink);
+      color: #fff;
+      border-color: var(--ink);
+    }
+
+    .add-question-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px;
+      border: 1.5px dashed var(--border-strong);
+      border-radius: var(--radius);
+      background: transparent;
+      color: var(--ink2);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      width: 100%;
+      transition: all 0.15s;
+      margin-top: 8px;
+    }
+
+    .add-question-btn:hover {
+      background: var(--surface);
+      color: var(--ink);
+    }
+
+    /* ── PLAYER ──────────────────────────── */
+    #player {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .player-header {
+      margin-bottom: 2rem;
+    }
+
+    .player-header h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .progress-bar-wrap {
+      height: 4px;
+      background: var(--surface2);
+      border-radius: 99px;
+      margin-top: 1rem;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width 0.3s ease;
+    }
+
+    .progress-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      color: var(--ink3);
+      margin-top: 6px;
+    }
+
+    .question-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .question-box .q-text {
+      font-size: 1rem;
+      font-weight: 500;
+      margin-bottom: 1.25rem;
+      line-height: 1.5;
+    }
+
+    .options-play {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .option-play {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      background: var(--bg);
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .option-play:hover {
+      background: var(--surface);
+      border-color: var(--ink);
+    }
+
+    .option-play.selected {
+      border-color: var(--accent2);
+      background: var(--accent2-light);
+    }
+
+    .option-play.correct {
+      border-color: var(--accent2);
+      background: var(--accent2-light);
+    }
+
+    .option-play.wrong {
+      border-color: #C0392B;
+      background: #FDF0EE;
+    }
+
+    .option-play.correct-missed {
+      border-color: var(--accent2);
+      background: transparent;
+      border-style: dashed;
+    }
+
+    .option-play.locked {
+      cursor: default;
+    }
+
+    .option-play.locked:hover {
+      background: var(--bg);
+    }
+
+    .option-play.selected.locked:hover {
+      background: var(--accent2-light);
+    }
+
+    .option-play.correct.locked:hover {
+      background: var(--accent2-light);
+    }
+
+    .option-play.wrong.locked:hover {
+      background: #FDF0EE;
+    }
+
+    .feedback-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 0.9rem;
+      font-weight: 500;
+      margin-top: 14px;
+    }
+
+    .feedback-banner.ok {
+      background: var(--accent2-light);
+      color: var(--accent2);
+    }
+
+    .feedback-banner.fail {
+      background: #FDF0EE;
+      color: #C0392B;
+    }
+
+    .feedback-banner svg {
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .option-marker {
+      width: 18px;
+      height: 18px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: 50%;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .option-play.selected .option-marker,
+    .option-play.correct .option-marker {
+      background: var(--accent2);
+      border-color: var(--accent2);
+    }
+
+    .option-play.wrong .option-marker {
+      background: #C0392B;
+      border-color: #C0392B;
+    }
+
+    .open-answer textarea {
+      width: 100%;
+      min-height: 100px;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .open-answer textarea:focus {
+      border-color: var(--accent);
+    }
+
+    .player-nav {
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+
+    /* ── RESULTS ─────────────────────────── */
+    #results {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    .score-hero {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      margin-bottom: 1.5rem;
+    }
+
+    .score-num {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(3rem, 12vw, 5rem);
+      font-weight: 800;
+      letter-spacing: -0.04em;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .score-label {
+      color: var(--ink2);
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+
+    .review-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .review-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+    }
+
+    .review-item.ok {
+      border-left: 3px solid var(--accent2);
+    }
+
+    .review-item.fail {
+      border-left: 3px solid #C0392B;
+    }
+
+    .review-item.open {
+      border-left: 3px solid var(--accent);
+    }
+
+    .review-q {
+      font-weight: 500;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+
+    .review-answer {
+      font-size: 0.85rem;
+      color: var(--ink2);
+    }
+
+    .review-answer .tag {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 99px;
+      font-size: 11px;
+      margin-right: 4px;
+    }
+
+    .tag.ok {
+      background: var(--accent2-light);
+      color: var(--accent2);
+    }
+
+    .tag.fail {
+      background: #FDF0EE;
+      color: #C0392B;
+    }
+
+    .tag.open {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .results-actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 1.5rem;
+    }
+
+    /* ── MODAL ───────────────────────────── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 24, 20, 0.5);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      max-width: 400px;
+      width: 100%;
+      border: 1px solid var(--border-strong);
+    }
+
+    .modal h3 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .modal p {
+      color: var(--ink2);
+      font-size: 0.9rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    /* ── TOAST ───────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: var(--ink);
+      color: #fff;
+      padding: 10px 16px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.25s ease;
+      z-index: 300;
+      max-width: 280px;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    /* ── RESPONSIVE ──────────────────────── */
+
+    /* Touch devices: always show card action buttons (no hover) */
+    @media (hover: none) {
+      .test-card .actions {
+        opacity: 1;
+      }
+    }
+
+    /* Tablet (≤768px): tighten grid minimum */
+    @media (max-width: 768px) {
+      .tests-grid {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      }
+    }
+
+    /* Mobile (≤600px) */
+    @media (max-width: 600px) {
+      nav {
+        padding: 0 1rem;
+        gap: 6px;
+      }
+
+      /* Collapse nav button text – keep only the icon */
+      .nav-actions .btn {
+        font-size: 0;
+        padding: 8px 10px;
+        gap: 0;
+        min-width: 38px;
+        justify-content: center;
+      }
+
+      .nav-actions .btn svg {
+        width: 18px;
+        height: 18px;
+      }
+
+      /* User badge – hide email to save space */
+      .user-badge .email {
+        display: none;
+      }
+
+      /* Main sections padding */
+      #home,
+      #users,
+      #editor,
+      #player,
+      #results {
+        padding: 1.25rem 1rem;
+      }
+
+      .home-header {
+        padding: 1.75rem 0.5rem 1.5rem;
+      }
+
+      /* Tests grid: single column on mobile */
+      .tests-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Always show card actions on touch screens */
+      .test-card .actions {
+        opacity: 1;
+      }
+
+      /* Editor header: stack actions below title */
+      .editor-header {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .editor-header .actions {
+        display: flex;
+        width: 100%;
+      }
+
+      .editor-header .actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+
+      /* Question header: wrap when tight */
+      .question-header {
+        flex-wrap: wrap;
+      }
+
+      /* Player nav: full-width buttons */
+      .player-nav {
+        flex-direction: column;
+      }
+
+      .player-nav .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Results actions: full-width buttons */
+      .results-actions {
+        flex-direction: column;
+      }
+
+      .results-actions .btn {
+        width: 100%;
+        justify-content: center;
+      }
+
+      /* Modal: tighter padding */
+      .modal {
+        padding: 1.25rem;
+      }
+
+      /* Toast: stretch full width at bottom */
+      .toast {
+        bottom: 1rem;
+        right: 1rem;
+        left: 1rem;
+        max-width: none;
+        text-align: center;
+      }
+
+      /* Student row: allow wrapping */
+      .student-row {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .student-row .student-meta {
+        width: 100%;
+        order: 4;
+      }
+
+      .student-row .student-actions {
+        width: 100%;
+        order: 3;
+      }
+
+      .student-row .student-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+
+      /* Invite panel: stack vertically */
+      .invite-panel {
+        flex-direction: column;
+      }
+
+      .invite-panel .field-group {
+        min-width: 0;
+        width: 100%;
+      }
+
+      .invite-panel-actions {
+        width: 100%;
+      }
+
+      .invite-panel-actions .btn {
+        flex: 1;
+        justify-content: center;
+      }
+
+      /* Auth card: less padding, fills screen better */
+      .auth-card {
+        padding: 1.75rem 1.25rem;
+      }
+
+      #login {
+        padding: 1.5rem 1rem;
+        align-items: flex-start;
+        padding-top: 3rem;
+      }
+
+      /* Bigger touch targets for auth buttons */
+      .auth-card .btn {
+        padding: 13px;
+        font-size: 15px;
+      }
+    }
+
+    /* Very small screens (≤380px) */
+    @media (max-width: 380px) {
+      .auth-card {
+        padding: 1.5rem 1rem;
+      }
+
+      .btn {
+        padding: 7px 12px;
+      }
+    }
+
+    /* ── AUTH / LOGIN ────────────────────── */
+    body.auth-locked .view {
+      display: none !important;
+    }
+
+    body.auth-locked #navActions {
+      display: none;
+    }
+
+    #userBadge {
+      display: none;
+    }
+
+    body.logged-in #userBadge {
+      display: flex;
+    }
+
+    #login {
+      display: none;
+    }
+
+    body.auth-locked #login {
+      display: flex;
+      min-height: calc(100vh - 56px);
+      align-items: center;
+      justify-content: center;
+      padding: 2rem 1.5rem;
+    }
+
+    .auth-card {
+      max-width: 380px;
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+    }
+
+    .auth-card h2 {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.5rem;
+      letter-spacing: -0.02em;
+      margin-bottom: 4px;
+    }
+
+    .auth-card .sub {
+      color: var(--ink2);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .auth-card .field-group {
+      margin-bottom: 1rem;
+    }
+
+    .auth-card input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .auth-card input:focus {
+      border-color: var(--accent);
+    }
+
+    .auth-card .btn {
+      width: 100%;
+      justify-content: center;
+      padding: 11px;
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .auth-toggle {
+      text-align: center;
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      color: var(--ink2);
+    }
+
+    .auth-toggle a {
+      color: var(--accent);
+      cursor: pointer;
+      font-weight: 500;
+      text-decoration: none;
+    }
+
+    .auth-toggle a:hover {
+      text-decoration: underline;
+    }
+
+    .auth-msg {
+      font-size: 0.85rem;
+      padding: 9px 12px;
+      border-radius: var(--radius-sm);
+      margin-bottom: 1rem;
+      display: none;
+    }
+
+    .auth-msg.show {
+      display: block;
+    }
+
+    .auth-msg.error {
+      background: #FDF0EE;
+      color: #C0392B;
+    }
+
+    .auth-msg.info {
+      background: var(--accent2-light);
+      color: var(--accent2);
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: var(--ink2);
+    }
+
+    .user-badge .email {
+      max-width: 140px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── USERS VIEW ──────────────────────── */
+    .invite-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-end;
+      flex-wrap: wrap;
+    }
+
+    .invite-panel .field-group {
+      flex: 1;
+      min-width: 220px;
+      margin-bottom: 0;
+    }
+
+    .invite-panel label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--ink2);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .invite-panel input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1.5px solid var(--border-strong);
+      border-radius: var(--radius-sm);
+      background: var(--bg);
+      color: var(--ink);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .invite-panel input:focus { border-color: var(--accent); }
+
+    .invite-panel-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    #inviteMsg {
+      width: 100%;
+      margin-top: 0.5rem;
+      margin-bottom: 0;
+    }
+
+    .students-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .student-row {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: border-color 0.15s;
+    }
+
+    .student-row.blocked {
+      opacity: 0.6;
+      border-color: #e0c0bb;
+    }
+
+    .student-row .student-email {
+      flex: 1;
+      font-weight: 500;
+      font-size: 0.9rem;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .student-row .student-meta {
+      font-size: 12px;
+      color: var(--ink3);
+      white-space: nowrap;
+    }
+
+    .student-row .student-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .student-status {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 99px;
+      font-size: 11px;
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
+    .student-status.active {
+      background: var(--accent2-light);
+      color: var(--accent2);
+    }
+
+    .student-status.blocked {
+      background: #FBE9DF;
+      color: var(--accent);
+    }
+
+    .student-status.pending {
+      background: var(--surface2);
+      color: var(--ink3);
+    }
+
+    .students-empty {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--ink3);
+      font-size: 0.9rem;
+    }
+
+    /* ── TOPICS ──────────────────────────── */
+    .topic-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .topic-card:hover {
+      border-color: var(--border-strong);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+    }
+
+    .topic-title {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 5px;
+    }
+
+    .topic-meta {
+      font-size: 12px;
+      color: var(--ink3);
+    }
+
+    .topic-breadcrumb {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 0.5rem;
+    }
+
+    /* ── DEADLINE / ATTEMPTS BADGES ─────── */
+    .badge.deadline-soon    { background: #FFF3CD; color: #856404; }
+    .badge.deadline-expired { background: #FDF0EE; color: #C0392B; }
+
+    /* ── ANSWER DETAIL ROWS (stats modal) ─ */
+    .answer-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+    .answer-row:last-child { border-bottom: none; }
+    .answer-icon { flex-shrink: 0; width: 16px; text-align: center; margin-top: 1px; }
+    .answer-q-text { color: var(--ink2); display: block; margin-bottom: 2px; }
+    .answer-ok   { color: var(--accent2); font-weight: 500; }
+    .answer-fail { color: #C0392B; font-weight: 500; }
+    .answer-open { color: var(--ink); font-style: italic; }
+    .answer-corr { color: var(--accent2); }
+
+    /* ── STATS ───────────────────────────── */
+    #stats {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .stats-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+
+    .stats-kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .stats-kpi-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 2rem;
+      letter-spacing: -0.03em;
+      color: var(--accent);
+      line-height: 1.1;
+    }
+
+    .stats-kpi-label {
+      font-size: 11px;
+      color: var(--ink3);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stats-test-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 8px;
+    }
+
+    .stats-test-info { flex: 1; min-width: 0; }
+
+    .stats-test-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stats-test-meta { font-size: 12px; color: var(--ink3); }
+
+    .stats-trend {
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      padding: 3px 10px;
+      border-radius: 99px;
+    }
+
+    .stats-trend.up   { background: var(--accent2-light); color: var(--accent2); }
+    .stats-trend.down { background: #FDF0EE; color: #C0392B; }
+    .stats-trend.flat { background: var(--surface2); color: var(--ink3); }
+
+    .stats-student-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 8px;
+      transition: border-color 0.15s;
+    }
+
+    .stats-student-card:hover { border-color: var(--border-strong); }
+
+    .stats-student-email {
+      flex: 1;
+      font-weight: 500;
+      font-size: 0.9rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stats-student-score {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .stats-student-meta {
+      font-size: 12px;
+      color: var(--ink3);
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .stats-detail-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 24, 20, 0.5);
+      z-index: 200;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem 4rem;
+      overflow-y: auto;
+    }
+
+    .stats-detail-overlay.open { display: flex; }
+
+    .stats-detail-modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      max-width: 580px;
+      width: 100%;
+      border: 1px solid var(--border-strong);
+    }
+
+    @media (max-width: 600px) {
+      #stats { padding: 1.25rem 1rem; }
+      .stats-test-card { flex-wrap: wrap; gap: 0.75rem; }
+      .stats-summary { grid-template-columns: repeat(2, 1fr); }
+      .stats-student-card { flex-wrap: wrap; }
+      .stats-student-meta { width: 100%; text-align: left; }
+    }
+  </style>
+</head>
+
+<body class="auth-locked">
+
+  <nav>
+    <div class="logo">Test<span>Craft</span></div>
+    <div class="nav-actions" id="navActions">
+      <button class="btn" onclick="goHome()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+          <polyline points="9 22 9 12 15 12 15 22" />
+        </svg>
+        Inicio
+      </button>
+      <button class="btn" id="usersNavBtn" style="display:none" onclick="openUsersView()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        Alumnos
+      </button>
+      <button class="btn" id="statsNavBtn" style="display:none" onclick="openStatsView()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        Estadísticas
+      </button>
+    </div>
+    <div class="user-badge" id="userBadge">
+      <span id="userRole"
+        style="display:none; background:var(--accent-light); color:var(--accent); padding:2px 8px; border-radius:99px; font-size:11px; font-weight:500;"></span>
+      <span class="email" id="userEmail"></span>
+      <button class="btn sm" onclick="doSignOut()" title="Cerrar sesión">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+        Salir
+      </button>
+    </div>
+  </nav>
+
+  <!-- LOGIN -->
+  <div id="login">
+    <div class="auth-card">
+      <h2 id="authTitle">Bienvenido</h2>
+      <p class="sub" id="authSub">Introduce tu correo para continuar.</p>
+      <div class="auth-msg" id="authMsg"></div>
+      <div class="field-group" id="emailGroup">
+        <input type="email" id="authEmail" placeholder="Correo electrónico" autocomplete="email">
+      </div>
+      <div class="field-group" id="passwordGroup" style="display:none">
+        <input type="password" id="authPassword" placeholder="Contraseña" autocomplete="current-password">
+      </div>
+      <button class="btn accent" id="authSubmit" onclick="submitAuth()">Continuar</button>
+      <div class="auth-toggle" id="authToggle" style="display:none">
+        <a onclick="goBackToEmail()">← Cambiar correo</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- HOME -->
+  <div id="home" class="view active">
+    <div class="home-header">
+      <h1 id="homeTitle">Crea y comparte<br>tus <span style="color:var(--accent)">tests</span></h1>
+      <p id="homeSubtitle">Diseña tests con preguntas de opción múltiple o respuesta abierta.</p>
+      <button class="btn accent" id="newTestBtn" onclick="newTest()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Nuevo test
+      </button>
+    </div>
+
+    <div class="topic-breadcrumb" id="topicBreadcrumb">
+      <button class="btn sm" onclick="backToTopics()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
+        Todos los temas
+      </button>
+    </div>
+    <div class="section-title" id="testsSectionTitle">Mis tests</div>
+    <div class="tests-grid" id="testsGrid"></div>
+  </div>
+
+  <!-- EDITOR -->
+  <div id="editor" class="view">
+    <div class="editor-header">
+      <h2 id="editorTitle">Nuevo test</h2>
+      <div class="actions">
+        <button class="btn" onclick="confirmBack()">Cancelar</button>
+        <button class="btn accent" onclick="saveTest()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+            <polyline points="17 21 17 13 7 13 7 21" />
+            <polyline points="7 3 7 8 15 8" />
+          </svg>
+          Guardar
+        </button>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Título del test</label>
+      <input type="text" id="testTitle" placeholder="Ej: Historia de España Tema 4" maxlength="80">
+    </div>
+    <div class="field-group">
+      <label>Tema</label>
+      <input type="text" id="testTopic" placeholder="Ej: Historia, Matemáticas…" maxlength="60" list="topicsList" autocomplete="off">
+      <datalist id="topicsList"></datalist>
+    </div>
+    <div class="field-group">
+      <label>Descripción (opcional)</label>
+      <input type="text" id="testDesc" placeholder="Una breve descripción del test" maxlength="200">
+    </div>
+
+    <div class="settings-row">
+      <div class="field-group">
+        <label>Tiempo límite (minutos)</label>
+        <input type="number" id="testTime" min="0" max="360" value="0" placeholder="0 = sin límite">
+      </div>
+      <div class="field-group">
+        <label>Orden aleatorio</label>
+        <select id="testShuffle">
+          <option value="0">No — orden fijo</option>
+          <option value="1">Sí — aleatorio</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Visible para alumnos</label>
+        <select id="testPublished">
+          <option value="0">No — borrador (solo yo)</option>
+          <option value="1">Sí — publicado</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label>Máx. intentos</label>
+        <input type="number" id="testMaxAttempts" min="0" value="0" placeholder="0 = ilimitados">
+      </div>
+      <div class="field-group">
+        <label>Fecha límite</label>
+        <input type="datetime-local" id="testDeadline">
+      </div>
+    </div>
+
+    <hr class="divider">
+    <div class="section-title" style="margin-bottom:1rem;">Preguntas</div>
+    <div class="questions-list" id="questionsList"></div>
+    <button class="add-question-btn" onclick="addQuestion()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+        <line x1="12" y1="5" x2="12" y2="19" />
+        <line x1="5" y1="12" x2="19" y2="12" />
+      </svg>
+      Añadir pregunta
+    </button>
+  </div>
+
+  <!-- PLAYER -->
+  <div id="player" class="view">
+    <div class="player-header">
+      <h2 id="playerTitle"></h2>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+      </div>
+      <div class="progress-label">
+        <span id="progressText">Pregunta 1 de 1</span>
+        <span id="timerText"></span>
+      </div>
+    </div>
+
+    <div class="question-box" id="questionBox"></div>
+
+    <div class="player-nav">
+      <button class="btn" id="prevBtn" onclick="prevQuestion()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="15 18 9 12 15 6" />
+        </svg>
+        Anterior
+      </button>
+      <button class="btn accent" id="nextBtn" onclick="nextQuestion()">
+        Siguiente
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- RESULTS -->
+  <div id="results" class="view">
+    <div class="score-hero">
+      <div class="score-num" id="scoreNum">—</div>
+      <div class="score-label" id="scoreLabel"></div>
+    </div>
+    <div class="section-title">Revisión de respuestas</div>
+    <div class="review-list" id="reviewList"></div>
+    <div class="results-actions">
+      <button class="btn" onclick="showView('home')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        </svg>
+        Inicio
+      </button>
+      <button class="btn accent" id="retryBtn" onclick="retryTest()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="1 4 1 10 7 10" />
+          <path d="M3.51 15a9 9 0 1 0 .49-4.16" />
+        </svg>
+        Reintentar
+      </button>
+      <button class="btn primary" id="shareBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="18" cy="5" r="3" />
+          <circle cx="6" cy="12" r="3" />
+          <circle cx="18" cy="19" r="3" />
+          <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
+          <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
+        </svg>
+        Compartir
+      </button>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div id="users" class="view">
+    <div class="home-header">
+      <h1>Gestión de <span style="color:var(--accent)">alumnos</span></h1>
+      <p>Invita alumnos y gestiona su acceso a la plataforma.</p>
+      <button class="btn accent" onclick="toggleInvitePanel()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="16" height="16">
+          <line x1="12" y1="5" x2="12" y2="19" />
+          <line x1="5" y1="12" x2="19" y2="12" />
+        </svg>
+        Invitar alumno
+      </button>
+    </div>
+
+    <div id="invitePanel" class="invite-panel" style="display:none">
+      <div class="field-group">
+        <label>Correo electrónico del alumno</label>
+        <input type="email" id="inviteEmail" placeholder="alumno@correo.com" autocomplete="off"
+          onkeydown="if(event.key==='Enter') inviteStudent()">
+      </div>
+      <div class="invite-panel-actions">
+        <button class="btn" onclick="toggleInvitePanel()">Cancelar</button>
+        <button class="btn accent" id="inviteBtn" onclick="inviteStudent()">Enviar invitación</button>
+      </div>
+      <div class="auth-msg" id="inviteMsg"></div>
+    </div>
+
+    <div class="section-title">Alumnos registrados</div>
+    <div id="studentsList" class="students-list"></div>
+  </div>
+
+  <!-- STATS -->
+  <div id="stats" class="view">
+    <div class="home-header" style="padding-top:1rem; padding-bottom:1.5rem">
+      <h1 id="statsTitle">Estadísticas</h1>
+      <p id="statsSubtitle"></p>
+    </div>
+    <div class="stats-summary" id="statsSummary"></div>
+    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:0.75rem">
+      <div class="section-title" id="statsListTitle" style="margin-bottom:0"></div>
+      <button class="btn sm" id="statsExportBtn" style="display:none" onclick="exportResultsCSV()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Exportar CSV
+      </button>
+    </div>
+    <div id="statsContent"></div>
+  </div>
+
+  <!-- STATS DETAIL (teacher: per-student) -->
+  <div class="stats-detail-overlay" id="statsDetailOverlay">
+    <div class="stats-detail-modal">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1.25rem">
+        <div>
+          <div style="font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px">Alumno</div>
+          <h3 id="statsDetailTitle" style="font-family:'Syne',sans-serif; font-weight:800; font-size:1.05rem; word-break:break-all"></h3>
+        </div>
+        <button class="btn sm" onclick="closeStatsDetail()" style="flex-shrink:0">✕</button>
+      </div>
+      <div class="stats-summary" id="statsDetailSummary" style="margin-bottom:1.5rem"></div>
+      <div class="section-title" style="margin-bottom:0.75rem">Progreso por test</div>
+      <div id="statsDetailContent"></div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <h3 id="modalTitle"></h3>
+      <p id="modalBody"></p>
+      <div class="modal-actions">
+        <button class="btn" id="modalCancel">Cancelar</button>
+        <button class="btn danger" id="modalConfirm">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    // ──────────────────────────────────────────
+    // STORAGE
+    // ──────────────────────────────────────────
+    const STORE_KEY = 'testcraft_tests_v1';
+
+    // ──────────────────────────────────────────
+    // JSONBIN.IO — almacenamiento en la nube (enlaces cortos)
+    // Pega aquí tu API Key de jsonbin.io. Si la dejas vacía,
+    // la app usará enlaces largos (el test va codificado en la URL).
+    // ──────────────────────────────────────────
+    const JSONBIN_KEY = ''; // <-- PEGA AQUÍ TU MASTER KEY o ACCESS KEY
+    const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+
+    // ──────────────────────────────────────────
+    // SUPABASE — login real (gratuito)
+    // 1. Crea un proyecto en https://supabase.com
+    // 2. En "Project Settings > API" copia la URL y la clave "anon public"
+    // 3. Pégalas aquí abajo. La clave anon es PÚBLICA y es seguro exponerla.
+    // Si las dejas vacías, la app se abre sin login (modo abierto).
+    // ──────────────────────────────────────────
+    const SUPABASE_URL = 'https://elkpidhrypunslxqsppo.supabase.co';      // <-- p.ej: https://xxxxxxxx.supabase.co
+    const SUPABASE_ANON_KEY = 'sb_publishable_Z6Xd-k-nDCVhy-zWCSOjRQ_3CGR_mxO'; // <-- tu clave anon public
+    let sbClient = null;
+
+
+    let currentUser = null;
+    let isTeacher = false; // se determina tras el login según la tabla profiles
+
+    // Almacenamiento local (fallback cuando no hay login configurado)
+    function loadTestsLocal()
+    {
+      try { return JSON.parse(localStorage.getItem(STORE_KEY)) || []; }
+      catch { return []; }
+    }
+    function saveTestsLocal(arr)
+    {
+      localStorage.setItem(STORE_KEY, JSON.stringify(arr));
+    }
+
+    // ¿Estamos usando la nube (Supabase con sesión activa)?
+    function usingCloud() { return !!(sbClient && currentUser); }
+
+    // Saber si el usuario actual es profesor (lee la tabla profiles)
+    async function fetchRole()
+    {
+      if (!usingCloud()) return true; // modo local/abierto: acceso total
+      const { data, error } = await sbClient
+        .from('profiles').select('is_teacher').eq('id', currentUser.id).maybeSingle();
+      if (error) { console.error(error); return false; }
+      return !!(data && data.is_teacher);
+    }
+
+    // Cargar tests: el profesor ve todos; el alumno ve solo los publicados
+    async function fetchTests()
+    {
+      if (usingCloud())
+      {
+        let q = sbClient.from('tests').select('data, updated_at, published, user_id');
+        if (!isTeacher) q = q.eq('published', true);
+        const { data, error } = await q.order('updated_at', { ascending: false });
+        if (error) { console.error(error); showToast('Error al cargar los tests'); return []; }
+        return data.map(row => ({ ...row.data, published: row.published, _ownerId: row.user_id }));
+      }
+      return loadTestsLocal();
+    }
+
+    // Crear o actualizar un test (solo profesores; la RLS también lo exige)
+    async function persistTest(test)
+    {
+      if (usingCloud())
+      {
+        const { error } = await sbClient.from('tests').upsert({
+          id: test.id,
+          user_id: currentUser.id,
+          data: test,
+          published: !!test.published,
+          updated_at: new Date().toISOString()
+        }, { onConflict: 'user_id,id' });
+        if (error) { console.error(error); showToast('Error al guardar en la nube'); return false; }
+        return true;
+      }
+      const arr = loadTestsLocal();
+      const idx = arr.findIndex(x => x.id === test.id);
+      if (idx >= 0) arr[idx] = test; else arr.push(test);
+      saveTestsLocal(arr);
+      return true;
+    }
+
+    // Eliminar un test
+    async function removeTest(id)
+    {
+      if (usingCloud())
+      {
+        const { error } = await sbClient.from('tests').delete().eq('id', id);
+        if (error) { console.error(error); showToast('Error al eliminar'); return false; }
+        return true;
+      }
+      saveTestsLocal(loadTestsLocal().filter(x => x.id !== id));
+      return true;
+    }
+
+    // ──────────────────────────────────────────
+    // STATE
+    // ──────────────────────────────────────────
+    let tests = [];
+    let editingId = null;
+    let currentTopic = null; // null = vista de temas, string = tests de ese tema
+    let editingQuestions = [];
+    let playerState = {
+      test: null,
+      questions: [],
+      current: 0,
+      answers: {},
+      timerInterval: null,
+      timeLeft: 0
+    };
+
+    // ──────────────────────────────────────────
+    // UTILS
+    // ──────────────────────────────────────────
+    function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2); }
+    function showToast(msg)
+    {
+      const t = document.getElementById('toast');
+      t.textContent = msg; t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+    function showModal(title, body, onConfirm, confirmLabel = 'Eliminar', danger = true)
+    {
+      document.getElementById('modalTitle').textContent = title;
+      document.getElementById('modalBody').textContent = body;
+      const btn = document.getElementById('modalConfirm');
+      btn.textContent = confirmLabel;
+      btn.className = 'btn ' + (danger ? 'danger' : 'primary');
+      document.getElementById('modalOverlay').classList.add('open');
+      btn.onclick = () => { closeModal(); onConfirm(); };
+      document.getElementById('modalCancel').onclick = closeModal;
+    }
+    function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+    function showView(id)
+    {
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      window.scrollTo(0, 0);
+    }
+
+    // ──────────────────────────────────────────
+    // HOME
+    // ──────────────────────────────────────────
+    function renderHome()
+    {
+      const newBtn = document.getElementById('newTestBtn');
+      const title = document.getElementById('homeTitle');
+      const subtitle = document.getElementById('homeSubtitle');
+      if (isTeacher)
+      {
+        newBtn.style.display = 'inline-flex';
+        title.innerHTML = 'Crea y comparte<br>tus <span style="color:var(--accent)">tests</span>';
+        subtitle.textContent = 'Diseña tests y publícalos para que los vean tus alumnos.';
+      } else
+      {
+        newBtn.style.display = 'none';
+        title.innerHTML = 'Tus <span style="color:var(--accent)">tests</span>';
+        subtitle.textContent = 'Estos son los tests que tu profesor ha publicado.';
+      }
+      updateTopicsDatalist();
+      if (currentTopic === null) renderTopicsView();
+      else renderTestsInTopic();
+    }
+
+    function updateTopicsDatalist()
+    {
+      const dl = document.getElementById('topicsList');
+      if (!dl) return;
+      const topics = [...new Set(tests.map(t => t.topic).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+      dl.innerHTML = topics.map(t => `<option value="${escHtml(t)}">`).join('');
+    }
+
+    function renderTopicsView()
+    {
+      document.getElementById('testsSectionTitle').textContent = isTeacher ? 'Temas' : 'Temas disponibles';
+      document.getElementById('topicBreadcrumb').style.display = 'none';
+      const grid = document.getElementById('testsGrid');
+
+      if (!tests.length)
+      {
+        grid.innerHTML = `<div class="empty-state">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ink3);margin:0 auto 8px;display:block"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="15" x2="12" y2="15"/></svg>
+      <strong>${isTeacher ? 'Aún no tienes tests' : 'No hay tests disponibles'}</strong>
+      <p>${isTeacher ? 'Crea tu primer test con el botón de arriba.' : 'Cuando tu profesor publique un test, aparecerá aquí.'}</p></div>`;
+        return;
+      }
+
+      // Agrupar por tema
+      const topicMap = {};
+      tests.forEach(t =>
+      {
+        const key = t.topic || '';
+        if (!topicMap[key]) topicMap[key] = [];
+        topicMap[key].push(t);
+      });
+
+      // Orden alfabético, "Sin tema" al final
+      const entries = Object.entries(topicMap).sort(([a], [b]) =>
+      {
+        if (!a && b) return 1;
+        if (a && !b) return -1;
+        return a.localeCompare(b, 'es');
+      });
+
+      const cards = entries.map(([topic, topicTests]) =>
+      {
+        const visibleCount = isTeacher ? topicTests.length : topicTests.filter(t => t.published).length;
+        if (!isTeacher && visibleCount === 0) return '';
+        const label = topic || 'Sin tema';
+        const draftCount = isTeacher ? topicTests.filter(t => !t.published).length : 0;
+        const draftText = draftCount ? ` · ${draftCount} borrador${draftCount !== 1 ? 'es' : ''}` : '';
+        return `<div class="topic-card" data-topic="${escHtml(topic)}" onclick="showTopic(this.dataset.topic)">
+  <div class="topic-title">
+    <span>${escHtml(label)}</span>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="9 18 15 12 9 6"/></svg>
+  </div>
+  <div class="topic-meta">${visibleCount} test${visibleCount !== 1 ? 's' : ''}${draftText}</div>
+</div>`;
+      }).filter(Boolean);
+
+      grid.innerHTML = cards.length ? cards.join('') : `<div class="empty-state"><strong>No hay tests disponibles</strong></div>`;
+    }
+
+    function renderTestsInTopic()
+    {
+      const label = currentTopic || 'Sin tema';
+      document.getElementById('testsSectionTitle').textContent = label;
+      document.getElementById('topicBreadcrumb').style.display = 'flex';
+
+      const topicTests = tests.filter(t => (t.topic || '') === currentTopic);
+      const visibleTests = isTeacher ? topicTests : topicTests.filter(t => t.published);
+      const grid = document.getElementById('testsGrid');
+
+      if (!visibleTests.length)
+      {
+        grid.innerHTML = `<div class="empty-state">
+      <strong>${isTeacher ? 'No hay tests en este tema' : 'No hay tests disponibles en este tema'}</strong>
+      <p>${isTeacher ? 'Crea un test y asígnale este tema.' : ''}</p></div>`;
+        return;
+      }
+      grid.innerHTML = visibleTests.map(t => renderTestCard(t)).join('');
+    }
+
+    function renderTestCard(t)
+    {
+      const deadlineBadge = (() => {
+        if (!t.deadline) return '';
+        const d = new Date(t.deadline), now = new Date();
+        const expired = d < now;
+        const soon = !expired && (d - now) < 24 * 3600 * 1000;
+        const cls = expired ? 'deadline-expired' : soon ? 'deadline-soon' : '';
+        const label = expired ? 'Plazo vencido' : `Plazo: ${d.toLocaleDateString('es-ES', { day:'numeric', month:'short' })}`;
+        return `<span class="badge ${cls}" style="margin-left:4px">${label}</span>`;
+      })();
+
+      const meta = `
+      <h3>${escHtml(t.title)}</h3>
+      <p>${escHtml(t.description || 'Sin descripción')}</p>
+      <span class="badge">${t.questions.length} pregunta${t.questions.length !== 1 ? 's' : ''}</span>
+      ${t.timeLimit ? `<span class="badge" style="background:var(--accent2-light);color:var(--accent2);margin-left:4px">⏱ ${t.timeLimit} min</span>` : ''}
+      ${deadlineBadge}`;
+
+      if (!isTeacher) return `<div class="test-card" onclick="startTest('${t.id}')">${meta}</div>`;
+
+      const pubBadge = t.published
+        ? `<span class="badge" style="background:var(--accent2-light);color:var(--accent2);margin-left:4px">Publicado</span>`
+        : `<span class="badge" style="background:var(--surface2);color:var(--ink3);margin-left:4px">Borrador</span>`;
+      const attemptsBadge = t.maxAttempts
+        ? `<span class="badge" style="background:var(--surface2);color:var(--ink3);margin-left:4px">${t.maxAttempts} intento${t.maxAttempts !== 1 ? 's' : ''} máx.</span>`
+        : '';
+      const isOwner = !usingCloud() || t._ownerId === currentUser?.id;
+
+      return `<div class="test-card" onclick="startTest('${t.id}')">
+      ${isOwner ? `<div class="actions" onclick="event.stopPropagation()">
+        <button class="btn sm" onclick="togglePublish('${t.id}')" title="${t.published ? 'Ocultar a los alumnos' : 'Publicar para los alumnos'}">
+          ${t.published
+          ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+          : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>'}
+        </button>
+        <button class="btn sm" onclick="duplicateTest('${t.id}')" title="Duplicar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        </button>
+        <button class="btn sm" onclick="editTest('${t.id}')" title="Editar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </button>
+        <button class="btn sm danger" onclick="deleteTest('${t.id}')" title="Eliminar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        </button>
+      </div>` : ''}
+      ${meta}
+      <div style="margin-top:8px">${pubBadge}${attemptsBadge}</div>
+    </div>`;
+    }
+
+    function goHome()
+    {
+      currentTopic = null;
+      showView('home');
+      renderHome();
+    }
+
+    function showTopic(topic)
+    {
+      currentTopic = topic;
+      renderHome();
+    }
+
+    function backToTopics()
+    {
+      currentTopic = null;
+      renderHome();
+    }
+
+    async function togglePublish(id)
+    {
+      const t = tests.find(x => x.id === id);
+      if (!t) return;
+      t.published = !t.published;
+      const ok = await persistTest(t);
+      if (!ok) { t.published = !t.published; return; }
+      renderHome();
+      showToast(t.published ? 'Test publicado para los alumnos ✓' : 'Test ocultado (borrador)');
+    }
+    function escHtml(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+
+    function deleteTest(id)
+    {
+      const t = tests.find(x => x.id === id);
+      showModal(`Eliminar "${t.title}"`, '¿Seguro? Esta acción no se puede deshacer.', async () =>
+      {
+        const ok = await removeTest(id);
+        if (!ok) return;
+        tests = tests.filter(x => x.id !== id);
+        renderHome();
+        showToast('Test eliminado');
+      });
+    }
+
+    // ──────────────────────────────────────────
+    // EDITOR
+    // ──────────────────────────────────────────
+    function newTest()
+    {
+      editingId = null;
+      editingQuestions = [];
+      document.getElementById('testTitle').value = '';
+      document.getElementById('testTopic').value = currentTopic || '';
+      document.getElementById('testDesc').value = '';
+      document.getElementById('testTime').value = 0;
+      document.getElementById('testShuffle').value = 0;
+      document.getElementById('testPublished').value = 0;
+      document.getElementById('testMaxAttempts').value = 0;
+      document.getElementById('testDeadline').value = '';
+      document.getElementById('editorTitle').textContent = 'Nuevo test';
+      renderQuestions();
+      addQuestion();
+      showView('editor');
+    }
+
+    function editTest(id)
+    {
+      const t = tests.find(x => x.id === id);
+      editingId = id;
+      editingQuestions = JSON.parse(JSON.stringify(t.questions));
+      document.getElementById('testTitle').value = t.title;
+      document.getElementById('testTopic').value = t.topic || '';
+      document.getElementById('testDesc').value = t.description || '';
+      document.getElementById('testTime').value = t.timeLimit || 0;
+      document.getElementById('testShuffle').value = t.shuffle ? 1 : 0;
+      document.getElementById('testPublished').value = t.published ? 1 : 0;
+      document.getElementById('testMaxAttempts').value = t.maxAttempts || 0;
+      document.getElementById('testDeadline').value = t.deadline
+        ? new Date(t.deadline).toISOString().slice(0, 16) : '';
+      document.getElementById('editorTitle').textContent = 'Editar test';
+      renderQuestions();
+      showView('editor');
+    }
+
+    function confirmBack()
+    {
+      showModal('¿Salir sin guardar?', 'Los cambios no guardados se perderán.', () =>
+      {
+        showView('home'); renderHome();
+      }, 'Salir', true);
+    }
+
+    // ──── Guardar test ────
+    async function saveTest()
+    {
+      const title = document.getElementById('testTitle').value.trim();
+      if (!title) { showToast('El título es obligatorio'); return; }
+      if (!editingQuestions.length) { showToast('Añade al menos una pregunta'); return; }
+
+      // Collect question data from DOM
+      const qCards = document.querySelectorAll('#questionsList .question-card');
+      const questions = [];
+      let valid = true;
+      qCards.forEach((card, i) =>
+      {
+        const q = editingQuestions[i];
+        q.text = card.querySelector('.q-text-input').value.trim();
+        if (!q.text) { showToast(`La pregunta ${i + 1} no tiene texto`); valid = false; return; }
+        if (q.type === 'multiple' || q.type === 'single')
+        {
+          const rows = card.querySelectorAll('.option-row');
+          q.options = [];
+          rows.forEach(row =>
+          {
+            const txt = row.querySelector('input[type="text"]').value.trim();
+            const correct = row.querySelector('.correct-check').checked;
+            if (txt) q.options.push({ text: txt, correct });
+          });
+          if (q.options.length < 2) { showToast(`La pregunta ${i + 1} necesita al menos 2 opciones`); valid = false; return; }
+          if (!q.options.some(o => o.correct)) { showToast(`Marca al menos una respuesta correcta en la pregunta ${i + 1}`); valid = false; return; }
+        }
+        questions.push(q);
+      });
+      if (!valid) return;
+
+      const test = {
+        id: editingId || genId(),
+        title,
+        topic: document.getElementById('testTopic').value.trim(),
+        description: document.getElementById('testDesc').value.trim(),
+        timeLimit: parseInt(document.getElementById('testTime').value) || 0,
+        shuffle: document.getElementById('testShuffle').value === '1',
+        published: document.getElementById('testPublished').value === '1',
+        maxAttempts: parseInt(document.getElementById('testMaxAttempts').value) || 0,
+        deadline: document.getElementById('testDeadline').value
+          ? new Date(document.getElementById('testDeadline').value).toISOString() : null,
+        questions,
+        createdAt: editingId ? (tests.find(x => x.id === editingId)?.createdAt || Date.now()) : Date.now(),
+        updatedAt: Date.now()
+      };
+
+      const ok = await persistTest(test);
+      if (!ok) return;
+
+      const testWithOwner = { ...test, _ownerId: currentUser?.id };
+      if (editingId)
+      {
+        tests = tests.map(x => x.id === editingId ? testWithOwner : x);
+      } else
+      {
+        tests.unshift(testWithOwner);
+      }
+      renderHome();
+      showView('home');
+      showToast('Test guardado ✓');
+    }
+
+    // ──── Questions editor ────
+    function addQuestion()
+    {
+      editingQuestions.push({
+        id: genId(), type: 'single',
+        text: '', options: [
+          { text: '', correct: true },
+          { text: '', correct: false }
+        ]
+      });
+      renderQuestions();
+      // scroll to bottom
+      setTimeout(() =>
+      {
+        const list = document.getElementById('questionsList');
+        list.lastElementChild?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }, 50);
+    }
+
+    function removeQuestion(i)
+    {
+      editingQuestions.splice(i, 1);
+      renderQuestions();
+    }
+
+    function changeQuestionType(i, type)
+    {
+      editingQuestions[i].type = type;
+      if ((type === 'single' || type === 'multiple') && !editingQuestions[i].options)
+      {
+        editingQuestions[i].options = [{ text: '', correct: true }, { text: '', correct: false }];
+      }
+      renderQuestions();
+    }
+
+    function addOption(i)
+    {
+      editingQuestions[i].options.push({ text: '', correct: false });
+      renderQuestions();
+    }
+
+    function removeOption(qi, oi)
+    {
+      editingQuestions[qi].options.splice(oi, 1);
+      renderQuestions();
+    }
+
+    function renderQuestions()
+    {
+      const list = document.getElementById('questionsList');
+      list.innerHTML = editingQuestions.map((q, i) => `
+    <div class="question-card" data-idx="${i}">
+      <div class="question-header">
+        <span class="question-num">P${i + 1}</span>
+        <div class="type-toggle">
+          <button class="type-btn ${q.type === 'single' ? 'active' : ''}" onclick="changeQuestionType(${i},'single')">Una respuesta</button>
+          <button class="type-btn ${q.type === 'multiple' ? 'active' : ''}" onclick="changeQuestionType(${i},'multiple')">Múltiple</button>
+          <button class="type-btn ${q.type === 'open' ? 'active' : ''}" onclick="changeQuestionType(${i},'open')">Abierta</button>
+        </div>
+        <div class="question-actions">
+          ${i > 0 ? `<button class="btn sm" title="Subir" onclick="moveQuestion(${i},-1)">↑</button>` : ''}
+          ${i < editingQuestions.length - 1 ? `<button class="btn sm" title="Bajar" onclick="moveQuestion(${i},1)">↓</button>` : ''}
+          <button class="btn sm danger" onclick="removeQuestion(${i})">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
+        </div>
+      </div>
+      <div class="field-group" style="margin-bottom:${q.type !== 'open' ? '0.75rem' : '0'}">
+        <input type="text" class="q-text-input" placeholder="Escribe la pregunta..." value="${escHtml(q.text)}" oninput="editingQuestions[${i}].text=this.value">
+      </div>
+      ${q.type !== 'open' ? `
+        <div class="options-list" id="opts_${i}">
+          ${q.options.map((o, oi) => `
+            <div class="option-row">
+              <input type="${q.type === 'multiple' ? 'checkbox' : 'radio'}" class="correct-check" ${o.correct ? 'checked' : ''} name="correct_${i}" title="Respuesta correcta"
+                onchange="handleCorrectChange(${i},${oi},this)">
+              <input type="text" placeholder="Opción ${oi + 1}" value="${escHtml(o.text)}" oninput="editingQuestions[${i}].options[${oi}].text=this.value">
+              ${q.options.length > 2 ? `<button class="del-opt" onclick="removeOption(${i},${oi})" title="Eliminar opción">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              </button>` : ''}
+            </div>`).join('')}
+        </div>
+        <button class="btn sm" style="margin-top:8px" onclick="addOption(${i})">+ Añadir opción</button>
+        <p style="font-size:11px;color:var(--ink3);margin-top:6px">
+          ${q.type === 'single' ? 'Selecciona la opción correcta (radio)' : 'Selecciona todas las opciones correctas (checkbox)'}
+        </p>
+      ` : '<p style="font-size:12px;color:var(--ink3);margin-top:4px">El usuario escribirá su respuesta libremente. Se revisará manualmente.</p>'}
+    </div>`).join('');
+    }
+
+    function handleCorrectChange(qi, oi, el)
+    {
+      if (editingQuestions[qi].type === 'single')
+      {
+        editingQuestions[qi].options.forEach((o, i) => o.correct = i === oi);
+        // sync radios visually
+        document.querySelectorAll(`input[name="correct_${qi}"]`).forEach((r, i) =>
+        {
+          r.checked = i === oi;
+          editingQuestions[qi].options[i].correct = i === oi;
+        });
+      } else
+      {
+        editingQuestions[qi].options[oi].correct = el.checked;
+      }
+    }
+
+    function moveQuestion(i, dir)
+    {
+      const j = i + dir;
+      if (j < 0 || j >= editingQuestions.length) return;
+      [editingQuestions[i], editingQuestions[j]] = [editingQuestions[j], editingQuestions[i]];
+      renderQuestions();
+    }
+
+    // ──────────────────────────────────────────
+    // PLAYER
+    // ──────────────────────────────────────────
+    async function startTest(id)
+    {
+      const t = tests.find(x => x.id === id);
+      if (!t || !t.questions.length) { showToast('Este test no tiene preguntas'); return; }
+
+      // Solo aplicar restricciones a alumnos
+      if (!isTeacher)
+      {
+        if (t.deadline && new Date() > new Date(t.deadline))
+        {
+          showToast('El plazo de entrega ha vencido'); return;
+        }
+        if (t.maxAttempts > 0 && usingCloud() && currentUser)
+        {
+          const { count } = await sbClient
+            .from('test_results')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', currentUser.id)
+            .eq('test_id', id);
+          if (count >= t.maxAttempts)
+          {
+            showToast(`Has alcanzado el límite de ${t.maxAttempts} intento${t.maxAttempts !== 1 ? 's' : ''} para este test`);
+            return;
+          }
+        }
+      }
+
+      let qs = JSON.parse(JSON.stringify(t.questions));
+      if (t.shuffle) qs = qs.sort(() => Math.random() - 0.5);
+      playerState = {
+        test: t, questions: qs, current: 0, answers: {}, revealed: {},
+        timerInterval: null, timeLeft: (t.timeLimit || 0) * 60
+      };
+      document.getElementById('playerTitle').textContent = t.title;
+      if (t.timeLimit) startTimer();
+      renderPlayerQuestion();
+      showView('player');
+    }
+
+    function startTimer()
+    {
+      const el = document.getElementById('timerText');
+      clearInterval(playerState.timerInterval);
+      playerState.timerInterval = setInterval(() =>
+      {
+        playerState.timeLeft--;
+        const m = Math.floor(playerState.timeLeft / 60);
+        const s = playerState.timeLeft % 60;
+        el.textContent = `⏱ ${m}:${String(s).padStart(2, '0')}`;
+        if (playerState.timeLeft <= 0)
+        {
+          clearInterval(playerState.timerInterval);
+          showToast('⏱ Tiempo agotado');
+          finishTest();
+        }
+      }, 1000);
+    }
+
+    function renderPlayerQuestion()
+    {
+      const { questions, current, answers, revealed } = playerState;
+      const q = questions[current];
+      const total = questions.length;
+      const instant = true;
+
+      document.getElementById('progressFill').style.width = ((current / total) * 100) + '%';
+      document.getElementById('progressText').textContent = `Pregunta ${current + 1} de ${total}`;
+
+      const box = document.getElementById('questionBox');
+      const saved = answers[current];
+
+      if (q.type === 'open')
+      {
+        box.innerHTML = `
+      <div class="q-text">${escHtml(q.text)}</div>
+      <div class="open-answer">
+        <textarea placeholder="Escribe tu respuesta aquí..." id="openAns">${escHtml(saved || '')}</textarea>
+      </div>`;
+      } else
+      {
+        const multi = q.type === 'multiple';
+        const sel = saved ? (Array.isArray(saved) ? saved : [saved]) : [];
+        const isRevealed = instant && revealed[current];
+        const correctIndices = q.options.map((o, j) => o.correct ? j : -1).filter(j => j >= 0);
+        const isCorrect = correctIndices.length === sel.length && correctIndices.every(j => sel.includes(j));
+
+        box.innerHTML = `
+      <div class="q-text">${escHtml(q.text)}</div>
+      ${multi ? '<p style="font-size:12px;color:var(--ink3);margin-bottom:8px">Selecciona todas las correctas</p>' : ''}
+      <div class="options-play">
+        ${q.options.map((o, oi) =>
+        {
+          let cls = '';
+          if (isRevealed)
+          {
+            if (o.correct && sel.includes(oi)) cls = 'correct';
+            else if (o.correct && !sel.includes(oi)) cls = 'correct-missed';
+            else if (!o.correct && sel.includes(oi)) cls = 'wrong';
+            cls += ' locked';
+          } else if (sel.includes(oi))
+          {
+            cls = 'selected';
+          }
+          let markerIcon = '';
+          if (isRevealed && (cls.includes('correct') || cls.includes('wrong')))
+          {
+            markerIcon = cls.includes('wrong')
+              ? '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" width="10" height="10"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+              : '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"/></svg>';
+          } else if (!isRevealed && sel.includes(oi))
+          {
+            markerIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" width="10" height="10"><polyline points="20 6 9 17 4 12"/></svg>';
+          }
+          return `<div class="option-play ${cls}" ${isRevealed ? '' : `onclick="selectOption(${oi})"`}>
+            <div class="option-marker">${markerIcon}</div>
+            <span>${escHtml(o.text)}</span>
+          </div>`;
+        }).join('')}
+      </div>
+      ${isRevealed ? `<div class="feedback-banner ${isCorrect ? 'ok' : 'fail'}">
+        ${isCorrect
+              ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> ¡Correcto!'
+              : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg> Incorrecto. La respuesta marcada en verde es la correcta.'}
+      </div>` : ''}
+      ${instant && !isRevealed && multi ? `<button class="btn accent" style="margin-top:14px" onclick="revealAnswer()">Comprobar respuesta</button>` : ''}`;
+      }
+
+      document.getElementById('prevBtn').style.visibility = current === 0 ? 'hidden' : 'visible';
+      const isLast = current === total - 1;
+      const nextBtn = document.getElementById('nextBtn');
+      nextBtn.innerHTML = isLast
+        ? `Finalizar <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `Siguiente <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="9 18 15 12 9 6"/></svg>`;
+    }
+
+    function revealAnswer()
+    {
+      const { current, answers } = playerState;
+      const sel = answers[current];
+      if (!sel || !sel.length) { showToast('Selecciona al menos una opción'); return; }
+      playerState.revealed[current] = true;
+      renderPlayerQuestion();
+    }
+
+    function selectOption(oi)
+    {
+      const { questions, current, answers, revealed } = playerState;
+      const q = questions[current];
+      if (revealed[current]) return; // ya revelada, bloqueada
+      if (q.type === 'multiple')
+      {
+        let sel = answers[current] ? [...answers[current]] : [];
+        const idx = sel.indexOf(oi);
+        if (idx >= 0) sel.splice(idx, 1); else sel.push(oi);
+        playerState.answers[current] = sel;
+      } else
+      {
+        playerState.answers[current] = [oi];
+        playerState.revealed[current] = true; // corrige al instante
+      }
+      renderPlayerQuestion();
+    }
+
+    function saveCurrentAnswer()
+    {
+      const { questions, current } = playerState;
+      const q = questions[current];
+      if (q.type === 'open')
+      {
+        const val = document.getElementById('openAns')?.value.trim();
+        if (val) playerState.answers[current] = val;
+      }
+    }
+
+    function nextQuestion()
+    {
+      saveCurrentAnswer();
+      const { questions, current } = playerState;
+      if (current === questions.length - 1) { finishTest(); return; }
+      playerState.current++;
+      renderPlayerQuestion();
+    }
+
+    function prevQuestion()
+    {
+      saveCurrentAnswer();
+      if (playerState.current === 0) return;
+      playerState.current--;
+      renderPlayerQuestion();
+    }
+
+    function finishTest()
+    {
+      clearInterval(playerState.timerInterval);
+      saveCurrentAnswer();
+      showResults();
+    }
+
+    // ──────────────────────────────────────────
+    // RESULTS
+    // ──────────────────────────────────────────
+    function showResults()
+    {
+      const { questions, answers } = playerState;
+      let correct = 0, total = 0;
+      const reviewItems = questions.map((q, i) =>
+      {
+        const ans = answers[i];
+        if (q.type === 'open')
+        {
+          return { q, ans, type: 'open' };
+        }
+        total++;
+        const correctIndices = q.options.map((o, j) => o.correct ? j : -1).filter(j => j >= 0);
+        const selArr = ans ? (Array.isArray(ans) ? ans : [ans]) : [];
+        const isCorrect = correctIndices.length === selArr.length &&
+          correctIndices.every(j => selArr.includes(j));
+        if (isCorrect) correct++;
+        return { q, ans: selArr, correctIndices, isCorrect };
+      });
+
+      const pct = total > 0 ? Math.round((correct / total) * 100) : null;
+
+      // Compact answer summary for detailed view
+      const answerSummary = reviewItems.map(item =>
+      {
+        if (item.type === 'open')
+          return { q: item.q.text, type: 'open', ok: null, ans: item.ans || '' };
+        const selLabels  = item.ans.map(j => item.q.options[j]?.text).filter(Boolean);
+        const corrLabels = item.correctIndices.map(j => item.q.options[j]?.text).filter(Boolean);
+        return {
+          q: item.q.text, type: item.q.type, ok: item.isCorrect,
+          ans: selLabels.join(', ') || '—',
+          correct: corrLabels.join(', ')
+        };
+      });
+      saveTestResult(pct, correct, total, answerSummary); // fire-and-forget
+      document.getElementById('scoreNum').textContent = pct !== null ? pct + '%' : '—';
+      document.getElementById('scoreLabel').textContent =
+        pct !== null
+          ? `${correct} de ${total} preguntas correctas`
+          : 'Test de respuesta abierta — revisión manual';
+
+      const rl = document.getElementById('reviewList');
+      rl.innerHTML = reviewItems.map((item, i) =>
+      {
+        if (item.type === 'open')
+        {
+          return `<div class="review-item open">
+        <div class="review-q">${escHtml(item.q.text)}</div>
+        <div class="review-answer"><span class="tag open">Abierta</span>${item.ans ? escHtml(item.ans) : '<em style="color:var(--ink3)">Sin respuesta</em>'}</div>
+      </div>`;
+        }
+        const cls = item.isCorrect ? 'ok' : 'fail';
+        const selLabels = item.ans.map(j => item.q.options[j]?.text).filter(Boolean);
+        const corrLabels = item.correctIndices.map(j => item.q.options[j]?.text).filter(Boolean);
+        return `<div class="review-item ${cls}">
+      <div class="review-q">${escHtml(item.q.text)}</div>
+      <div class="review-answer">
+        <span class="tag ${cls}">${item.isCorrect ? '✓ Correcto' : '✗ Incorrecto'}</span>
+        ${!item.isCorrect ? `<br><span style="color:var(--ink3);font-size:12px">Tu respuesta: ${selLabels.join(', ') || '—'}</span><br><span style="color:var(--accent2);font-size:12px">Correcta: ${corrLabels.join(', ')}</span>` : `<span style="color:var(--ink2);font-size:12px">${selLabels.join(', ')}</span>`}
+      </div>
+    </div>`;
+      }).join('');
+
+      document.getElementById('shareBtn').onclick = () => shareTest(playerState.test.id);
+      showView('results');
+    }
+
+    function retryTest() { startTest(playerState.test.id); }
+
+    // ──────────────────────────────────────────
+    // STATISTICS
+    // ──────────────────────────────────────────
+
+    async function saveTestResult(score, correct, total, answers = [])
+    {
+      if (!usingCloud() || !currentUser) return;
+      try
+      {
+        await sbClient.from('test_results').insert({
+          user_id: currentUser.id,
+          test_id: playerState.test.id,
+          test_title: playerState.test.title,
+          score: score,
+          correct: correct,
+          total: total,
+          answers: answers,
+        });
+      } catch (e) { console.error('Stats save error:', e); }
+    }
+
+    function sparkline(scores, width = 130, height = 44)
+    {
+      if (scores.length < 2) return `<span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:var(--accent)">${scores[0] ?? '—'}%</span>`;
+      const pad = 4, w = width - pad * 2, h = height - pad * 2;
+      const pts = scores.map((s, i) => [
+        pad + (i / (scores.length - 1)) * w,
+        pad + h - (s / 100) * h
+      ]);
+      const diff = scores[scores.length - 1] - scores[0];
+      const color = diff > 3 ? 'var(--accent2)' : diff < -3 ? '#C0392B' : 'var(--ink3)';
+      const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+      const [lx, ly] = pts[pts.length - 1];
+      return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+        <path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3.5" fill="${color}"/>
+      </svg>`;
+    }
+
+    function trendBadge(scores)
+    {
+      if (scores.length < 2) return '';
+      const diff = scores[scores.length - 1] - scores[0];
+      if (diff > 3)  return `<span class="stats-trend up">↑ +${Math.round(diff)}%</span>`;
+      if (diff < -3) return `<span class="stats-trend down">↓ ${Math.round(diff)}%</span>`;
+      return `<span class="stats-trend flat">→ estable</span>`;
+    }
+
+    function kpiHtml(items, smallNum = false)
+    {
+      return items.map(k => `<div class="stats-kpi">
+        <div class="stats-kpi-num" ${smallNum ? 'style="font-size:1.5rem"' : ''}>${k.num}</div>
+        <div class="stats-kpi-label">${k.label}</div>
+      </div>`).join('');
+    }
+
+    function statsTestCardHtml(title, rs)
+    {
+      const scores = rs.filter(r => r.score !== null).map(r => r.score);
+      const best   = scores.length ? Math.max(...scores) : null;
+      const meta   = [
+        `${rs.length} intento${rs.length !== 1 ? 's' : ''}`,
+        best !== null ? `Mejor: ${best}%` : null,
+        scores.length > 1 ? `Último: ${scores[scores.length - 1]}%` : null,
+      ].filter(Boolean).join(' · ');
+      return `<div class="stats-test-card">
+        <div class="stats-test-info">
+          <div class="stats-test-name">${escHtml(title)}</div>
+          <div class="stats-test-meta">${meta}</div>
+        </div>
+        ${scores.length ? sparkline(scores) : '<span style="color:var(--ink3);font-size:12px">Respuesta abierta</span>'}
+        ${trendBadge(scores)}
+      </div>`;
+    }
+
+    async function openStatsView()
+    {
+      showView('stats');
+      document.getElementById('statsSummary').innerHTML = '';
+      document.getElementById('statsContent').innerHTML = '<div class="students-empty">Cargando…</div>';
+      document.getElementById('statsListTitle').textContent = '';
+      document.getElementById('statsExportBtn').style.display = 'none';
+      isTeacher ? await renderTeacherStats() : await renderStudentStats();
+    }
+
+    // ── Student stats ─────────────────────────
+    async function renderStudentStats()
+    {
+      document.getElementById('statsTitle').innerHTML = 'Mis <span style="color:var(--accent)">estadísticas</span>';
+      document.getElementById('statsSubtitle').textContent = 'Sigue tu evolución en cada test.';
+      const content = document.getElementById('statsContent');
+
+      if (!usingCloud())
+      {
+        content.innerHTML = '<div class="students-empty">Las estadísticas requieren sesión iniciada.</div>';
+        return;
+      }
+
+      const { data: results, error } = await sbClient
+        .from('test_results').select('*').order('completed_at', { ascending: true });
+      if (error) { content.innerHTML = `<div class="students-empty">Error: ${error.message}</div>`; return; }
+
+      const scored = results.filter(r => r.score !== null);
+      const avg    = scored.length ? Math.round(scored.reduce((a, r) => a + r.score, 0) / scored.length) : null;
+      const best   = scored.length ? Math.max(...scored.map(r => r.score)) : null;
+
+      document.getElementById('statsSummary').innerHTML = kpiHtml([
+        { num: results.length,                    label: 'Intentos' },
+        { num: avg  !== null ? avg  + '%' : '—', label: 'Promedio' },
+        { num: best !== null ? best + '%' : '—', label: 'Mejor nota' },
+        { num: new Set(results.map(r => r.test_id)).size, label: 'Tests distintos' },
+      ]);
+
+      if (!results.length)
+      {
+        document.getElementById('statsListTitle').textContent = '';
+        content.innerHTML = `<div class="empty-state">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ink3);margin:0 auto 8px;display:block">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <strong>Aún no has completado ningún test</strong>
+          <p>Completa un test y aquí verás tu progreso.</p>
+        </div>`;
+        return;
+      }
+
+      const byTest = {};
+      results.forEach(r =>
+      {
+        if (!byTest[r.test_id]) byTest[r.test_id] = { title: r.test_title, results: [] };
+        byTest[r.test_id].results.push(r);
+      });
+
+      document.getElementById('statsListTitle').textContent = 'Progreso por test';
+      content.innerHTML = Object.values(byTest)
+        .map(({ title, results: rs }) => statsTestCardHtml(title, rs)).join('');
+    }
+
+    // ── Teacher stats ─────────────────────────
+    async function renderTeacherStats()
+    {
+      document.getElementById('statsTitle').innerHTML = 'Estadísticas de <span style="color:var(--accent)">alumnos</span>';
+      document.getElementById('statsSubtitle').textContent = 'Seguimiento del progreso de tus alumnos.';
+      const content = document.getElementById('statsContent');
+
+      try
+      {
+        const [{ students }, { data: results }] = await Promise.all([
+          callManageUsers('list'),
+          sbClient.from('test_results').select('*').order('completed_at', { ascending: true })
+        ]);
+
+        const scored = (results || []).filter(r => r.score !== null);
+        const globalAvg = scored.length
+          ? Math.round(scored.reduce((a, r) => a + r.score, 0) / scored.length)
+          : null;
+
+        document.getElementById('statsSummary').innerHTML = kpiHtml([
+          { num: students.length,                         label: 'Alumnos' },
+          { num: (results || []).length,                  label: 'Tests completados' },
+          { num: globalAvg !== null ? globalAvg + '%' : '—', label: 'Promedio general' },
+        ]);
+
+        // Group results by student
+        const byStudent = {};
+        (results || []).forEach(r =>
+        {
+          if (!byStudent[r.user_id]) byStudent[r.user_id] = [];
+          byStudent[r.user_id].push(r);
+        });
+
+        const active = students
+          .filter(s => byStudent[s.id]?.length)
+          .map(s =>
+          {
+            const rs      = byStudent[s.id];
+            const sScored = rs.filter(r => r.score !== null);
+            const avg     = sScored.length ? Math.round(sScored.reduce((a, r) => a + r.score, 0) / sScored.length) : null;
+            const latest  = rs.length ? new Date(rs[rs.length - 1].completed_at).toLocaleDateString('es-ES') : null;
+            return { s, rs, avg, latest };
+          })
+          .sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
+
+        document.getElementById('statsListTitle').textContent = 'Por alumno';
+        document.getElementById('statsExportBtn').style.display = results?.length ? 'inline-flex' : 'none';
+
+        if (!active.length)
+        {
+          content.innerHTML = `<div class="empty-state">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ink3);margin:0 auto 8px;display:block">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <strong>Ningún alumno ha completado tests todavía</strong>
+            <p>Aquí verás el progreso de tus alumnos cuando completen sus primeros tests.</p>
+          </div>`;
+          return;
+        }
+
+        content.innerHTML = active.map(({ s, rs, avg, latest }) =>
+        {
+          const scores = rs.filter(r => r.score !== null).map(r => r.score);
+          const diff   = scores.length >= 2 ? scores[scores.length - 1] - scores[0] : 0;
+          const trendEl = scores.length >= 2
+            ? (diff > 3  ? '<span class="stats-trend up"   style="font-size:11px;padding:2px 7px">↑</span>'
+              : diff < -3 ? '<span class="stats-trend down" style="font-size:11px;padding:2px 7px">↓</span>'
+              :             '<span class="stats-trend flat" style="font-size:11px;padding:2px 7px">→</span>')
+            : '';
+          return `<div class="stats-student-card">
+            <div class="stats-student-email" title="${s.email}">${s.email}</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${avg !== null ? `<div class="stats-student-score">${avg}%</div>${trendEl}` : '<span style="color:var(--ink3);font-size:12px">—</span>'}
+            </div>
+            <div class="stats-student-meta">
+              ${rs.length} intento${rs.length !== 1 ? 's' : ''}
+              ${latest ? `<br>${latest}` : ''}
+            </div>
+            <button class="btn sm" onclick="openStudentStatsDetail('${s.id}', '${s.email.replace(/'/g, "\\'")}')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+              Detalle
+            </button>
+          </div>`;
+        }).join('');
+      }
+      catch (e)
+      {
+        content.innerHTML = `<div class="students-empty">Error al cargar: ${e.message}</div>`;
+      }
+    }
+
+    // ── Per-student detail (teacher) ──────────
+    async function openStudentStatsDetail(userId, email)
+    {
+      document.getElementById('statsDetailOverlay').classList.add('open');
+      document.getElementById('statsDetailTitle').textContent = email;
+      document.getElementById('statsDetailSummary').innerHTML = '<div style="color:var(--ink3);font-size:13px">Cargando…</div>';
+      document.getElementById('statsDetailContent').innerHTML = '';
+
+      const { data: results, error } = await sbClient
+        .from('test_results').select('*')
+        .eq('user_id', userId).order('completed_at', { ascending: true });
+
+      if (error)
+      {
+        document.getElementById('statsDetailContent').innerHTML = `<div class="students-empty">Error: ${error.message}</div>`;
+        return;
+      }
+
+      const scored = results.filter(r => r.score !== null);
+      const avg    = scored.length ? Math.round(scored.reduce((a, r) => a + r.score, 0) / scored.length) : null;
+      const best   = scored.length ? Math.max(...scored.map(r => r.score)) : null;
+      const latest = scored.length ? scored[scored.length - 1].score : null;
+
+      document.getElementById('statsDetailSummary').innerHTML = kpiHtml([
+        { num: results.length,                    label: 'Intentos' },
+        { num: avg  !== null ? avg  + '%' : '—', label: 'Promedio' },
+        { num: best !== null ? best + '%' : '—', label: 'Mejor nota' },
+        { num: latest !== null ? latest + '%' : '—', label: 'Último' },
+      ], true);
+
+      const byTest = {};
+      results.forEach(r =>
+      {
+        if (!byTest[r.test_id]) byTest[r.test_id] = { title: r.test_title, results: [] };
+        byTest[r.test_id].results.push(r);
+      });
+
+      document.getElementById('statsDetailContent').innerHTML =
+        Object.values(byTest).map(({ title, results: rs }) =>
+        {
+          const scores   = rs.filter(r => r.score !== null).map(r => r.score);
+          const attempts = scores.map(s => s + '%').join(' → ');
+          const meta     = [
+            `${rs.length} intento${rs.length !== 1 ? 's' : ''}`,
+            scores.length ? attempts : 'Respuesta abierta',
+          ].join(' · ');
+
+          // Per-question breakdown from the latest attempt
+          const latest    = rs[rs.length - 1];
+          const answersHtml = (latest.answers && latest.answers.length)
+            ? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
+                <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">
+                  Último intento
+                  ${latest.completed_at ? `· ${new Date(latest.completed_at).toLocaleDateString('es-ES')}` : ''}
+                </div>
+                ${latest.answers.map((a, i) =>
+                {
+                  if (a.type === 'open') return `<div class="answer-row">
+                    <span class="answer-icon" style="color:var(--accent)">✎</span>
+                    <div><span class="answer-q-text">P${i+1}: ${escHtml(a.q)}</span>
+                    <span class="answer-open">${escHtml(a.ans) || '<em>Sin respuesta</em>'}</span></div>
+                  </div>`;
+                  return `<div class="answer-row">
+                    <span class="answer-icon ${a.ok ? 'answer-ok' : 'answer-fail'}">${a.ok ? '✓' : '✗'}</span>
+                    <div><span class="answer-q-text">P${i+1}: ${escHtml(a.q)}</span>
+                    ${a.ok
+                      ? `<span class="answer-ok">${escHtml(a.ans)}</span>`
+                      : `<span class="answer-fail">${escHtml(a.ans)}</span>
+                         <span style="color:var(--ink3)"> → </span>
+                         <span class="answer-corr">${escHtml(a.correct)}</span>`}
+                    </div>
+                  </div>`;
+                }).join('')}
+              </div>`
+            : '';
+
+          return `<div class="stats-test-card" style="padding:0.9rem 1.1rem;margin-bottom:6px;flex-direction:column;align-items:stretch">
+            <div style="display:flex;align-items:center;gap:1rem">
+              <div class="stats-test-info">
+                <div class="stats-test-name">${escHtml(title)}</div>
+                <div class="stats-test-meta">${meta}</div>
+              </div>
+              ${scores.length ? sparkline(scores, 100, 36) : ''}
+              ${trendBadge(scores)}
+            </div>
+            ${answersHtml}
+          </div>`;
+        }).join('') || '<div class="students-empty">Sin resultados.</div>';
+    }
+
+    function closeStatsDetail()
+    {
+      document.getElementById('statsDetailOverlay').classList.remove('open');
+    }
+
+    async function duplicateTest(id)
+    {
+      const t = tests.find(x => x.id === id);
+      if (!t) return;
+      const copy = {
+        ...JSON.parse(JSON.stringify(t)),
+        id: genId(),
+        title: 'Copia de ' + t.title,
+        published: false,
+        createdAt: Date.now(),
+        updatedAt: Date.now()
+      };
+      delete copy._ownerId;
+      const ok = await persistTest(copy);
+      if (!ok) return;
+      tests.unshift({ ...copy, _ownerId: currentUser?.id });
+      renderHome();
+      showToast('Test duplicado ✓');
+    }
+
+    async function exportResultsCSV()
+    {
+      try
+      {
+        const [{ students }, { data: results }] = await Promise.all([
+          callManageUsers('list'),
+          sbClient.from('test_results').select('*').order('completed_at', { ascending: true })
+        ]);
+
+        if (!results?.length) { showToast('No hay resultados para exportar'); return; }
+
+        const emailMap = Object.fromEntries(students.map(s => [s.id, s.email]));
+        const csvEsc   = s => `"${String(s ?? '').replace(/"/g, '""')}"`;
+        const headers  = ['Email', 'Test', 'Nota (%)', 'Correctas', 'Total preguntas', 'Fecha'];
+        const rows     = results.map(r => [
+          emailMap[r.user_id] || r.user_id,
+          r.test_title,
+          r.score ?? '',
+          r.correct,
+          r.total,
+          new Date(r.completed_at).toLocaleString('es-ES'),
+        ].map(csvEsc).join(','));
+
+        const csv  = '﻿' + [headers.map(csvEsc).join(','), ...rows].join('\r\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url;
+        a.download = `testcraft_${new Date().toISOString().slice(0, 10)}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('CSV descargado ✓');
+      }
+      catch (e) { showToast('Error al exportar: ' + e.message); }
+    }
+
+    // ──────────────────────────────────────────
+    // SHARE / IMPORT
+    // ──────────────────────────────────────────
+    function copyLink(url)
+    {
+      if (navigator.clipboard)
+      {
+        navigator.clipboard.writeText(url).then(
+          () => showToast('¡Enlace copiado al portapapeles!'),
+          () => prompt('Copia este enlace:', url)
+        );
+      } else
+      {
+        prompt('Copia este enlace:', url);
+      }
+    }
+
+    async function shareTest(id)
+    {
+      const t = tests.find(x => x.id === id);
+      if (!t) return;
+
+      if (JSONBIN_KEY)
+      {
+        try
+        {
+          showToast('Subiendo test a la nube...');
+          const res = await fetch(JSONBIN_BASE + '/b', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'X-Master-Key': JSONBIN_KEY,
+              'X-Bin-Private': 'false',
+              'X-Bin-Name': t.title.slice(0, 120)
+            },
+            body: JSON.stringify(t)
+          });
+          if (!res.ok) throw new Error('upload failed');
+          const data = await res.json();
+          const binId = data.metadata.id;
+          const url = location.origin + location.pathname + '?bin=' + binId;
+          copyLink(url);
+          return;
+        } catch (e)
+        {
+          showToast('Error en la nube, usando enlace largo');
+        }
+      }
+
+      // Fallback: test codificado en la propia URL
+      const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(t))));
+      const url = location.origin + location.pathname + '?test=' + encoded;
+      copyLink(url);
+    }
+
+    async function importTestObj(t)
+    {
+      if (!t || !t.id || !t.title || !t.questions) { showToast('Test no válido'); return; }
+
+      // Los alumnos no pueden crear/guardar tests (RLS). Lo hacen una vez sin guardarlo.
+      if (!isTeacher)
+      {
+        const temp = { ...t, id: 'temp_' + genId(), published: true };
+        showModal(`Test compartido: "${t.title}"`, '¿Quieres hacer este test ahora?', () =>
+        {
+          tests.push(temp); // solo en memoria, para poder lanzarlo
+          startTest(temp.id);
+        }, 'Empezar', false);
+        return;
+      }
+
+      const exists = tests.find(x => x.id === t.id);
+      if (exists)
+      {
+        showToast('Este test ya está en tu biblioteca');
+      } else
+      {
+        // id nuevo al importar: el test pasa a ser una copia propia del profesor
+        const copy = { ...t, id: genId(), createdAt: Date.now(), updatedAt: Date.now() };
+        const ok = await persistTest(copy);
+        if (ok)
+        {
+          tests.unshift(copy);
+          t = copy;
+          showToast(`Test "${t.title}" importado ✓`);
+        }
+      }
+      renderHome();
+      setTimeout(() =>
+      {
+        showModal(`Test compartido: "${t.title}"`, '¿Quieres empezar el test ahora?', () => startTest(t.id), 'Empezar', false);
+      }, 400);
+    }
+
+    async function checkImportFromUrl()
+    {
+      const params = new URLSearchParams(location.search);
+      const binId = params.get('bin');
+      const encoded = params.get('test');
+
+      if (binId)
+      {
+        try
+        {
+          const headers = {};
+          if (JSONBIN_KEY) headers['X-Master-Key'] = JSONBIN_KEY;
+          const res = await fetch(JSONBIN_BASE + '/b/' + binId + '/latest', { headers });
+          if (!res.ok) throw new Error('fetch failed');
+          const data = await res.json();
+          importTestObj(data.record);
+        } catch (e)
+        {
+          showToast('No se pudo cargar el test compartido');
+        }
+        window.history.replaceState({}, '', location.pathname);
+        return;
+      }
+
+      if (encoded)
+      {
+        try
+        {
+          const t = JSON.parse(decodeURIComponent(escape(atob(encoded))));
+          importTestObj(t);
+        } catch (e)
+        {
+          showToast('Error al importar el test');
+        }
+        window.history.replaceState({}, '', location.pathname);
+      }
+    }
+
+    // ──────────────────────────────────────────
+    // AUTH (Supabase)
+    // ──────────────────────────────────────────
+    let appReady = false;
+    let authStep = 'email'; // 'email' | 'password'
+    let resolvedEmail = '';
+
+    function showAuthMsg(text, type)
+    {
+      const el = document.getElementById('authMsg');
+      el.textContent = text;
+      el.className = 'auth-msg show ' + type;
+    }
+    function clearAuthMsg()
+    {
+      document.getElementById('authMsg').className = 'auth-msg';
+    }
+
+    function goBackToEmail()
+    {
+      authStep = 'email';
+      resolvedEmail = '';
+      clearAuthMsg();
+      document.getElementById('authTitle').textContent = 'Bienvenido';
+      document.getElementById('authSub').textContent = 'Introduce tu correo para continuar.';
+      document.getElementById('emailGroup').style.display = '';
+      document.getElementById('passwordGroup').style.display = 'none';
+      document.getElementById('authPassword').value = '';
+      document.getElementById('authSubmit').textContent = 'Continuar';
+      document.getElementById('authToggle').style.display = 'none';
+    }
+
+    async function checkEmailRole()
+    {
+      const email = document.getElementById('authEmail').value.trim();
+      if (!email) { showAuthMsg('Introduce tu correo electrónico', 'error'); return; }
+
+      const btn = document.getElementById('authSubmit');
+      btn.disabled = true; btn.style.opacity = '0.6';
+      btn.textContent = 'Comprobando…';
+      clearAuthMsg();
+
+      try
+      {
+        const { data: role, error } = await sbClient.rpc('get_profile_role', { p_email: email });
+        if (error) throw error;
+
+        if (role === 'teacher')
+        {
+          resolvedEmail = email;
+          authStep = 'password';
+          document.getElementById('authTitle').textContent = 'Acceso de profesor';
+          document.getElementById('authSub').textContent = 'Introduce tu contraseña para entrar.';
+          document.getElementById('emailGroup').style.display = 'none';
+          document.getElementById('passwordGroup').style.display = '';
+          document.getElementById('authSubmit').textContent = 'Entrar';
+          document.getElementById('authToggle').style.display = '';
+          document.getElementById('authPassword').focus();
+        }
+        else if (role === 'student')
+        {
+          btn.textContent = 'Entrando…';
+          const { data: loginKey, error: keyErr } = await sbClient.rpc('get_student_login_key', { p_email: email });
+          if (keyErr || !loginKey) throw new Error('No se pudo obtener acceso. Contacta con tu profesor.');
+          const { error: signInErr } = await sbClient.auth.signInWithPassword({ email, password: loginKey });
+          if (signInErr) throw new Error('Error al acceder. Contacta con tu profesor.');
+        }
+        else if (role === 'blocked')
+        {
+          showAuthMsg('Tu cuenta está bloqueada. Contacta con tu profesor.', 'error');
+        }
+        else
+        {
+          showAuthMsg('Este correo no está registrado en la plataforma.', 'error');
+        }
+      }
+      catch (e)
+      {
+        showAuthMsg(e.message || 'Error de conexión. Inténtalo de nuevo.', 'error');
+      }
+      finally
+      {
+        btn.disabled = false; btn.style.opacity = '1';
+        if (authStep !== 'password') btn.textContent = 'Continuar';
+      }
+    }
+
+    async function signInTeacher()
+    {
+      const password = document.getElementById('authPassword').value;
+      if (!password) { showAuthMsg('Introduce tu contraseña', 'error'); return; }
+
+      const btn = document.getElementById('authSubmit');
+      btn.disabled = true; btn.style.opacity = '0.6';
+      clearAuthMsg();
+
+      try
+      {
+        const { error } = await sbClient.auth.signInWithPassword({ email: resolvedEmail, password });
+        if (error) throw error;
+      }
+      catch (e)
+      {
+        showAuthMsg(translateAuthError(e.message || ''), 'error');
+      }
+      finally
+      {
+        btn.disabled = false; btn.style.opacity = '1';
+      }
+    }
+
+    async function submitAuth()
+    {
+      if (!sbClient) { showAuthMsg('Login no configurado', 'error'); return; }
+      if (authStep === 'password') { await signInTeacher(); return; }
+      await checkEmailRole();
+    }
+
+    function translateAuthError(msg)
+    {
+      const m = msg.toLowerCase();
+      if (m.includes('invalid login') || m.includes('invalid credentials'))
+        return 'Contraseña incorrecta.';
+      if (m.includes('rate limit') || m.includes('too many'))
+        return 'Demasiados intentos. Espera un momento.';
+      return msg;
+    }
+
+    // ──────────────────────────────────────────
+    // GESTIÓN DE ALUMNOS
+    // ──────────────────────────────────────────
+    const MANAGE_USERS_FN = `${SUPABASE_URL}/functions/v1/manage-users`;
+
+    async function callManageUsers(action, body = {})
+    {
+      const { data: { session } } = await sbClient.auth.getSession();
+      const res = await fetch(MANAGE_USERS_FN, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ action, ...body }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Error en la operación');
+      return json;
+    }
+
+    function openUsersView()
+    {
+      showView('users');
+      renderUsers();
+    }
+
+    async function renderUsers()
+    {
+      const list = document.getElementById('studentsList');
+      list.innerHTML = '<div class="students-empty">Cargando alumnos…</div>';
+      try
+      {
+        const { students } = await callManageUsers('list');
+        if (!students.length)
+        {
+          list.innerHTML = '<div class="students-empty">No hay alumnos todavía. Invita al primero.</div>';
+          return;
+        }
+        list.innerHTML = students.map(s =>
+        {
+          const lastLogin = s.last_sign_in_at
+            ? new Date(s.last_sign_in_at).toLocaleDateString('es-ES')
+            : null;
+          const isPending = !s.last_sign_in_at;
+          const statusLabel = s.is_blocked ? 'Bloqueado' : isPending ? 'Pendiente' : 'Activo';
+          const statusClass = s.is_blocked ? 'blocked' : isPending ? 'pending' : 'active';
+          const base = window.location.origin + window.location.pathname;
+          const loginUrl = s.login_key
+            ? `${base}?k=${s.login_key}&e=${encodeURIComponent(s.email)}`
+            : null;
+          return `
+            <div class="student-row ${s.is_blocked ? 'blocked' : ''}" data-student-id="${s.id}">
+              <div class="student-email" title="${s.email}">${s.email}</div>
+              <span class="student-status ${statusClass}">${statusLabel}</span>
+              <div class="student-meta">${lastLogin ? 'Último acceso: ' + lastLogin : 'Sin acceso aún'}</div>
+              <div class="student-actions">
+                ${loginUrl ? `<button class="btn sm" title="Copiar enlace de acceso"
+                  onclick="navigator.clipboard.writeText(${JSON.stringify(loginUrl)}).then(()=>showToast('Enlace copiado'))">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+                  </svg>
+                  Copiar enlace
+                </button>` : ''}
+                <button class="btn sm" onclick="toggleBlockStudent('${s.id}', ${s.is_blocked})" title="${s.is_blocked ? 'Desbloquear' : 'Bloquear'}">
+                  ${s.is_blocked ? `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+                    </svg> Desbloquear` : `
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg> Bloquear`}
+                </button>
+                <button class="btn sm danger" onclick="deleteStudent('${s.id}', '${s.email.replace(/'/g, "\\'")}')" title="Eliminar alumno">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                    <path d="M10 11v6M14 11v6"/>
+                    <path d="M9 6V4h6v2"/>
+                  </svg>
+                  Eliminar
+                </button>
+              </div>
+            </div>`;
+        }).join('');
+      } catch (e)
+      {
+        list.innerHTML = `<div class="students-empty">Error al cargar alumnos: ${e.message}</div>`;
+      }
+    }
+
+    function toggleInvitePanel()
+    {
+      const panel = document.getElementById('invitePanel');
+      const open = panel.style.display === 'none';
+      panel.style.display = open ? 'flex' : 'none';
+      if (open)
+      {
+        document.getElementById('inviteEmail').value = '';
+        document.getElementById('inviteMsg').className = 'auth-msg';
+        document.getElementById('inviteEmail').focus();
+      }
+    }
+
+    async function inviteStudent()
+    {
+      const email = document.getElementById('inviteEmail').value.trim();
+      const msgEl = document.getElementById('inviteMsg');
+      if (!email) { msgEl.textContent = 'Introduce un correo.'; msgEl.className = 'auth-msg show error'; return; }
+
+      const btn = document.getElementById('inviteBtn');
+      btn.disabled = true; btn.style.opacity = '0.6';
+      msgEl.className = 'auth-msg';
+      let invited = false;
+      try
+      {
+        const base = window.location.origin + window.location.pathname;
+        const { loginKey, email: confirmedEmail } = await callManageUsers('invite', { email });
+        invited = true;
+        const loginUrl = `${base}?k=${loginKey}&e=${encodeURIComponent(confirmedEmail)}`;
+        msgEl.innerHTML = `Alumno añadido. Comparte este enlace con ${confirmedEmail}:<br>
+          <span style="font-size:11px;word-break:break-all;color:var(--ink)">${loginUrl}</span><br>
+          <button class="btn sm" style="margin-top:8px"
+            onclick="navigator.clipboard.writeText(${JSON.stringify(loginUrl)}).then(()=>showToast('Enlace copiado'))">
+            Copiar enlace
+          </button>`;
+        msgEl.className = 'auth-msg show info';
+        document.getElementById('inviteEmail').value = '';
+        renderUsers();
+      } catch (e)
+      {
+        const msg = e.message || '';
+        if (msg.toLowerCase().includes('rate') || msg.includes('429') || msg.includes('limit')) {
+          msgEl.textContent = 'Límite de emails alcanzado. Espera unos minutos e inténtalo de nuevo.';
+        } else {
+          msgEl.textContent = msg;
+        }
+        msgEl.className = 'auth-msg show error';
+      } finally
+      {
+        btn.disabled = false; btn.style.opacity = '1';
+      }
+    }
+
+    function toggleBlockStudent(userId, currentlyBlocked)
+    {
+      const action = currentlyBlocked ? 'Desbloquear' : 'Bloquear';
+      showModal(
+        `${action} alumno`,
+        currentlyBlocked
+          ? 'El alumno podrá volver a iniciar sesión.'
+          : 'El alumno no podrá iniciar sesión hasta que lo desbloquees.',
+        async () =>
+        {
+          try
+          {
+            await callManageUsers('block', { userId, block: !currentlyBlocked });
+            showToast(`Alumno ${currentlyBlocked ? 'desbloqueado' : 'bloqueado'}.`);
+            renderUsers();
+          } catch (e) { showToast('Error: ' + e.message); }
+        },
+        action,
+        !currentlyBlocked
+      );
+    }
+
+    function deleteStudent(userId, email)
+    {
+      showModal(
+        `Eliminar alumno`,
+        `¿Eliminar la cuenta de ${email}? Esta acción no se puede deshacer.`,
+        async () =>
+        {
+          try
+          {
+            await callManageUsers('delete', { userId });
+            showToast('Alumno eliminado.');
+            renderUsers();
+          } catch (e) { showToast('Error: ' + e.message); }
+        },
+        'Eliminar',
+        true
+      );
+    }
+
+    async function doSignOut()
+    {
+      if (sbClient) await sbClient.auth.signOut();
+      // onAuthStateChange se encarga de mostrar el login
+    }
+
+    async function onLogin(user)
+    {
+      currentUser = user;
+
+      if (!appReady)
+      {
+        appReady = true;
+        isTeacher = await fetchRole();
+
+        // Bloquear acceso a alumnos bloqueados
+        if (!isTeacher)
+        {
+          const { data: profile } = await sbClient.from('profiles').select('is_blocked').eq('id', user.id).maybeSingle();
+          if (profile?.is_blocked)
+          {
+            appReady = false;
+            await sbClient.auth.signOut();
+            showAuthMsg('Tu cuenta está bloqueada. Contacta con tu profesor.', 'error');
+            return;
+          }
+        }
+
+        document.body.classList.remove('auth-locked');
+        document.body.classList.add('logged-in');
+        document.getElementById('userEmail').textContent = user.email || '';
+        document.getElementById('userRole').textContent = isTeacher ? 'Profesor' : 'Alumno';
+        document.getElementById('userRole').style.display = 'inline-block';
+        document.getElementById('usersNavBtn').style.display = isTeacher ? 'inline-flex' : 'none';
+        document.getElementById('statsNavBtn').style.display = 'inline-flex';
+        tests = await fetchTests();
+        renderHome();
+        await checkImportFromUrl();
+      } else
+      {
+        document.body.classList.remove('auth-locked');
+        document.body.classList.add('logged-in');
+      }
+
+      const anyView = [...document.querySelectorAll('.view')].some(v => v.classList.contains('active'));
+      if (!anyView) showView('home');
+    }
+
+    function showLogin()
+    {
+      currentUser = null;
+      appReady = false;
+      tests = [];
+      isTeacher = false;
+      document.body.classList.add('auth-locked');
+      document.body.classList.remove('logged-in');
+      document.getElementById('authPassword').value = '';
+      document.getElementById('usersNavBtn').style.display = 'none';
+      document.getElementById('statsNavBtn').style.display = 'none';
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      goBackToEmail();
+    }
+
+    // ──────────────────────────────────────────
+    // INIT
+    // ──────────────────────────────────────────
+    async function init()
+    {
+      // Sin Supabase configurado -> modo abierto (sin login, datos locales)
+      if (!SUPABASE_URL || !SUPABASE_ANON_KEY || !window.supabase)
+      {
+        document.body.classList.remove('auth-locked');
+        document.body.classList.add('logged-in');
+        document.getElementById('userBadge').style.display = 'none';
+        appReady = true;
+        isTeacher = true; // modo local/abierto: acceso completo
+        tests = await fetchTests();
+        renderHome();
+        await checkImportFromUrl();
+        return;
+      }
+
+      sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      sbClient.auth.onAuthStateChange((_event, session) =>
+      {
+        if (session) onLogin(session.user);
+        else showLogin();
+      });
+
+      // Auto-login de alumno por URL (?k=loginKey&e=email)
+      const _p = new URLSearchParams(window.location.search);
+      const _k = _p.get('k'), _e = _p.get('e');
+      if (_k && _e)
+      {
+        window.history.replaceState({}, '', location.pathname);
+        const { error: _err } = await sbClient.auth.signInWithPassword({
+          email: decodeURIComponent(_e), password: _k,
+        });
+        if (_err) { showLogin(); showAuthMsg('El enlace no es válido o ha expirado.', 'error'); }
+      }
+      else
+      {
+        await sbClient.auth.getSession();
+      }
+
+      // Enter para enviar el formulario
+      ['authEmail', 'authPassword'].forEach(id =>
+      {
+        document.getElementById(id).addEventListener('keydown', e =>
+        {
+          if (e.key === 'Enter') submitAuth();
+        });
+      });
+    }
+
+    init();
+
+    // Close modal on overlay click
+    document.getElementById('modalOverlay').addEventListener('click', e =>
+    {
+      if (e.target === document.getElementById('modalOverlay')) closeModal();
+    });
+
+    document.getElementById('statsDetailOverlay').addEventListener('click', e =>
+    {
+      if (e.target === document.getElementById('statsDetailOverlay')) closeStatsDetail();
+    });
+  </script>
+</body>
+
+</html>
