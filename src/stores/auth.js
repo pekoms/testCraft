@@ -2,8 +2,6 @@ import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { supabase } from '@/lib/supabase'
 
-const ADMIN_EMAIL = 'alejandropi301196@gmail.com'
-
 export const useAuthStore = defineStore('auth', () => {
   const currentUser = ref(null)
   const isTeacher = ref(false)
@@ -23,18 +21,20 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchRole() {
-    if (!supabase || !currentUser.value) return true
+    if (!supabase || !currentUser.value) return { isTeacher: true, isAdmin: false }
     const { data } = await supabase
-      .from('profiles').select('is_teacher').eq('id', currentUser.value.id).maybeSingle()
-    return !!(data?.is_teacher)
+      .from('profiles').select('is_teacher, is_admin').eq('id', currentUser.value.id).maybeSingle()
+    const admin = !!(data?.is_admin)
+    return { isTeacher: !!(data?.is_teacher) || admin, isAdmin: admin }
   }
 
   async function onLogin(user) {
     currentUser.value = user
-    isAdmin.value = user.email?.toLowerCase() === ADMIN_EMAIL
     if (!appReady.value) {
       appReady.value = true
-      isTeacher.value = await fetchRole()
+      const role = await fetchRole()
+      isTeacher.value = role.isTeacher
+      isAdmin.value = role.isAdmin
 
       if (!isTeacher.value) {
         const { data: profile } = await supabase
@@ -86,7 +86,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const { data: role, error } = await supabase.rpc('get_profile_role', { p_email: email })
       if (error) throw error
-      if (role === 'teacher') {
+      if (role === 'teacher' || role === 'admin') {
         resolvedEmail.value = email
         authStep.value = 'password'
       } else if (role === 'student') {
