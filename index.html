@@ -1348,6 +1348,152 @@
       gap: 10px;
       margin-bottom: 0.5rem;
     }
+
+    /* ── STATS ───────────────────────────── */
+    #stats {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem;
+    }
+
+    .stats-summary {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-bottom: 2rem;
+    }
+
+    .stats-kpi {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .stats-kpi-num {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 2rem;
+      letter-spacing: -0.03em;
+      color: var(--accent);
+      line-height: 1.1;
+    }
+
+    .stats-kpi-label {
+      font-size: 11px;
+      color: var(--ink3);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .stats-test-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.1rem 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+      margin-bottom: 8px;
+    }
+
+    .stats-test-info { flex: 1; min-width: 0; }
+
+    .stats-test-name {
+      font-family: 'Syne', sans-serif;
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 3px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .stats-test-meta { font-size: 12px; color: var(--ink3); }
+
+    .stats-trend {
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      padding: 3px 10px;
+      border-radius: 99px;
+    }
+
+    .stats-trend.up   { background: var(--accent2-light); color: var(--accent2); }
+    .stats-trend.down { background: #FDF0EE; color: #C0392B; }
+    .stats-trend.flat { background: var(--surface2); color: var(--ink3); }
+
+    .stats-student-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 8px;
+      transition: border-color 0.15s;
+    }
+
+    .stats-student-card:hover { border-color: var(--border-strong); }
+
+    .stats-student-email {
+      flex: 1;
+      font-weight: 500;
+      font-size: 0.9rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .stats-student-score {
+      font-family: 'Syne', sans-serif;
+      font-weight: 800;
+      font-size: 1.4rem;
+      color: var(--accent);
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .stats-student-meta {
+      font-size: 12px;
+      color: var(--ink3);
+      white-space: nowrap;
+      text-align: right;
+    }
+
+    .stats-detail-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 24, 20, 0.5);
+      z-index: 200;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 2rem 1rem 4rem;
+      overflow-y: auto;
+    }
+
+    .stats-detail-overlay.open { display: flex; }
+
+    .stats-detail-modal {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      max-width: 580px;
+      width: 100%;
+      border: 1px solid var(--border-strong);
+    }
+
+    @media (max-width: 600px) {
+      #stats { padding: 1.25rem 1rem; }
+      .stats-test-card { flex-wrap: wrap; gap: 0.75rem; }
+      .stats-summary { grid-template-columns: repeat(2, 1fr); }
+      .stats-student-card { flex-wrap: wrap; }
+      .stats-student-meta { width: 100%; text-align: left; }
+    }
   </style>
 </head>
 
@@ -1371,6 +1517,14 @@
           <path d="M16 3.13a4 4 0 0 1 0 7.75" />
         </svg>
         Alumnos
+      </button>
+      <button class="btn" id="statsNavBtn" style="display:none" onclick="openStatsView()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <line x1="18" y1="20" x2="18" y2="10"/>
+          <line x1="12" y1="20" x2="12" y2="4"/>
+          <line x1="6" y1="20" x2="6" y2="14"/>
+        </svg>
+        Estadísticas
       </button>
     </div>
     <div class="user-badge" id="userBadge">
@@ -1590,6 +1744,33 @@
 
     <div class="section-title">Alumnos registrados</div>
     <div id="studentsList" class="students-list"></div>
+  </div>
+
+  <!-- STATS -->
+  <div id="stats" class="view">
+    <div class="home-header" style="padding-top:1rem; padding-bottom:1.5rem">
+      <h1 id="statsTitle">Estadísticas</h1>
+      <p id="statsSubtitle"></p>
+    </div>
+    <div class="stats-summary" id="statsSummary"></div>
+    <div class="section-title" id="statsListTitle" style="margin-bottom:0.75rem"></div>
+    <div id="statsContent"></div>
+  </div>
+
+  <!-- STATS DETAIL (teacher: per-student) -->
+  <div class="stats-detail-overlay" id="statsDetailOverlay">
+    <div class="stats-detail-modal">
+      <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:1.25rem">
+        <div>
+          <div style="font-size:11px; color:var(--ink3); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:4px">Alumno</div>
+          <h3 id="statsDetailTitle" style="font-family:'Syne',sans-serif; font-weight:800; font-size:1.05rem; word-break:break-all"></h3>
+        </div>
+        <button class="btn sm" onclick="closeStatsDetail()" style="flex-shrink:0">✕</button>
+      </div>
+      <div class="stats-summary" id="statsDetailSummary" style="margin-bottom:1.5rem"></div>
+      <div class="section-title" style="margin-bottom:0.75rem">Progreso por test</div>
+      <div id="statsDetailContent"></div>
+    </div>
   </div>
 
   <!-- MODAL -->
@@ -2358,6 +2539,7 @@
       });
 
       const pct = total > 0 ? Math.round((correct / total) * 100) : null;
+      saveTestResult(pct, correct, total); // fire-and-forget
       document.getElementById('scoreNum').textContent = pct !== null ? pct + '%' : '—';
       document.getElementById('scoreLabel').textContent =
         pct !== null
@@ -2391,6 +2573,296 @@
     }
 
     function retryTest() { startTest(playerState.test.id); }
+
+    // ──────────────────────────────────────────
+    // STATISTICS
+    // ──────────────────────────────────────────
+
+    async function saveTestResult(score, correct, total)
+    {
+      if (!usingCloud() || !currentUser) return;
+      try
+      {
+        await sbClient.from('test_results').insert({
+          user_id: currentUser.id,
+          test_id: playerState.test.id,
+          test_title: playerState.test.title,
+          score: score,    // null for all-open-question tests
+          correct: correct,
+          total: total,
+        });
+      } catch (e) { console.error('Stats save error:', e); }
+    }
+
+    function sparkline(scores, width = 130, height = 44)
+    {
+      if (scores.length < 2) return `<span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:var(--accent)">${scores[0] ?? '—'}%</span>`;
+      const pad = 4, w = width - pad * 2, h = height - pad * 2;
+      const pts = scores.map((s, i) => [
+        pad + (i / (scores.length - 1)) * w,
+        pad + h - (s / 100) * h
+      ]);
+      const diff = scores[scores.length - 1] - scores[0];
+      const color = diff > 3 ? 'var(--accent2)' : diff < -3 ? '#C0392B' : 'var(--ink3)';
+      const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ');
+      const [lx, ly] = pts[pts.length - 1];
+      return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+        <path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+        <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3.5" fill="${color}"/>
+      </svg>`;
+    }
+
+    function trendBadge(scores)
+    {
+      if (scores.length < 2) return '';
+      const diff = scores[scores.length - 1] - scores[0];
+      if (diff > 3)  return `<span class="stats-trend up">↑ +${Math.round(diff)}%</span>`;
+      if (diff < -3) return `<span class="stats-trend down">↓ ${Math.round(diff)}%</span>`;
+      return `<span class="stats-trend flat">→ estable</span>`;
+    }
+
+    function kpiHtml(items, smallNum = false)
+    {
+      return items.map(k => `<div class="stats-kpi">
+        <div class="stats-kpi-num" ${smallNum ? 'style="font-size:1.5rem"' : ''}>${k.num}</div>
+        <div class="stats-kpi-label">${k.label}</div>
+      </div>`).join('');
+    }
+
+    function statsTestCardHtml(title, rs)
+    {
+      const scores = rs.filter(r => r.score !== null).map(r => r.score);
+      const best   = scores.length ? Math.max(...scores) : null;
+      const meta   = [
+        `${rs.length} intento${rs.length !== 1 ? 's' : ''}`,
+        best !== null ? `Mejor: ${best}%` : null,
+        scores.length > 1 ? `Último: ${scores[scores.length - 1]}%` : null,
+      ].filter(Boolean).join(' · ');
+      return `<div class="stats-test-card">
+        <div class="stats-test-info">
+          <div class="stats-test-name">${escHtml(title)}</div>
+          <div class="stats-test-meta">${meta}</div>
+        </div>
+        ${scores.length ? sparkline(scores) : '<span style="color:var(--ink3);font-size:12px">Respuesta abierta</span>'}
+        ${trendBadge(scores)}
+      </div>`;
+    }
+
+    async function openStatsView()
+    {
+      showView('stats');
+      document.getElementById('statsSummary').innerHTML = '';
+      document.getElementById('statsContent').innerHTML = '<div class="students-empty">Cargando…</div>';
+      document.getElementById('statsListTitle').textContent = '';
+      isTeacher ? await renderTeacherStats() : await renderStudentStats();
+    }
+
+    // ── Student stats ─────────────────────────
+    async function renderStudentStats()
+    {
+      document.getElementById('statsTitle').innerHTML = 'Mis <span style="color:var(--accent)">estadísticas</span>';
+      document.getElementById('statsSubtitle').textContent = 'Sigue tu evolución en cada test.';
+      const content = document.getElementById('statsContent');
+
+      if (!usingCloud())
+      {
+        content.innerHTML = '<div class="students-empty">Las estadísticas requieren sesión iniciada.</div>';
+        return;
+      }
+
+      const { data: results, error } = await sbClient
+        .from('test_results').select('*').order('completed_at', { ascending: true });
+      if (error) { content.innerHTML = `<div class="students-empty">Error: ${error.message}</div>`; return; }
+
+      const scored = results.filter(r => r.score !== null);
+      const avg    = scored.length ? Math.round(scored.reduce((a, r) => a + r.score, 0) / scored.length) : null;
+      const best   = scored.length ? Math.max(...scored.map(r => r.score)) : null;
+
+      document.getElementById('statsSummary').innerHTML = kpiHtml([
+        { num: results.length,                    label: 'Intentos' },
+        { num: avg  !== null ? avg  + '%' : '—', label: 'Promedio' },
+        { num: best !== null ? best + '%' : '—', label: 'Mejor nota' },
+        { num: new Set(results.map(r => r.test_id)).size, label: 'Tests distintos' },
+      ]);
+
+      if (!results.length)
+      {
+        document.getElementById('statsListTitle').textContent = '';
+        content.innerHTML = `<div class="empty-state">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ink3);margin:0 auto 8px;display:block">
+            <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+          </svg>
+          <strong>Aún no has completado ningún test</strong>
+          <p>Completa un test y aquí verás tu progreso.</p>
+        </div>`;
+        return;
+      }
+
+      const byTest = {};
+      results.forEach(r =>
+      {
+        if (!byTest[r.test_id]) byTest[r.test_id] = { title: r.test_title, results: [] };
+        byTest[r.test_id].results.push(r);
+      });
+
+      document.getElementById('statsListTitle').textContent = 'Progreso por test';
+      content.innerHTML = Object.values(byTest)
+        .map(({ title, results: rs }) => statsTestCardHtml(title, rs)).join('');
+    }
+
+    // ── Teacher stats ─────────────────────────
+    async function renderTeacherStats()
+    {
+      document.getElementById('statsTitle').innerHTML = 'Estadísticas de <span style="color:var(--accent)">alumnos</span>';
+      document.getElementById('statsSubtitle').textContent = 'Seguimiento del progreso de tus alumnos.';
+      const content = document.getElementById('statsContent');
+
+      try
+      {
+        const [{ students }, { data: results }] = await Promise.all([
+          callManageUsers('list'),
+          sbClient.from('test_results').select('*').order('completed_at', { ascending: true })
+        ]);
+
+        const scored = (results || []).filter(r => r.score !== null);
+        const globalAvg = scored.length
+          ? Math.round(scored.reduce((a, r) => a + r.score, 0) / scored.length)
+          : null;
+
+        document.getElementById('statsSummary').innerHTML = kpiHtml([
+          { num: students.length,                         label: 'Alumnos' },
+          { num: (results || []).length,                  label: 'Tests completados' },
+          { num: globalAvg !== null ? globalAvg + '%' : '—', label: 'Promedio general' },
+        ]);
+
+        // Group results by student
+        const byStudent = {};
+        (results || []).forEach(r =>
+        {
+          if (!byStudent[r.user_id]) byStudent[r.user_id] = [];
+          byStudent[r.user_id].push(r);
+        });
+
+        const active = students
+          .filter(s => byStudent[s.id]?.length)
+          .map(s =>
+          {
+            const rs      = byStudent[s.id];
+            const sScored = rs.filter(r => r.score !== null);
+            const avg     = sScored.length ? Math.round(sScored.reduce((a, r) => a + r.score, 0) / sScored.length) : null;
+            const latest  = rs.length ? new Date(rs[rs.length - 1].completed_at).toLocaleDateString('es-ES') : null;
+            return { s, rs, avg, latest };
+          })
+          .sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1));
+
+        document.getElementById('statsListTitle').textContent = 'Por alumno';
+
+        if (!active.length)
+        {
+          content.innerHTML = `<div class="empty-state">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ink3);margin:0 auto 8px;display:block">
+              <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <strong>Ningún alumno ha completado tests todavía</strong>
+            <p>Aquí verás el progreso de tus alumnos cuando completen sus primeros tests.</p>
+          </div>`;
+          return;
+        }
+
+        content.innerHTML = active.map(({ s, rs, avg, latest }) =>
+        {
+          const scores = rs.filter(r => r.score !== null).map(r => r.score);
+          const diff   = scores.length >= 2 ? scores[scores.length - 1] - scores[0] : 0;
+          const trendEl = scores.length >= 2
+            ? (diff > 3  ? '<span class="stats-trend up"   style="font-size:11px;padding:2px 7px">↑</span>'
+              : diff < -3 ? '<span class="stats-trend down" style="font-size:11px;padding:2px 7px">↓</span>'
+              :             '<span class="stats-trend flat" style="font-size:11px;padding:2px 7px">→</span>')
+            : '';
+          return `<div class="stats-student-card">
+            <div class="stats-student-email" title="${s.email}">${s.email}</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${avg !== null ? `<div class="stats-student-score">${avg}%</div>${trendEl}` : '<span style="color:var(--ink3);font-size:12px">—</span>'}
+            </div>
+            <div class="stats-student-meta">
+              ${rs.length} intento${rs.length !== 1 ? 's' : ''}
+              ${latest ? `<br>${latest}` : ''}
+            </div>
+            <button class="btn sm" onclick="openStudentStatsDetail('${s.id}', ${JSON.stringify(s.email)})">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+              Detalle
+            </button>
+          </div>`;
+        }).join('');
+      }
+      catch (e)
+      {
+        content.innerHTML = `<div class="students-empty">Error al cargar: ${e.message}</div>`;
+      }
+    }
+
+    // ── Per-student detail (teacher) ──────────
+    async function openStudentStatsDetail(userId, email)
+    {
+      document.getElementById('statsDetailOverlay').classList.add('open');
+      document.getElementById('statsDetailTitle').textContent = email;
+      document.getElementById('statsDetailSummary').innerHTML = '<div style="color:var(--ink3);font-size:13px">Cargando…</div>';
+      document.getElementById('statsDetailContent').innerHTML = '';
+
+      const { data: results, error } = await sbClient
+        .from('test_results').select('*')
+        .eq('user_id', userId).order('completed_at', { ascending: true });
+
+      if (error)
+      {
+        document.getElementById('statsDetailContent').innerHTML = `<div class="students-empty">Error: ${error.message}</div>`;
+        return;
+      }
+
+      const scored = results.filter(r => r.score !== null);
+      const avg    = scored.length ? Math.round(scored.reduce((a, r) => a + r.score, 0) / scored.length) : null;
+      const best   = scored.length ? Math.max(...scored.map(r => r.score)) : null;
+      const latest = scored.length ? scored[scored.length - 1].score : null;
+
+      document.getElementById('statsDetailSummary').innerHTML = kpiHtml([
+        { num: results.length,                    label: 'Intentos' },
+        { num: avg  !== null ? avg  + '%' : '—', label: 'Promedio' },
+        { num: best !== null ? best + '%' : '—', label: 'Mejor nota' },
+        { num: latest !== null ? latest + '%' : '—', label: 'Último' },
+      ], true);
+
+      const byTest = {};
+      results.forEach(r =>
+      {
+        if (!byTest[r.test_id]) byTest[r.test_id] = { title: r.test_title, results: [] };
+        byTest[r.test_id].results.push(r);
+      });
+
+      document.getElementById('statsDetailContent').innerHTML =
+        Object.values(byTest).map(({ title, results: rs }) =>
+        {
+          const scores  = rs.filter(r => r.score !== null).map(r => r.score);
+          const attempts = scores.map(s => s + '%').join(' → ');
+          const meta = [
+            `${rs.length} intento${rs.length !== 1 ? 's' : ''}`,
+            scores.length ? attempts : 'Respuesta abierta',
+          ].join(' · ');
+          return `<div class="stats-test-card" style="padding:0.9rem 1.1rem;margin-bottom:6px">
+            <div class="stats-test-info">
+              <div class="stats-test-name">${escHtml(title)}</div>
+              <div class="stats-test-meta">${meta}</div>
+            </div>
+            ${scores.length ? sparkline(scores, 100, 36) : ''}
+            ${trendBadge(scores)}
+          </div>`;
+        }).join('') || '<div class="students-empty">Sin resultados.</div>';
+    }
+
+    function closeStatsDetail()
+    {
+      document.getElementById('statsDetailOverlay').classList.remove('open');
+    }
 
     // ──────────────────────────────────────────
     // SHARE / IMPORT
@@ -2874,6 +3346,7 @@
         document.getElementById('userRole').textContent = isTeacher ? 'Profesor' : 'Alumno';
         document.getElementById('userRole').style.display = 'inline-block';
         document.getElementById('usersNavBtn').style.display = isTeacher ? 'inline-flex' : 'none';
+        document.getElementById('statsNavBtn').style.display = 'inline-flex';
         tests = await fetchTests();
         renderHome();
         await checkImportFromUrl();
@@ -2897,6 +3370,7 @@
       document.body.classList.remove('logged-in');
       document.getElementById('authPassword').value = '';
       document.getElementById('usersNavBtn').style.display = 'none';
+      document.getElementById('statsNavBtn').style.display = 'none';
       document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
       goBackToEmail();
     }
@@ -2960,6 +3434,11 @@
     document.getElementById('modalOverlay').addEventListener('click', e =>
     {
       if (e.target === document.getElementById('modalOverlay')) closeModal();
+    });
+
+    document.getElementById('statsDetailOverlay').addEventListener('click', e =>
+    {
+      if (e.target === document.getElementById('statsDetailOverlay')) closeStatsDetail();
     });
   </script>
 </body>
