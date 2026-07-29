@@ -56,23 +56,29 @@
         <strong>Aún no has completado ningún test</strong>
         <p>Completa un test y aquí verás tu progreso.</p>
       </div>
-      <div v-for="[testId, group] in studentGroups" :key="testId" class="stats-test-card">
-        <div class="stats-test-info">
-          <div class="stats-test-name">{{ group.title }}</div>
-          <div class="stats-test-meta">{{ testMeta(group.results) }}</div>
+      <div v-for="[testId, group] in studentGroups" :key="testId" class="stats-test-card" style="flex-direction:column;align-items:stretch;gap:0.75rem">
+        <!-- Main row: info + sparkline + trend -->
+        <div style="display:flex;align-items:center;gap:1.25rem">
+          <div class="stats-test-info">
+            <div class="stats-test-name">{{ group.title }}</div>
+            <div class="stats-test-meta">{{ testMeta(group.results) }}</div>
+          </div>
+          <span v-if="group.scores.length" v-html="sparkline(group.scores)"></span>
+          <span v-else style="color:var(--ink3);font-size:12px">Respuesta abierta</span>
+          <span v-if="group.scores.length >= 2" class="stats-trend" :class="trendClass(group.scores)">
+            {{ trendLabel(group.scores) }}
+          </span>
         </div>
-        <span v-if="group.scores.length" v-html="sparkline(group.scores)"></span>
-        <span v-else style="color:var(--ink3);font-size:12px">Respuesta abierta</span>
-        <span v-if="group.scores.length >= 2" class="stats-trend" :class="trendClass(group.scores)">
-          {{ trendLabel(group.scores) }}
-        </span>
-        <button class="btn sm" :title="'Reintentar: ' + group.title" @click="retryTest(testId)">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-            <polyline points="1 4 1 10 7 10"/>
-            <path d="M3.51 15a9 9 0 1 0 .49-4.16"/>
-          </svg>
-          Reintentar
-        </button>
+        <!-- Action row -->
+        <div style="border-top:1px solid var(--border);padding-top:0.65rem;display:flex;justify-content:flex-end">
+          <button class="btn sm" @click="retryTest(testId)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <polyline points="1 4 1 10 7 10"/>
+              <path d="M3.51 15a9 9 0 1 0 .49-4.16"/>
+            </svg>
+            Reintentar
+          </button>
+        </div>
       </div>
     </template>
 
