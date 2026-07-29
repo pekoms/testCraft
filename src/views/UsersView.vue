@@ -38,10 +38,6 @@
         <span class="student-status" :class="statusClass(s)">{{ statusLabel(s) }}</span>
         <div class="student-meta">{{ s.last_sign_in_at ? 'Último acceso: ' + new Date(s.last_sign_in_at).toLocaleDateString('es-ES') : 'Sin acceso aún' }}</div>
         <div class="student-actions">
-          <button v-if="s.login_key" class="btn sm" title="Copiar enlace de acceso" @click="copyLoginLink(s)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-            Copiar enlace
-          </button>
           <button class="btn sm" @click="toggleBlock(s)" :title="s.is_blocked ? 'Desbloquear' : 'Bloquear'">
             <svg v-if="s.is_blocked" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
             <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
@@ -100,34 +96,17 @@ function statusClass(s) {
   return 'active'
 }
 
-function loginUrl(s) {
-  if (!s.login_key) return null
-  const base = window.location.origin + window.location.pathname
-  return `${base}?k=${s.login_key}&e=${encodeURIComponent(s.email)}`
-}
-
-function copyLoginLink(s) {
-  const url = loginUrl(s)
-  if (!url) return
-  navigator.clipboard.writeText(url).then(() => appStore.showToast('Enlace copiado'))
-}
-
 async function inviteStudent() {
   const email = inviteEmail.value.trim()
   inviteMsg.value = { text: '', type: '', html: '' }
   if (!email) { inviteMsg.value = { text: 'Introduce un correo.', type: 'error', html: '' }; return }
   inviting.value = true
   try {
-    const base = window.location.origin + window.location.pathname
-    const { loginKey, email: confirmedEmail } = await usersStore.callManageUsers('invite', { email })
-    const url = `${base}?k=${loginKey}&e=${encodeURIComponent(confirmedEmail)}`
-    const escapedUrl = url.replace(/"/g, '&quot;')
+    const { email: confirmedEmail } = await usersStore.callManageUsers('invite', { email })
     inviteMsg.value = {
-      text: '',
+      text: `Alumno añadido. ${confirmedEmail} puede acceder usando su correo electrónico.`,
       type: 'info',
-      html: `Alumno añadido. Comparte este enlace con ${confirmedEmail}:<br>
-        <span style="font-size:11px;word-break:break-all;color:var(--ink)">${url}</span><br>
-        <button class="btn sm" style="margin-top:8px" onclick="navigator.clipboard.writeText('${escapedUrl}').then(()=>{})">Copiar enlace</button>`,
+      html: '',
     }
     inviteEmail.value = ''
     loadStudents()

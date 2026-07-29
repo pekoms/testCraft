@@ -19,6 +19,10 @@ describe('auth store — estado inicial', () => {
     expect(store.isTeacher).toBe(false)
   })
 
+  it('isAdmin empieza en false', () => {
+    expect(store.isAdmin).toBe(false)
+  })
+
   it('mensaje de error empieza vacío', () => {
     expect(store.authMsg.text).toBe('')
     expect(store.authMsg.type).toBe('')
@@ -33,9 +37,9 @@ describe('auth store — transiciones de estado', () => {
   })
 
   it('showLogin resetea todo el estado de autenticación', () => {
-    // Simula estado de sesión activa
     store.currentUser = { id: '123', email: 'teacher@school.com' }
     store.isTeacher = true
+    store.isAdmin = true
     store.authLocked = false
     store.appReady = true
     store.authStep = 'password'
@@ -46,9 +50,17 @@ describe('auth store — transiciones de estado', () => {
     expect(store.authLocked).toBe(true)
     expect(store.currentUser).toBeNull()
     expect(store.isTeacher).toBe(false)
+    expect(store.isAdmin).toBe(false)
     expect(store.appReady).toBe(false)
     expect(store.authStep).toBe('email')
     expect(store.resolvedEmail).toBe('')
+  })
+
+  it('isAdmin puede establecerse en true y showLogin lo resetea', () => {
+    store.isAdmin = true
+    expect(store.isAdmin).toBe(true)
+    store.showLogin()
+    expect(store.isAdmin).toBe(false)
   })
 
   it('goBackToEmail resetea el paso y el email resuelto', () => {

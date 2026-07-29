@@ -134,6 +134,7 @@ import { useAppStore } from '@/stores/app'
 import { useUsersStore } from '@/stores/users'
 import { supabase } from '@/lib/supabase'
 import StatsDetailModal from '@/components/StatsDetailModal.vue'
+import { sparkline, trendClass, trendLabel, trendArrow, testMeta, filterStudentResults } from '@/composables/statsHelpers'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -166,8 +167,7 @@ async function load() {
       ])
       students.value = list
       // Only keep results that belong to actual students (excludes admin and other teachers)
-      const studentIds = new Set(list.map(s => s.id))
-      results.value = (res || []).filter(r => studentIds.has(r.user_id))
+      results.value = filterStudentResults(res || [], list)
     } else {
       const { data: res, error } = await supabase
         .from('test_results').select('*').order('completed_at', { ascending: true })
@@ -215,16 +215,6 @@ const kpis = computed(() => {
 })
 
 const listTitle = computed(() => authStore.isTeacher ? 'Por alumno' : 'Progreso por test')
-
-function testMeta(rs) {
-  const scores = rs.filter(r => r.score !== null).map(r => r.score)
-  const best = scores.length ? Math.max(...scores) : null
-  return [
-    `${rs.length} intento${rs.length !== 1 ? 's' : ''}`,
-    best !== null ? `Mejor: ${best}%` : null,
-    scores.length > 1 ? `Último: ${scores[scores.length - 1]}%` : null,
-  ].filter(Boolean).join(' · ')
-}
 
 // ── Retry ─────────────────────────────────────
 async function retryTest(testId) {
@@ -376,37 +366,5 @@ function exportPDF() {
   setTimeout(() => { win.focus(); win.print() }, 400)
 }
 
-// ── Sparkline helpers ─────────────────────────
-function sparkline(scores, width = 130, height = 44) {
-  if (scores.length < 2) return `<span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:var(--accent)">${scores[0] ?? '—'}%</span>`
-  const pad = 4, w = width - pad * 2, h = height - pad * 2
-  const pts = scores.map((s, i) => [pad + (i / (scores.length - 1)) * w, pad + h - (s / 100) * h])
-  const diff = scores[scores.length - 1] - scores[0]
-  const color = diff > 3 ? 'var(--accent2)' : diff < -3 ? '#C0392B' : 'var(--ink3)'
-  const d = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join(' ')
-  const [lx, ly] = pts[pts.length - 1]
-  return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
-    <path d="${d}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
-    <circle cx="${lx.toFixed(1)}" cy="${ly.toFixed(1)}" r="3.5" fill="${color}"/>
-  </svg>`
-}
-
-function trendClass(scores) {
-  if (scores.length < 2) return 'flat'
-  const diff = scores[scores.length - 1] - scores[0]
-  return diff > 3 ? 'up' : diff < -3 ? 'down' : 'flat'
-}
-
-function trendLabel(scores) {
-  if (scores.length < 2) return ''
-  const diff = scores[scores.length - 1] - scores[0]
-  if (diff > 3) return `↑ +${Math.round(diff)}%`
-  if (diff < -3) return `↓ ${Math.round(diff)}%`
-  return '→ estable'
-}
-
-function trendArrow(scores) {
-  const cls = trendClass(scores)
-  return cls === 'up' ? '↑' : cls === 'down' ? '↓' : '→'
-}
+// sparkline, trendClass, trendLabel, trendArrow, testMeta, filterStudentResults imported from statsHelpers
 </script>

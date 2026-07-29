@@ -76,6 +76,7 @@ describe('NavBar', () => {
     authStore.authLocked = false
     authStore.currentUser = { email: 'teacher@school.com' }
     authStore.isTeacher = true
+    authStore.isAdmin = false
     const wrapper = mountNav()
     expect(wrapper.text()).toContain('Profesor')
   })
@@ -84,7 +85,36 @@ describe('NavBar', () => {
     authStore.authLocked = false
     authStore.currentUser = { email: 'student@school.com' }
     authStore.isTeacher = false
+    authStore.isAdmin = false
     const wrapper = mountNav()
     expect(wrapper.text()).toContain('Alumno')
+  })
+
+  it('muestra etiqueta Admin cuando isAdmin es true', () => {
+    authStore.authLocked = false
+    authStore.currentUser = { email: 'admin@school.com' }
+    authStore.isTeacher = true
+    authStore.isAdmin = true
+    const wrapper = mountNav()
+    expect(wrapper.text()).toContain('Admin')
+  })
+
+  it('Admin ve el botón de Alumnos (tiene permisos de profesor)', () => {
+    authStore.authLocked = false
+    authStore.isTeacher = true
+    authStore.isAdmin = true
+    const wrapper = mountNav()
+    const btns = wrapper.findAll('button')
+    expect(btns.some(b => b.text().includes('Alumnos'))).toBe(true)
+  })
+
+  it('muestra el selector de temas siempre', () => {
+    const wrapper = mountNav()
+    expect(wrapper.find('.theme-switcher').exists()).toBe(true)
+  })
+
+  it('tiene exactamente tres botones de tema', () => {
+    const wrapper = mountNav()
+    expect(wrapper.findAll('.theme-btn')).toHaveLength(3)
   })
 })
