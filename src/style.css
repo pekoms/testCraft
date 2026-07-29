@@ -15,6 +15,40 @@
   --radius-sm: 8px;
 }
 
+html[data-theme="dark"] {
+  --bg: #18161A;
+  --surface: #211F24;
+  --surface2: #2A2730;
+  --ink: #F0EDE8;
+  --ink2: #A09C96;
+  --ink3: #6A6660;
+  --accent: #E8693A;
+  --accent-light: #3D2218;
+  --accent2: #4A8B6A;
+  --accent2-light: #152B21;
+  --border: rgba(240, 237, 232, 0.1);
+  --border-strong: rgba(240, 237, 232, 0.2);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+html[data-theme="slate"] {
+  --bg: #0F1623;
+  --surface: #16202F;
+  --surface2: #1D2A3F;
+  --ink: #D8E4F0;
+  --ink2: #8A9BB8;
+  --ink3: #5A6B88;
+  --accent: #6B9FFF;
+  --accent-light: #0D1D3D;
+  --accent2: #3AB87A;
+  --accent2-light: #0A2B1D;
+  --border: rgba(216, 228, 240, 0.1);
+  --border-strong: rgba(216, 228, 240, 0.2);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
@@ -331,8 +365,21 @@ nav {
 .auth-msg.error { background: #FDF0EE; color: #C0392B; }
 .auth-msg.info { background: var(--accent2-light); color: var(--accent2); }
 
+.nav-right { display: flex; align-items: center; gap: 10px; }
 .user-badge { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink2); }
 .user-badge .email { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── THEME SWITCHER ──────────────────── */
+.theme-switcher { display: flex; gap: 2px; background: var(--surface2); border-radius: 8px; padding: 3px; }
+.theme-btn {
+  width: 28px; height: 28px;
+  display: flex; align-items: center; justify-content: center;
+  border: none; border-radius: 5px;
+  background: transparent; cursor: pointer; color: var(--ink3);
+  transition: all 0.15s;
+}
+.theme-btn:hover { color: var(--ink); background: var(--surface); }
+.theme-btn.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,0.15); }
 
 /* ── USERS VIEW ──────────────────────── */
 .invite-panel {

@@ -13,22 +13,34 @@
     <!-- KPI summary -->
     <div class="stats-summary">
       <div v-for="kpi in kpis" :key="kpi.label" class="stats-kpi">
-        <div class="stats-kpi-num" :style="smallNum ? 'font-size:1.5rem' : ''">{{ kpi.num }}</div>
+        <div class="stats-kpi-num">{{ kpi.num }}</div>
         <div class="stats-kpi-label">{{ kpi.label }}</div>
       </div>
     </div>
 
-    <!-- Header row: title + export -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem">
+    <!-- Header row: title + export buttons -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;gap:8px;flex-wrap:wrap">
       <div class="section-title" style="margin-bottom:0">{{ listTitle }}</div>
-      <button v-if="authStore.isTeacher && results.length" class="btn sm" @click="exportCSV">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        Exportar CSV
-      </button>
+      <div v-if="results.length" style="display:flex;gap:6px">
+        <button v-if="authStore.isTeacher" class="btn sm" @click="exportCSV">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="7 10 12 15 17 10"/>
+            <line x1="12" y1="15" x2="12" y2="3"/>
+          </svg>
+          CSV
+        </button>
+        <button class="btn sm" @click="exportPDF">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          PDF
+        </button>
+      </div>
     </div>
 
     <!-- Loading / Error -->
@@ -54,6 +66,13 @@
         <span v-if="group.scores.length >= 2" class="stats-trend" :class="trendClass(group.scores)">
           {{ trendLabel(group.scores) }}
         </span>
+        <button class="btn sm" :title="'Reintentar: ' + group.title" @click="retryTest(testId)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <polyline points="1 4 1 10 7 10"/>
+            <path d="M3.51 15a9 9 0 1 0 .49-4.16"/>
+          </svg>
+          Reintentar
+        </button>
       </div>
     </template>
 
@@ -103,12 +122,14 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useUsersStore } from '@/stores/users'
 import { supabase } from '@/lib/supabase'
 import StatsDetailModal from '@/components/StatsDetailModal.vue'
 
+const router = useRouter()
 const authStore = useAuthStore()
 const appStore = useAppStore()
 const usersStore = useUsersStore()
@@ -197,6 +218,16 @@ function testMeta(rs) {
   ].filter(Boolean).join(' · ')
 }
 
+// ── Retry ─────────────────────────────────────
+async function retryTest(testId) {
+  const test = appStore.tests.find(t => t.id === testId)
+  if (!test) {
+    appStore.showToast('Este test ya no está disponible')
+    return
+  }
+  await appStore.startTest(testId)
+}
+
 // ── Teacher view ──────────────────────────────
 const byStudent = computed(() => {
   const map = {}
@@ -250,6 +281,93 @@ async function exportCSV() {
   } catch (e) { appStore.showToast('Error al exportar: ' + e.message) }
 }
 
+// ── Export PDF ────────────────────────────────
+function exportPDF() {
+  const date = new Date().toLocaleDateString('es-ES', { year: 'numeric', month: 'long', day: 'numeric' })
+  const kpiHtml = kpis.value.map(k =>
+    `<div class="kpi"><div class="kpi-num">${k.num}</div><div class="kpi-label">${k.label}</div></div>`
+  ).join('')
+
+  let tableHead = '', tableBody = ''
+
+  if (authStore.isTeacher) {
+    tableHead = '<tr><th>Alumno</th><th>Intentos</th><th>Promedio</th><th>Mejor nota</th><th>Último test</th></tr>'
+    tableBody = activeStudents.value.map(item => {
+      const best = item.scores.length ? Math.max(...item.scores) + '%' : '—'
+      return `<tr>
+        <td>${item.s.email}</td>
+        <td class="center">${item.rs.length}</td>
+        <td class="center score">${item.avg !== null ? item.avg + '%' : '—'}</td>
+        <td class="center">${best}</td>
+        <td class="center">${item.latest || '—'}</td>
+      </tr>`
+    }).join('')
+  } else {
+    const email = authStore.currentUser?.email || ''
+    tableHead = '<tr><th>Test</th><th>Intentos</th><th>Último</th><th>Mejor nota</th></tr>'
+    tableBody = [...studentGroups.value.entries()].map(([, group]) => {
+      const best = group.scores.length ? Math.max(...group.scores) + '%' : '—'
+      const last = group.scores.length ? group.scores[group.scores.length - 1] + '%' : '—'
+      return `<tr>
+        <td>${group.title}</td>
+        <td class="center">${group.results.length}</td>
+        <td class="center score">${last}</td>
+        <td class="center">${best}</td>
+      </tr>`
+    }).join('')
+  }
+
+  const title = authStore.isTeacher
+    ? 'Estadísticas de alumnos — TestCraft'
+    : `Mis estadísticas — ${authStore.currentUser?.email || ''}`
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>${title}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; color: #1A1814; padding: 32px; }
+    h1 { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; margin-bottom: 4px; }
+    .meta { color: #5A5650; font-size: 11px; margin-bottom: 24px; }
+    .kpis { display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; }
+    .kpi { border: 1px solid #ddd; border-radius: 10px; padding: 12px 20px; min-width: 100px; text-align: center; }
+    .kpi-num { font-size: 20px; font-weight: 800; color: #D4571C; line-height: 1.1; }
+    .kpi-label { font-size: 9px; color: #9A968F; text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { background: #1A1814; color: #fff; padding: 9px 12px; text-align: left; font-size: 10px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+    td { padding: 9px 12px; border-bottom: 1px solid #ede9e2; }
+    tr:last-child td { border-bottom: none; }
+    .center { text-align: center; }
+    .score { font-weight: 700; color: #D4571C; }
+    @media print {
+      body { padding: 20px; }
+      @page { margin: 20mm; }
+    }
+  </style>
+</head>
+<body>
+  <h1>${title}</h1>
+  <div class="meta">TestCraft · Generado el ${date}</div>
+  <div class="kpis">${kpiHtml}</div>
+  <table>
+    <thead>${tableHead}</thead>
+    <tbody>${tableBody}</tbody>
+  </table>
+</body>
+</html>`
+
+  const win = window.open('', '_blank')
+  if (!win) {
+    appStore.showToast('Activa las ventanas emergentes para exportar PDF')
+    return
+  }
+  win.document.write(html)
+  win.document.close()
+  setTimeout(() => { win.focus(); win.print() }, 400)
+}
+
 // ── Sparkline helpers ─────────────────────────
 function sparkline(scores, width = 130, height = 44) {
   if (scores.length < 2) return `<span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:var(--accent)">${scores[0] ?? '—'}%</span>`
@@ -283,6 +401,4 @@ function trendArrow(scores) {
   const cls = trendClass(scores)
   return cls === 'up' ? '↑' : cls === 'down' ? '↓' : '→'
 }
-
-const smallNum = false
 </script>

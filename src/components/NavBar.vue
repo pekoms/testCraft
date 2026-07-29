@@ -31,20 +31,51 @@
       </button>
     </div>
 
-    <div v-if="!authStore.authLocked" class="user-badge">
-      <span v-if="authStore.currentUser"
-        style="background:var(--accent-light);color:var(--accent);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500">
-        {{ authStore.isTeacher ? 'Profesor' : 'Alumno' }}
-      </span>
-      <span class="email">{{ authStore.currentUser?.email }}</span>
-      <button class="btn sm" @click="authStore.doSignOut()" title="Cerrar sesión">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-          <polyline points="16 17 21 12 16 7"/>
-          <line x1="21" y1="12" x2="9" y2="12"/>
-        </svg>
-        Salir
-      </button>
+    <div class="nav-right">
+      <!-- Theme switcher — always visible -->
+      <div class="theme-switcher">
+        <button
+          v-for="t in themes" :key="t.id"
+          class="theme-btn" :class="{ active: theme === t.id }"
+          :title="t.label"
+          @click="setTheme(t.id)"
+        >
+          <!-- Sun: light -->
+          <svg v-if="t.id === 'light'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+          <!-- Moon: dark -->
+          <svg v-else-if="t.id === 'dark'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <!-- Star: slate/noche -->
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- User info — only when logged in -->
+      <template v-if="!authStore.authLocked">
+        <div class="user-badge">
+          <span
+            v-if="authStore.currentUser"
+            style="background:var(--accent-light);color:var(--accent);padding:2px 8px;border-radius:99px;font-size:11px;font-weight:500"
+          >
+            {{ authStore.isTeacher ? 'Profesor' : 'Alumno' }}
+          </span>
+          <span class="email">{{ authStore.currentUser?.email }}</span>
+          <button class="btn sm" @click="authStore.doSignOut()" title="Cerrar sesión">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+              <polyline points="16 17 21 12 16 7"/>
+              <line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Salir
+          </button>
+        </div>
+      </template>
     </div>
   </nav>
 </template>
@@ -53,10 +84,12 @@
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+import { useTheme } from '@/composables/useTheme'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const appStore = useAppStore()
+const { theme, themes, setTheme } = useTheme()
 
 function goHome() {
   appStore.backToTopics()
