@@ -2892,7 +2892,7 @@
               ${rs.length} intento${rs.length !== 1 ? 's' : ''}
               ${latest ? `<br>${latest}` : ''}
             </div>
-            <button class="btn sm" onclick="openStudentStatsDetail('${s.id}', ${JSON.stringify(s.email)})">
+            <button class="btn sm" onclick="openStudentStatsDetail('${s.id}', '${s.email.replace(/'/g, "\\'")}')">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
                 <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
               </svg>
