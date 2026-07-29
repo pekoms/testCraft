@@ -2734,7 +2734,7 @@
 
     function statsTestCardHtml(title, rs)
     {
-      //
+    
       const scores = rs.filter(r => r.score !== null).map(r => r.score);
       const best   = scores.length ? Math.max(...scores) : null;
       const meta   = [
