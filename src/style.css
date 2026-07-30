@@ -520,6 +520,16 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 1.1rem 1.5rem; display: flex; align-items: center; gap: 1.5rem; margin-bottom: 8px;
 }
+.stats-test-card.stacked {
+  flex-direction: column; align-items: stretch; gap: 0.75rem;
+}
+.stats-test-row {
+  display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap; min-width: 0;
+}
+.stats-test-foot {
+  border-top: 1px solid var(--border); padding-top: 0.65rem;
+  display: flex; justify-content: flex-end;
+}
 .stats-test-info { flex: 1; min-width: 0; }
 .stats-test-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.9rem; margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stats-test-meta { font-size: 12px; color: var(--ink3); }
@@ -606,7 +616,9 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
 
   #stats { padding: 1.25rem 1rem; }
   .stats-summary { grid-template-columns: repeat(2, 1fr); }
-  .stats-test-card { flex-wrap: wrap; gap: 0.5rem; padding: 1rem; }
+  .stats-test-card { padding: 1rem; }
+  .stats-test-card:not(.stacked) { flex-wrap: wrap; gap: 0.5rem; }
+  .stats-test-row { gap: 0.5rem; }
   .stats-test-info { min-width: 0; }
 
   .stats-student-card { flex-wrap: wrap; gap: 6px; }

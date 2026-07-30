@@ -32,8 +32,8 @@
         <strong>Aún no has completado ningún test</strong>
         <p>Completa un test y aquí verás tu progreso.</p>
       </div>
-      <div v-for="[testId, group] in studentGroups" :key="testId" class="stats-test-card" style="flex-direction:column;align-items:stretch;gap:0.75rem">
-        <div style="display:flex;align-items:center;gap:1.25rem">
+      <div v-for="[testId, group] in studentGroups" :key="testId" class="stats-test-card stacked">
+        <div class="stats-test-row">
           <div class="stats-test-info">
             <div class="stats-test-name">{{ group.title }}</div>
             <div class="stats-test-meta">{{ testMeta(group.results) }}</div>
@@ -44,7 +44,7 @@
             {{ trendLabel(group.scores) }}
           </span>
         </div>
-        <div style="border-top:1px solid var(--border);padding-top:0.65rem;display:flex;justify-content:flex-end">
+        <div class="stats-test-foot">
           <button class="btn sm" @click="retryTest(testId)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
               <polyline points="1 4 1 10 7 10"/>
@@ -65,8 +65,8 @@
           <strong>Aún no has completado ningún test</strong>
           <p>Cuando completes un test, aquí verás tu progreso.</p>
         </div>
-        <div v-for="[testId, group] in adminGroups" :key="testId" class="stats-test-card" style="flex-direction:column;align-items:stretch;gap:0.75rem">
-          <div style="display:flex;align-items:center;gap:1.25rem">
+        <div v-for="[testId, group] in adminGroups" :key="testId" class="stats-test-card stacked">
+          <div class="stats-test-row">
             <div class="stats-test-info">
               <div class="stats-test-name">{{ group.title }}</div>
               <div class="stats-test-meta">{{ testMeta(group.results) }}</div>
@@ -77,7 +77,7 @@
               {{ trendLabel(group.scores) }}
             </span>
           </div>
-          <div style="border-top:1px solid var(--border);padding-top:0.65rem;display:flex;justify-content:flex-end">
+          <div class="stats-test-foot">
             <button class="btn sm" @click="retryTest(testId)">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
                 <polyline points="1 4 1 10 7 10"/>
