@@ -250,7 +250,7 @@ async function saveTest() {
   const ok = await appStore.persistTest(test)
   if (!ok) return
 
-  const withOwner = { ...test, _ownerId: authStore.currentUser?.id }
+  const withOwner = { ...test, _ownerId: existing?._ownerId || authStore.currentUser?.id }
   if (appStore.editingId) {
     const idx = appStore.tests.findIndex(x => x.id === appStore.editingId)
     if (idx >= 0) appStore.tests[idx] = withOwner

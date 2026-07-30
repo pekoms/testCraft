@@ -18,37 +18,13 @@
       </div>
     </div>
 
-    <!-- Header row: title + export buttons -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;gap:8px;flex-wrap:wrap">
-      <div class="section-title" style="margin-bottom:0">{{ listTitle }}</div>
-      <div v-if="results.length" style="display:flex;gap:6px">
-        <button v-if="authStore.isTeacher" class="btn sm" @click="exportCSV">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-            <polyline points="7 10 12 15 17 10"/>
-            <line x1="12" y1="15" x2="12" y2="3"/>
-          </svg>
-          CSV
-        </button>
-        <button class="btn sm" @click="exportPDF">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
-          </svg>
-          PDF
-        </button>
-      </div>
-    </div>
-
     <!-- Loading / Error -->
     <div v-if="loading" class="students-empty">Cargando…</div>
     <div v-else-if="loadError" class="students-empty">Error al cargar: {{ loadError }}</div>
 
     <!-- Student stats -->
     <template v-else-if="!authStore.isTeacher">
+      <div class="section-title" style="margin-bottom:0.75rem">Progreso por test</div>
       <div v-if="!results.length" class="empty-state">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ink3);margin:0 auto 8px;display:block">
           <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
@@ -57,7 +33,6 @@
         <p>Completa un test y aquí verás tu progreso.</p>
       </div>
       <div v-for="[testId, group] in studentGroups" :key="testId" class="stats-test-card" style="flex-direction:column;align-items:stretch;gap:0.75rem">
-        <!-- Main row: info + sparkline + trend -->
         <div style="display:flex;align-items:center;gap:1.25rem">
           <div class="stats-test-info">
             <div class="stats-test-name">{{ group.title }}</div>
@@ -69,7 +44,6 @@
             {{ trendLabel(group.scores) }}
           </span>
         </div>
-        <!-- Action row -->
         <div style="border-top:1px solid var(--border);padding-top:0.65rem;display:flex;justify-content:flex-end">
           <button class="btn sm" @click="retryTest(testId)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
@@ -82,8 +56,64 @@
       </div>
     </template>
 
-    <!-- Teacher: per-student list -->
+    <!-- Teacher / Admin view -->
     <template v-else>
+      <!-- Admin's own results (shown above the student list) -->
+      <template v-if="authStore.isAdmin">
+        <div class="section-title" style="margin-bottom:0.75rem">Mis resultados</div>
+        <div v-if="!adminResults.length" class="empty-state" style="margin-bottom:1.25rem">
+          <strong>Aún no has completado ningún test</strong>
+          <p>Cuando completes un test, aquí verás tu progreso.</p>
+        </div>
+        <div v-for="[testId, group] in adminGroups" :key="testId" class="stats-test-card" style="flex-direction:column;align-items:stretch;gap:0.75rem">
+          <div style="display:flex;align-items:center;gap:1.25rem">
+            <div class="stats-test-info">
+              <div class="stats-test-name">{{ group.title }}</div>
+              <div class="stats-test-meta">{{ testMeta(group.results) }}</div>
+            </div>
+            <span v-if="group.scores.length" v-html="sparkline(group.scores)"></span>
+            <span v-else style="color:var(--ink3);font-size:12px">Respuesta abierta</span>
+            <span v-if="group.scores.length >= 2" class="stats-trend" :class="trendClass(group.scores)">
+              {{ trendLabel(group.scores) }}
+            </span>
+          </div>
+          <div style="border-top:1px solid var(--border);padding-top:0.65rem;display:flex;justify-content:flex-end">
+            <button class="btn sm" @click="retryTest(testId)">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <polyline points="1 4 1 10 7 10"/>
+                <path d="M3.51 15a9 9 0 1 0 .49-4.16"/>
+              </svg>
+              Reintentar
+            </button>
+          </div>
+        </div>
+      </template>
+
+      <!-- Per-student header: title + export buttons -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;margin-top:1.5rem;gap:8px;flex-wrap:wrap">
+        <div class="section-title" style="margin-bottom:0">Por alumno</div>
+        <div v-if="results.length" style="display:flex;gap:6px">
+          <button class="btn sm" @click="exportCSV">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="7 10 12 15 17 10"/>
+              <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            CSV
+          </button>
+          <button class="btn sm" @click="exportPDF">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+            PDF
+          </button>
+        </div>
+      </div>
+
       <div v-if="!activeStudents.length" class="empty-state">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--ink3);margin:0 auto 8px;display:block">
           <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
@@ -145,6 +175,7 @@ const loading = ref(true)
 const loadError = ref('')
 const results = ref([])
 const students = ref([])
+const adminResults = ref([])
 
 const detailOpen = ref(false)
 const detailUserId = ref('')
@@ -166,8 +197,16 @@ async function load() {
         supabase.from('test_results').select('*').order('completed_at', { ascending: true }),
       ])
       students.value = list
-      // Only keep results that belong to actual students (excludes admin and other teachers)
       results.value = filterStudentResults(res || [], list)
+
+      if (authStore.isAdmin && authStore.currentUser) {
+        const { data: myRes } = await supabase
+          .from('test_results')
+          .select('*')
+          .eq('user_id', authStore.currentUser.id)
+          .order('completed_at', { ascending: true })
+        adminResults.value = myRes || []
+      }
     } else {
       const { data: res, error } = await supabase
         .from('test_results').select('*').order('completed_at', { ascending: true })
@@ -185,6 +224,18 @@ async function load() {
 const studentGroups = computed(() => {
   const map = new Map()
   results.value.forEach(r => {
+    if (!map.has(r.test_id)) map.set(r.test_id, { title: r.test_title, results: [], scores: [] })
+    const g = map.get(r.test_id)
+    g.results.push(r)
+    if (r.score !== null) g.scores.push(r.score)
+  })
+  return map
+})
+
+// ── Admin own results ─────────────────────────
+const adminGroups = computed(() => {
+  const map = new Map()
+  adminResults.value.forEach(r => {
     if (!map.has(r.test_id)) map.set(r.test_id, { title: r.test_title, results: [], scores: [] })
     const g = map.get(r.test_id)
     g.results.push(r)
@@ -213,8 +264,6 @@ const kpis = computed(() => {
     { num: globalAvg !== null ? globalAvg + '%' : '—', label: 'Promedio general' },
   ]
 })
-
-const listTitle = computed(() => authStore.isTeacher ? 'Por alumno' : 'Progreso por test')
 
 // ── Retry ─────────────────────────────────────
 async function retryTest(testId) {

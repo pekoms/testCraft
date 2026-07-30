@@ -4,8 +4,6 @@ import { supabase } from '@/lib/supabase'
 import router from '@/router'
 
 const STORE_KEY = 'testcraft_tests_v1'
-const JSONBIN_KEY = ''
-const JSONBIN_BASE = 'https://api.jsonbin.io/v3'
 
 // Returns auth store instance (lazy import avoids circular dep at module init)
 async function getAuth() {
@@ -68,9 +66,11 @@ export const useAppStore = defineStore('app', () => {
   async function persistTest(test) {
     const auth = await getAuth()
     if (supabase && auth.currentUser) {
+      const existing = tests.value.find(x => x.id === test.id)
+      const ownerId = existing?._ownerId || auth.currentUser.id
       const { error } = await supabase.from('tests').upsert({
         id: test.id,
-        user_id: auth.currentUser.id,
+        user_id: ownerId,
         data: test,
         published: !!test.published,
         updated_at: new Date().toISOString(),
@@ -258,37 +258,7 @@ export const useAppStore = defineStore('app', () => {
     } catch (e) { console.error('Stats save error:', e) }
   }
 
-  // ── Share / Import ─────────────────────────────
-  function copyLink(url) {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(url).then(
-        () => showToast('¡Enlace copiado al portapapeles!'),
-        () => prompt('Copia este enlace:', url),
-      )
-    } else {
-      prompt('Copia este enlace:', url)
-    }
-  }
-
-  async function shareTest(id) {
-    const t = tests.value.find(x => x.id === id)
-    if (!t) return
-    if (JSONBIN_KEY) {
-      try {
-        showToast('Subiendo test a la nube...')
-        const res = await fetch(JSONBIN_BASE + '/b', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_KEY, 'X-Bin-Private': 'false', 'X-Bin-Name': t.title.slice(0, 120) },
-          body: JSON.stringify(t),
-        })
-        if (!res.ok) throw new Error()
-        copyLink(location.origin + location.pathname + '?bin=' + (await res.json()).metadata.id)
-        return
-      } catch { showToast('Error en la nube, usando enlace largo') }
-    }
-    copyLink(location.origin + location.pathname + '?test=' + btoa(unescape(encodeURIComponent(JSON.stringify(t)))))
-  }
-
+  // ── Import ─────────────────────────────────────
   async function importTestObj(t) {
     const auth = await getAuth()
     if (!t || !t.id || !t.title || !t.questions) { showToast('Test no válido'); return }
@@ -339,6 +309,6 @@ export const useAppStore = defineStore('app', () => {
     genId, showToast, showModal, closeModal,
     fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest,
     startTest, nextQuestion, prevQuestion, selectOption, revealAnswer, finishTest, saveCurrentAnswer,
-    shareTest, checkImportFromUrl, showTopic, backToTopics,
+    checkImportFromUrl, showTopic, backToTopics,
   }
 })
