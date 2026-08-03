@@ -25,10 +25,10 @@
       <template v-else>
         <div v-if="!byTest.length" class="students-empty">Sin resultados.</div>
         <div v-for="group in byTest" :key="group.testId"
-          class="stats-test-card"
-          style="padding:0.9rem 1.1rem;margin-bottom:6px;flex-direction:column;align-items:stretch"
+          class="stats-test-card stacked"
+          style="padding:0.9rem 1.1rem;margin-bottom:6px"
         >
-          <div style="display:flex;align-items:center;gap:1rem">
+          <div class="stats-test-row" style="gap:1rem">
             <div class="stats-test-info">
               <div class="stats-test-name">{{ group.title }}</div>
               <div class="stats-test-meta">{{ group.meta }}</div>

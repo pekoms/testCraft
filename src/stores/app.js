@@ -88,8 +88,13 @@ export const useAppStore = defineStore('app', () => {
   async function removeTest(id) {
     const auth = await getAuth()
     if (supabase && auth.currentUser) {
-      const { error } = await supabase.from('tests').delete().eq('id', id)
+      const existing = tests.value.find(x => x.id === id)
+      const ownerId = existing?._ownerId || auth.currentUser.id
+      const { error, count } = await supabase.from('tests').delete({ count: 'exact' })
+        .eq('id', id)
+        .eq('user_id', ownerId)
       if (error) { showToast('Error al eliminar'); return false }
+      if (count === 0) { showToast('No se pudo eliminar el test'); return false }
       return true
     }
     saveTestsLocal(loadTestsLocal().filter(x => x.id !== id))
