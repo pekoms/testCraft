@@ -540,6 +540,42 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
 .stats-trend.down { background: #FDF0EE; color: #C0392B; }
 .stats-trend.flat { background: var(--surface2); color: var(--ink3); }
 
+/* ── Student tracking toolbar ─────────────────── */
+.tracking-toolbar {
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 0.75rem;
+}
+.tracking-search {
+  display: flex; align-items: center; gap: 6px; flex: 1; min-width: 160px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 0 10px; height: 34px;
+}
+.tracking-input {
+  border: none; background: transparent; outline: none; flex: 1; font-size: 13px; color: var(--ink);
+  font-family: inherit;
+}
+.tracking-clear {
+  border: none; background: transparent; color: var(--ink3); cursor: pointer; padding: 0 2px;
+  font-size: 12px; line-height: 1;
+}
+.tracking-clear:hover { color: var(--ink); }
+.sort-group { display: flex; gap: 4px; }
+
+/* ── Student avatar ───────────────────────────── */
+.student-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: white;
+  font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+/* ── Failed questions breakdown ───────────────── */
+.fail-list { display: flex; flex-direction: column; gap: 8px; }
+.fail-item { padding: 8px 10px; background: var(--surface2); border-radius: var(--radius-sm); }
+.fail-q { font-size: 13px; font-weight: 500; margin-bottom: 6px; line-height: 1.4; }
+.fail-meta { display: flex; align-items: center; gap: 8px; }
+.fail-bar-wrap { flex: 1; height: 5px; background: var(--border); border-radius: 3px; overflow: hidden; }
+.fail-bar { height: 100%; background: #C0392B; border-radius: 3px; transition: width 0.3s; }
+.fail-pct { font-size: 11px; color: var(--ink3); white-space: nowrap; }
+
 .stats-student-card {
   background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
   padding: 1rem 1.25rem; display: flex; align-items: center; gap: 1rem; margin-bottom: 8px; transition: border-color 0.15s;
@@ -621,6 +657,10 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
   .stats-test-card:not(.stacked) { flex-wrap: wrap; gap: 0.5rem; }
   .stats-test-row { gap: 0.5rem; }
   .stats-test-info { min-width: 0; }
+
+  .tracking-toolbar { flex-direction: column; align-items: stretch; }
+  .tracking-search { min-width: 0; }
+  .sort-group { justify-content: flex-start; }
 
   .stats-student-card { flex-wrap: wrap; gap: 6px; }
   .stats-student-email { width: 100%; font-size: 0.85rem; }

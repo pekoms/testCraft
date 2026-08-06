@@ -1,14 +1,19 @@
 <template>
   <div class="stats-detail-overlay" :class="{ open }" @click.self="$emit('close')">
     <div class="stats-detail-modal">
+      <!-- Header -->
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1.25rem">
         <div>
           <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Alumno</div>
           <h3 style="font-family:'Syne',sans-serif;font-weight:800;font-size:1.05rem;word-break:break-all">{{ email }}</h3>
+          <div v-if="activity.first" style="font-size:11px;color:var(--ink3);margin-top:4px">
+            Activo desde {{ activity.first }} · último acceso {{ activity.last }}
+          </div>
         </div>
         <button class="btn sm" @click="$emit('close')" style="flex-shrink:0">✕</button>
       </div>
 
+      <!-- KPIs -->
       <div v-if="loading" class="stats-summary">
         <div style="color:var(--ink3);font-size:13px">Cargando…</div>
       </div>
@@ -19,10 +24,25 @@
         </div>
       </div>
 
-      <div class="section-title" style="margin-bottom:0.75rem">Progreso por test</div>
+      <template v-if="!loading">
+        <!-- Most failed questions -->
+        <template v-if="topFailed.length">
+          <div class="section-title" style="margin-bottom:0.65rem">Preguntas más falladas</div>
+          <div class="fail-list" style="margin-bottom:1.25rem">
+            <div v-for="f in topFailed" :key="f.q" class="fail-item">
+              <div class="fail-q">{{ f.q }}</div>
+              <div class="fail-meta">
+                <div class="fail-bar-wrap">
+                  <div class="fail-bar" :style="{ width: Math.round(f.fails / f.total * 100) + '%' }"></div>
+                </div>
+                <span class="fail-pct">{{ Math.round(f.fails / f.total * 100) }}% errores ({{ f.fails }}/{{ f.total }})</span>
+              </div>
+            </div>
+          </div>
+        </template>
 
-      <div v-if="loading" class="students-empty">—</div>
-      <template v-else>
+        <!-- Progress by test -->
+        <div class="section-title" style="margin-bottom:0.75rem">Progreso por test</div>
         <div v-if="!byTest.length" class="students-empty">Sin resultados.</div>
         <div v-for="group in byTest" :key="group.testId"
           class="stats-test-card stacked"
@@ -42,7 +62,7 @@
           <!-- Per-question breakdown from latest attempt -->
           <div v-if="group.answers.length" style="margin-top:10px;padding-top:8px;border-top:1px solid var(--border)">
             <div style="font-size:11px;color:var(--ink3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">
-              Último intento{{ group.latestDate ? ' · ' + group.latestDate : '' }}
+              Último intento{{ group.latestDate ? ' · ' + group.latestDate : '' }}{{ group.latestDuration ? ' · ⏱ ' + group.latestDuration : '' }}
             </div>
             <div v-for="(a, i) in group.answers" :key="i" class="answer-row">
               <span class="answer-icon" :class="a.type === 'open' ? '' : a.ok ? 'answer-ok' : 'answer-fail'"
@@ -85,12 +105,16 @@ defineEmits(['close'])
 const loading = ref(false)
 const kpis = ref([])
 const byTest = ref([])
+const topFailed = ref([])
+const activity = ref({ first: '', last: '' })
 
 watch(() => props.open, async (isOpen) => {
   if (!isOpen || !props.userId) return
   loading.value = true
   kpis.value = []
   byTest.value = []
+  topFailed.value = []
+  activity.value = { first: '', last: '' }
 
   const { data: results, error } = await supabase
     .from('test_results').select('*')
@@ -98,15 +122,15 @@ watch(() => props.open, async (isOpen) => {
 
   if (error) { loading.value = false; return }
 
+  // ── KPIs ───────────────────────────────────────
   const scored = results.filter(r => r.score !== null)
   const avg = scored.length ? Math.round(scored.reduce((a, r) => a + r.score, 0) / scored.length) : null
   const best = scored.length ? Math.max(...scored.map(r => r.score)) : null
-  const latest = scored.length ? scored[scored.length - 1].score : null
-
   const timed = results.filter(r => r.duration_seconds != null)
   const avgTime = timed.length
     ? Math.round(timed.reduce((a, r) => a + r.duration_seconds, 0) / timed.length)
     : null
+  const testsCount = new Set(results.map(r => r.test_id)).size
 
   kpis.value = [
     { num: results.length, label: 'Intentos' },
@@ -115,6 +139,33 @@ watch(() => props.open, async (isOpen) => {
     { num: avgTime !== null ? fmtTime(avgTime) : '—', label: 'Tiempo medio' },
   ]
 
+  // ── Activity dates ──────────────────────────────
+  if (results.length) {
+    const fmt = d => new Date(d).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' })
+    activity.value = {
+      first: fmt(results[0].completed_at),
+      last: fmt(results[results.length - 1].completed_at),
+    }
+  }
+
+  // ── Most failed questions ───────────────────────
+  const failMap = new Map()
+  results.forEach(r => {
+    ;(r.answers || []).forEach(a => {
+      if (a.type === 'open') return
+      const key = a.q
+      if (!failMap.has(key)) failMap.set(key, { q: a.q, fails: 0, total: 0 })
+      const e = failMap.get(key)
+      e.total++
+      if (!a.ok) e.fails++
+    })
+  })
+  topFailed.value = [...failMap.values()]
+    .filter(e => e.fails > 0)
+    .sort((a, b) => (b.fails / b.total) - (a.fails / a.total))
+    .slice(0, 5)
+
+  // ── Progress by test ────────────────────────────
   const map = new Map()
   results.forEach(r => {
     if (!map.has(r.test_id)) map.set(r.test_id, { title: r.test_title, results: [] })
@@ -125,6 +176,8 @@ watch(() => props.open, async (isOpen) => {
     const scores = g.results.filter(r => r.score !== null).map(r => r.score)
     const attempts = scores.map(s => s + '%').join(' → ')
     const latestR = g.results[g.results.length - 1]
+    const timedR = g.results.filter(r => r.duration_seconds)
+    const avgDur = timedR.length ? Math.round(timedR.reduce((a, r) => a + r.duration_seconds, 0) / timedR.length) : null
     return {
       testId,
       title: g.title,
@@ -132,9 +185,11 @@ watch(() => props.open, async (isOpen) => {
       meta: [
         `${g.results.length} intento${g.results.length !== 1 ? 's' : ''}`,
         scores.length ? attempts : 'Respuesta abierta',
-      ].join(' · '),
+        avgDur ? `⏱ ${fmtTime(avgDur)} media` : null,
+      ].filter(Boolean).join(' · '),
       answers: latestR?.answers || [],
       latestDate: latestR?.completed_at ? new Date(latestR.completed_at).toLocaleDateString('es-ES') : '',
+      latestDuration: latestR?.duration_seconds ? fmtTime(latestR.duration_seconds) : '',
     }
   })
 

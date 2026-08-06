@@ -89,28 +89,47 @@
         </div>
       </template>
 
-      <!-- Per-student header: title + export buttons -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;margin-top:1.5rem;gap:8px;flex-wrap:wrap">
-        <div class="section-title" style="margin-bottom:0">Por alumno</div>
-        <div v-if="results.length" style="display:flex;gap:6px">
-          <button class="btn sm" @click="exportCSV">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-              <polyline points="7 10 12 15 17 10"/>
-              <line x1="12" y1="15" x2="12" y2="3"/>
-            </svg>
-            CSV
-          </button>
-          <button class="btn sm" @click="exportPDF">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-              <polyline points="14 2 14 8 20 8"/>
-              <line x1="16" y1="13" x2="8" y2="13"/>
-              <line x1="16" y1="17" x2="8" y2="17"/>
-              <polyline points="10 9 9 9 8 9"/>
-            </svg>
-            PDF
-          </button>
+      <!-- Seguimiento de alumnos: título + exportar + búsqueda + orden -->
+      <div style="margin-top:1.5rem">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.75rem;gap:8px;flex-wrap:wrap">
+          <div class="section-title" style="margin-bottom:0">
+            Seguimiento de alumnos
+            <span v-if="activeStudents.length" style="font-size:12px;font-weight:400;color:var(--ink3);margin-left:6px">
+              {{ filteredStudents.length }}<template v-if="search.trim() && filteredStudents.length !== activeStudents.length"> de {{ activeStudents.length }}</template>
+            </span>
+          </div>
+          <div v-if="results.length" style="display:flex;gap:6px">
+            <button class="btn sm" @click="exportCSV">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              CSV
+            </button>
+            <button class="btn sm" @click="exportPDF">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              PDF
+            </button>
+          </div>
+        </div>
+        <div class="tracking-toolbar">
+          <div class="tracking-search">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="color:var(--ink3);flex-shrink:0"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input v-model="search" type="text" placeholder="Buscar por email…" class="tracking-input" />
+            <button v-if="search" class="tracking-clear" @click="search = ''" title="Limpiar">✕</button>
+          </div>
+          <div class="sort-group">
+            <button :class="['btn','sm', sortBy==='avg' ? 'accent' : '']" @click="sortBy='avg'">Nota</button>
+            <button :class="['btn','sm', sortBy==='tests' ? 'accent' : '']" @click="sortBy='tests'">Intentos</button>
+            <button :class="['btn','sm', sortBy==='recent' ? 'accent' : '']" @click="sortBy='recent'">Reciente</button>
+          </div>
         </div>
       </div>
 
@@ -121,7 +140,11 @@
         <strong>Ningún alumno ha completado tests todavía</strong>
         <p>Aquí verás el progreso de tus alumnos cuando completen sus primeros tests.</p>
       </div>
-      <div v-for="item in activeStudents" :key="item.s.id" class="stats-student-card">
+      <div v-else-if="!filteredStudents.length" class="students-empty" style="margin-top:1rem">
+        Sin resultados para <em>{{ search }}</em>
+      </div>
+      <div v-for="item in filteredStudents" :key="item.s.id" class="stats-student-card">
+        <div class="student-avatar">{{ item.s.email[0].toUpperCase() }}</div>
         <div class="stats-student-email" :title="item.s.email">{{ item.s.email }}</div>
         <div style="display:flex;align-items:center;gap:6px">
           <template v-if="item.avg !== null">
@@ -133,7 +156,7 @@
           <span v-else style="color:var(--ink3);font-size:12px">—</span>
         </div>
         <div class="stats-student-meta">
-          {{ item.rs.length }} intento{{ item.rs.length !== 1 ? 's' : '' }}
+          {{ item.rs.length }} intento{{ item.rs.length !== 1 ? 's' : '' }} · {{ item.tests }} test{{ item.tests !== 1 ? 's' : '' }}
           <br v-if="item.latest">
           {{ item.latest }}
         </div>
@@ -176,6 +199,8 @@ const loadError = ref('')
 const results = ref([])
 const students = ref([])
 const adminResults = ref([])
+const search = ref('')
+const sortBy = ref('avg')
 
 const detailOpen = ref(false)
 const detailUserId = ref('')
@@ -294,10 +319,27 @@ const activeStudents = computed(() =>
       const avg = sScored.length ? Math.round(sScored.reduce((a, r) => a + r.score, 0) / sScored.length) : null
       const scores = sScored.map(r => r.score)
       const latest = rs.length ? new Date(rs[rs.length - 1].completed_at).toLocaleDateString('es-ES') : null
-      return { s, rs, avg, scores, latest }
+      const tests = new Set(rs.map(r => r.test_id)).size
+      return { s, rs, avg, scores, latest, tests }
     })
-    .sort((a, b) => (b.avg ?? -1) - (a.avg ?? -1))
 )
+
+const filteredStudents = computed(() => {
+  let list = activeStudents.value
+  if (search.value.trim()) {
+    const q = search.value.toLowerCase()
+    list = list.filter(item => item.s.email.toLowerCase().includes(q))
+  }
+  return [...list].sort((a, b) => {
+    if (sortBy.value === 'tests') return b.rs.length - a.rs.length
+    if (sortBy.value === 'recent') {
+      const ad = a.rs.length ? new Date(a.rs[a.rs.length - 1].completed_at).getTime() : 0
+      const bd = b.rs.length ? new Date(b.rs[b.rs.length - 1].completed_at).getTime() : 0
+      return bd - ad
+    }
+    return (b.avg ?? -1) - (a.avg ?? -1)
+  })
+})
 
 function openDetail(s) {
   detailUserId.value = s.id
