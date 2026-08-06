@@ -36,6 +36,8 @@ describe('HomeView — acciones en tarjeta de test', () => {
     vi.spyOn(appStore, 'startTest').mockResolvedValue()
     vi.spyOn(appStore, 'togglePublish').mockResolvedValue()
     vi.spyOn(appStore, 'deleteTest').mockImplementation(() => {})
+    vi.spyOn(appStore, 'loadWrongAnswers').mockResolvedValue()
+    vi.spyOn(appStore, 'startWrongAnswersTest').mockResolvedValue()
   })
 
   function mountView() {
@@ -117,5 +119,79 @@ describe('HomeView — acciones en tarjeta de test', () => {
 
     const btns = wrapper.findAll('button')
     expect(btns.some(b => b.text().toLowerCase().includes('compartir'))).toBe(false)
+  })
+})
+
+describe('HomeView — Repaso de errores', () => {
+  let pinia, authStore, appStore
+
+  beforeEach(() => {
+    pinia = createPinia()
+    setActivePinia(pinia)
+    authStore = useAuthStore()
+    appStore = useAppStore()
+    vi.spyOn(appStore, 'loadWrongAnswers').mockResolvedValue()
+    vi.spyOn(appStore, 'startWrongAnswersTest').mockResolvedValue()
+    authStore.authLocked = false
+    authStore.isTeacher = false
+  })
+
+  function mountView() {
+    return mount(HomeView, { global: { plugins: [pinia, router] } })
+  }
+
+  it('alumnos ven el botón Repaso de errores', async () => {
+    const wrapper = mountView()
+    await flushPromises()
+    expect(wrapper.findAll('button').some(b => b.text().toLowerCase().includes('repaso'))).toBe(true)
+  })
+
+  it('botón Repaso de errores deshabilitado cuando wrongAnswers está vacío', async () => {
+    appStore.wrongAnswers = []
+    const wrapper = mountView()
+    await flushPromises()
+    const btn = wrapper.findAll('button').find(b => b.text().toLowerCase().includes('repaso'))
+    expect(btn.element.disabled).toBe(true)
+  })
+
+  it('botón Repaso de errores habilitado cuando hay wrongAnswers', async () => {
+    appStore.wrongAnswers = [{ id: 'q1', type: 'single', text: '?', options: [] }]
+    const wrapper = mountView()
+    await flushPromises()
+    const btn = wrapper.findAll('button').find(b => b.text().toLowerCase().includes('repaso'))
+    expect(btn.element.disabled).toBe(false)
+  })
+
+  it('el botón muestra el número de preguntas erróneas', async () => {
+    appStore.wrongAnswers = [
+      { id: 'q1', type: 'single', text: 'Q1', options: [] },
+      { id: 'q2', type: 'single', text: 'Q2', options: [] },
+    ]
+    const wrapper = mountView()
+    await flushPromises()
+    const btn = wrapper.findAll('button').find(b => b.text().toLowerCase().includes('repaso'))
+    expect(btn.text()).toContain('2')
+  })
+
+  it('profesores NO ven el botón Repaso de errores', async () => {
+    authStore.isTeacher = true
+    authStore.currentUser = { id: 'teacher-id', email: 'teacher@test.com' }
+    const wrapper = mountView()
+    await flushPromises()
+    expect(wrapper.findAll('button').some(b => b.text().toLowerCase().includes('repaso'))).toBe(false)
+  })
+
+  it('llama a loadWrongAnswers al montar para alumnos', async () => {
+    mountView()
+    await flushPromises()
+    expect(appStore.loadWrongAnswers).toHaveBeenCalledOnce()
+  })
+
+  it('NO llama a loadWrongAnswers cuando el usuario es profesor', async () => {
+    authStore.isTeacher = true
+    authStore.currentUser = { id: 'teacher-id', email: 'teacher@test.com' }
+    mountView()
+    await flushPromises()
+    expect(appStore.loadWrongAnswers).not.toHaveBeenCalled()
   })
 })

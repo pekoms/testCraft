@@ -12,6 +12,13 @@
         </svg>
         Nuevo test
       </button>
+      <button v-else class="btn" :disabled="!appStore.wrongAnswers.length" @click="appStore.startWrongAnswersTest()"
+        :title="appStore.wrongAnswers.length ? `Practicar ${appStore.wrongAnswers.length} pregunta${appStore.wrongAnswers.length !== 1 ? 's' : ''} errónea${appStore.wrongAnswers.length !== 1 ? 's' : ''}` : 'Completa algún test para usar esta función'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+        </svg>
+        Repaso de errores{{ appStore.wrongAnswers.length ? ` (${appStore.wrongAnswers.length})` : '' }}
+      </button>
     </div>
 
     <!-- Breadcrumb when inside a topic -->
@@ -96,7 +103,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
@@ -104,6 +111,10 @@ import { useAppStore } from '@/stores/app'
 const router = useRouter()
 const authStore = useAuthStore()
 const appStore = useAppStore()
+
+onMounted(() => {
+  if (!authStore.isTeacher) appStore.loadWrongAnswers()
+})
 
 const sectionTitle = computed(() => {
   if (appStore.currentTopic === null) return authStore.isTeacher ? 'Temas' : 'Temas disponibles'

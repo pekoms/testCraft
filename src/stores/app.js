@@ -23,6 +23,7 @@ export const useAppStore = defineStore('app', () => {
   })
 
   const resultData = ref(null)
+  const wrongAnswers = ref([])
   const toast = ref({ text: '', show: false })
   const modal = ref({ open: false, title: '', body: '', confirmLabel: 'Eliminar', danger: true, onConfirm: null })
 
@@ -171,6 +172,7 @@ export const useAppStore = defineStore('app', () => {
       test: t, questions: qs, current: 0,
       answers: {}, revealed: {}, timerInterval: null,
       timeLeft: (t.timeLimit || 0) * 60,
+      startedAt: Date.now(),
     }
     router.push('/player')
   }
@@ -242,15 +244,23 @@ export const useAppStore = defineStore('app', () => {
       if (item.type === 'open') return { q: item.q.text, type: 'open', ok: null, ans: item.ans || '' }
       const selLabels = item.ans.map(j => item.q.options[j]?.text).filter(Boolean)
       const corrLabels = item.correctIndices.map(j => item.q.options[j]?.text).filter(Boolean)
-      return { q: item.q.text, type: item.q.type, ok: item.isCorrect, ans: selLabels.join(', ') || '—', correct: corrLabels.join(', ') }
+      return {
+        q: item.q.text, type: item.q.type, ok: item.isCorrect,
+        ans: selLabels.join(', ') || '—', correct: corrLabels.join(', '),
+        question: item.isCorrect ? undefined : item.q,
+      }
     })
 
-    saveTestResult(pct, correct, total, answerSummary)
-    resultData.value = { pct, correct, total, reviewItems, test: playerState.value.test }
+    const durationSeconds = playerState.value.startedAt
+      ? Math.round((Date.now() - playerState.value.startedAt) / 1000)
+      : null
+
+    saveTestResult(pct, correct, total, answerSummary, durationSeconds)
+    resultData.value = { pct, correct, total, reviewItems, test: playerState.value.test, durationSeconds }
     router.push('/results')
   }
 
-  async function saveTestResult(score, correct, total, answers = []) {
+  async function saveTestResult(score, correct, total, answers = [], durationSeconds = null) {
     const auth = await getAuth()
     if (!supabase || !auth.currentUser) return
     try {
@@ -259,6 +269,7 @@ export const useAppStore = defineStore('app', () => {
         test_id: playerState.value.test.id,
         test_title: playerState.value.test.title,
         score, correct, total, answers,
+        duration_seconds: durationSeconds,
       })
     } catch (e) { console.error('Stats save error:', e) }
   }
@@ -309,11 +320,68 @@ export const useAppStore = defineStore('app', () => {
   function showTopic(topic) { currentTopic.value = topic }
   function backToTopics() { currentTopic.value = null }
 
+  // ── Retry wrong only (from current result) ─────
+  function retryWrongOnly() {
+    if (!resultData.value) return
+    const wrongQs = resultData.value.reviewItems
+      .filter(item => item.type !== 'open' && !item.isCorrect)
+      .map(item => item.q)
+    if (!wrongQs.length) return
+    clearInterval(playerState.value.timerInterval)
+    playerState.value = {
+      test: resultData.value.test,
+      questions: wrongQs,
+      current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
+      startedAt: Date.now(),
+    }
+    router.push('/player')
+  }
+
+  // ── Wrong answers across all tests ─────────────
+  async function loadWrongAnswers() {
+    const auth = await getAuth()
+    if (!supabase || !auth.currentUser || auth.isTeacher) {
+      wrongAnswers.value = []
+      return
+    }
+    const { data } = await supabase
+      .from('test_results')
+      .select('answers')
+      .eq('user_id', auth.currentUser.id)
+      .order('completed_at', { ascending: false })
+    if (!data) return
+    const seen = new Set()
+    const wrong = []
+    data.forEach(r => {
+      ;(r.answers || []).forEach(a => {
+        if (a.ok === false && a.question && !seen.has(a.q)) {
+          seen.add(a.q)
+          wrong.push(a.question)
+        }
+      })
+    })
+    wrongAnswers.value = wrong
+  }
+
+  async function startWrongAnswersTest() {
+    if (!wrongAnswers.value.length) return
+    const qs = [...wrongAnswers.value].sort(() => Math.random() - 0.5)
+    clearInterval(playerState.value.timerInterval)
+    playerState.value = {
+      test: { id: 'wrong_' + Date.now(), title: 'Repaso de errores', questions: qs },
+      questions: qs,
+      current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
+      startedAt: Date.now(),
+    }
+    router.push('/player')
+  }
+
   return {
-    tests, currentTopic, editingId, editingQuestions, playerState, resultData, toast, modal,
+    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, toast, modal,
     genId, showToast, showModal, closeModal,
     fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest,
-    startTest, nextQuestion, prevQuestion, selectOption, revealAnswer, finishTest, saveCurrentAnswer,
+    startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,
+    nextQuestion, prevQuestion, selectOption, revealAnswer, finishTest, saveCurrentAnswer,
     checkImportFromUrl, showTopic, backToTopics,
   }
 })

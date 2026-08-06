@@ -5,6 +5,7 @@
       <div class="score-label">
         {{ pct !== null ? `${correct} de ${total} preguntas correctas` : 'Test de respuesta abierta — revisión manual' }}
       </div>
+      <div v-if="durationSeconds !== null" class="score-time">⏱ {{ fmtDuration(durationSeconds) }}</div>
     </div>
 
     <div class="section-title">Revisión de respuestas</div>
@@ -43,6 +44,13 @@
         </svg>
         Inicio
       </button>
+      <button class="btn" :disabled="!wrongCount" @click="appStore.retryWrongOnly()"
+        :title="wrongCount ? `Repetir solo las ${wrongCount} preguntas falladas` : 'No hay preguntas incorrectas'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+        </svg>
+        Solo erróneos{{ wrongCount ? ` (${wrongCount})` : '' }}
+      </button>
       <button class="btn accent" @click="retry">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polyline points="1 4 1 10 7 10"/>
@@ -66,12 +74,23 @@ const pct = computed(() => appStore.resultData?.pct ?? null)
 const correct = computed(() => appStore.resultData?.correct ?? 0)
 const total = computed(() => appStore.resultData?.total ?? 0)
 const reviewItems = computed(() => appStore.resultData?.reviewItems ?? [])
+const durationSeconds = computed(() => appStore.resultData?.durationSeconds ?? null)
+
+const wrongCount = computed(() =>
+  reviewItems.value.filter(item => item.type !== 'open' && !item.isCorrect).length
+)
 
 function selLabels(item) {
   return item.ans.map(j => item.q.options[j]?.text).filter(Boolean).join(', ')
 }
 function corrLabels(item) {
   return item.correctIndices.map(j => item.q.options[j]?.text).filter(Boolean).join(', ')
+}
+
+function fmtDuration(s) {
+  if (s < 60) return `${s}s`
+  const m = Math.floor(s / 60), sec = s % 60
+  return sec > 0 ? `${m} min ${sec}s` : `${m} min`
 }
 
 function retry() {

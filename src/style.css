@@ -300,6 +300,7 @@ nav {
 }
 .score-num { font-family: 'Syne', sans-serif; font-size: clamp(3rem, 12vw, 5rem); font-weight: 800; letter-spacing: -0.04em; color: var(--accent); line-height: 1; }
 .score-label { color: var(--ink2); font-size: 0.9rem; margin-top: 4px; }
+.score-time { color: var(--ink3); font-size: 0.8rem; margin-top: 6px; }
 
 .review-list { display: flex; flex-direction: column; gap: 10px; }
 .review-item { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }

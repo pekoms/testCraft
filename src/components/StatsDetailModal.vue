@@ -103,11 +103,16 @@ watch(() => props.open, async (isOpen) => {
   const best = scored.length ? Math.max(...scored.map(r => r.score)) : null
   const latest = scored.length ? scored[scored.length - 1].score : null
 
+  const timed = results.filter(r => r.duration_seconds != null)
+  const avgTime = timed.length
+    ? Math.round(timed.reduce((a, r) => a + r.duration_seconds, 0) / timed.length)
+    : null
+
   kpis.value = [
     { num: results.length, label: 'Intentos' },
     { num: avg !== null ? avg + '%' : '—', label: 'Promedio' },
     { num: best !== null ? best + '%' : '—', label: 'Mejor nota' },
-    { num: latest !== null ? latest + '%' : '—', label: 'Último' },
+    { num: avgTime !== null ? fmtTime(avgTime) : '—', label: 'Tiempo medio' },
   ]
 
   const map = new Map()
@@ -135,6 +140,11 @@ watch(() => props.open, async (isOpen) => {
 
   loading.value = false
 })
+
+function fmtTime(s) {
+  const m = Math.floor(s / 60), sec = s % 60
+  return m > 0 ? `${m}m ${sec}s` : `${s}s`
+}
 
 function sparkline(scores, width = 130, height = 44) {
   if (scores.length < 2) return `<span style="font-family:'Syne',sans-serif;font-weight:700;font-size:1.1rem;color:var(--accent)">${scores[0] ?? '—'}%</span>`

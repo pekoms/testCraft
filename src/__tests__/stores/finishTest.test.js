@@ -157,3 +157,46 @@ describe('finishTest — cálculo de puntuación', () => {
     expect(store.resultData.pct).toBe(50)
   })
 })
+
+describe('finishTest — durationSeconds', () => {
+  let store
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useAppStore()
+  })
+
+  it('durationSeconds es null cuando playerState no tiene startedAt', () => {
+    setupPlayer(store, [makeQuestion('single', [true, false])], { 0: [0] })
+    store.finishTest()
+    expect(store.resultData.durationSeconds).toBeNull()
+  })
+
+  it('durationSeconds se calcula en segundos desde startedAt', () => {
+    store.playerState = {
+      test: { id: 't1', title: 'T' },
+      questions: [makeQuestion('single', [true, false])],
+      answers: { 0: [0] },
+      revealed: {}, current: 0, timerInterval: null, timeLeft: 0,
+      startedAt: Date.now() - 5000,
+    }
+    store.finishTest()
+    expect(store.resultData.durationSeconds).toBeGreaterThanOrEqual(4)
+    expect(store.resultData.durationSeconds).toBeLessThanOrEqual(8)
+  })
+
+  it('resultData expone durationSeconds junto al resto de campos', () => {
+    store.playerState = {
+      test: { id: 't1', title: 'T' },
+      questions: [makeQuestion('single', [true, false])],
+      answers: { 0: [0] },
+      revealed: {}, current: 0, timerInterval: null, timeLeft: 0,
+      startedAt: Date.now() - 3000,
+    }
+    store.finishTest()
+    const rd = store.resultData
+    expect(rd).toHaveProperty('pct')
+    expect(rd).toHaveProperty('durationSeconds')
+    expect(typeof rd.durationSeconds).toBe('number')
+  })
+})
