@@ -173,12 +173,22 @@ describe('HomeView — Repaso de errores', () => {
     expect(btn.text()).toContain('2')
   })
 
-  it('profesores NO ven el botón Repaso de errores', async () => {
+  it('profesores no-admin NO ven el botón Repaso de errores', async () => {
     authStore.isTeacher = true
+    authStore.isAdmin = false
     authStore.currentUser = { id: 'teacher-id', email: 'teacher@test.com' }
     const wrapper = mountView()
     await flushPromises()
     expect(wrapper.findAll('button').some(b => b.text().toLowerCase().includes('repaso'))).toBe(false)
+  })
+
+  it('admin SÍ ve el botón Repaso de errores junto a Nuevo test', async () => {
+    authStore.isTeacher = true
+    authStore.isAdmin = true
+    authStore.currentUser = { id: 'admin-id', email: 'admin@test.com' }
+    const wrapper = mountView()
+    await flushPromises()
+    expect(wrapper.findAll('button').some(b => b.text().toLowerCase().includes('repaso'))).toBe(true)
   })
 
   it('llama a loadWrongAnswers al montar para alumnos', async () => {
@@ -187,8 +197,18 @@ describe('HomeView — Repaso de errores', () => {
     expect(appStore.loadWrongAnswers).toHaveBeenCalledOnce()
   })
 
-  it('NO llama a loadWrongAnswers cuando el usuario es profesor', async () => {
+  it('llama a loadWrongAnswers al montar para admin', async () => {
     authStore.isTeacher = true
+    authStore.isAdmin = true
+    authStore.currentUser = { id: 'admin-id', email: 'admin@test.com' }
+    mountView()
+    await flushPromises()
+    expect(appStore.loadWrongAnswers).toHaveBeenCalledOnce()
+  })
+
+  it('NO llama a loadWrongAnswers cuando el usuario es profesor no-admin', async () => {
+    authStore.isTeacher = true
+    authStore.isAdmin = false
     authStore.currentUser = { id: 'teacher-id', email: 'teacher@test.com' }
     mountView()
     await flushPromises()

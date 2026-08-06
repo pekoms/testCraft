@@ -12,7 +12,7 @@
         </svg>
         Nuevo test
       </button>
-      <button v-else class="btn" :disabled="!appStore.wrongAnswers.length" @click="appStore.startWrongAnswersTest()"
+      <button v-if="!authStore.isTeacher || authStore.isAdmin" class="btn" :disabled="!appStore.wrongAnswers.length" @click="appStore.startWrongAnswersTest()"
         :title="appStore.wrongAnswers.length ? `Practicar ${appStore.wrongAnswers.length} pregunta${appStore.wrongAnswers.length !== 1 ? 's' : ''} errónea${appStore.wrongAnswers.length !== 1 ? 's' : ''}` : 'Completa algún test para usar esta función'">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
@@ -113,7 +113,7 @@ const authStore = useAuthStore()
 const appStore = useAppStore()
 
 onMounted(() => {
-  if (!authStore.isTeacher) appStore.loadWrongAnswers()
+  if (!authStore.isTeacher || authStore.isAdmin) appStore.loadWrongAnswers()
 })
 
 const sectionTitle = computed(() => {

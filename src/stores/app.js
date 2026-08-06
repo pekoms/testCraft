@@ -340,7 +340,7 @@ export const useAppStore = defineStore('app', () => {
   // ── Wrong answers across all tests ─────────────
   async function loadWrongAnswers() {
     const auth = await getAuth()
-    if (!supabase || !auth.currentUser || auth.isTeacher) {
+    if (!supabase || !auth.currentUser || (auth.isTeacher && !auth.isAdmin)) {
       wrongAnswers.value = []
       return
     }
