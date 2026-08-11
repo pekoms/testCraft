@@ -271,6 +271,8 @@ export const useAppStore = defineStore('app', () => {
         score, correct, total, answers,
         duration_seconds: durationSeconds,
       })
+      // Refresh wrong-answers cache so the home button count stays accurate
+      loadWrongAnswers()
     } catch (e) { console.error('Stats save error:', e) }
   }
 
@@ -350,12 +352,18 @@ export const useAppStore = defineStore('app', () => {
       .eq('user_id', auth.currentUser.id)
       .order('completed_at', { ascending: false })
     if (!data) return
-    const seen = new Set()
+    // Results come newest-first. Track questions answered correctly in a recent
+    // attempt so that a later wrong attempt on the same question doesn't surface.
+    const seenCorrect = new Set()
+    const seenWrong = new Set()
     const wrong = []
     data.forEach(r => {
       ;(r.answers || []).forEach(a => {
-        if (a.ok === false && a.question && !seen.has(a.q)) {
-          seen.add(a.q)
+        if (a.type === 'open') return
+        const key = a.q
+        if (a.ok === true) seenCorrect.add(key)
+        if (a.ok === false && a.question && !seenCorrect.has(key) && !seenWrong.has(key)) {
+          seenWrong.add(key)
           wrong.push(a.question)
         }
       })

@@ -152,3 +152,69 @@ describe('loadWrongAnswers — sin sesión activa', () => {
     await expect(store.loadWrongAnswers()).resolves.not.toThrow()
   })
 })
+
+describe('loadWrongAnswers — lógica de deduplicación correcta/errónea', () => {
+  it('excluye preguntas acertadas recientemente aunque fueran erróneas antes', () => {
+    // Simulate the aggregation logic directly (results ordered newest first)
+    const resultsNewestFirst = [
+      // Newest: Q1 answered correctly, Q2 answered wrong
+      { answers: [
+        { q: 'Q1', type: 'single', ok: true },
+        { q: 'Q2', type: 'single', ok: false, question: { id: 'q2', type: 'single', text: 'Q2', options: [] } },
+      ]},
+      // Older: Q1 answered wrong, Q2 also wrong
+      { answers: [
+        { q: 'Q1', type: 'single', ok: false, question: { id: 'q1', type: 'single', text: 'Q1', options: [] } },
+        { q: 'Q2', type: 'single', ok: false, question: { id: 'q2', type: 'single', text: 'Q2', options: [] } },
+      ]},
+    ]
+
+    const seenCorrect = new Set()
+    const seenWrong = new Set()
+    const wrong = []
+    resultsNewestFirst.forEach(r => {
+      ;(r.answers || []).forEach(a => {
+        if (a.type === 'open') return
+        const key = a.q
+        if (a.ok === true) seenCorrect.add(key)
+        if (a.ok === false && a.question && !seenCorrect.has(key) && !seenWrong.has(key)) {
+          seenWrong.add(key)
+          wrong.push(a.question)
+        }
+      })
+    })
+
+    // Q1 was answered correctly in the newest attempt → should NOT be in wrong
+    // Q2 was answered wrong in newest attempt → SHOULD be in wrong
+    expect(wrong.map(q => q.text)).not.toContain('Q1')
+    expect(wrong.map(q => q.text)).toContain('Q2')
+    expect(wrong).toHaveLength(1)
+  })
+
+  it('incluye preguntas que siguen siendo erróneas en el intento más reciente', () => {
+    const resultsNewestFirst = [
+      { answers: [
+        { q: 'Persistente', type: 'single', ok: false, question: { id: 'qp', type: 'single', text: 'Persistente', options: [] } },
+      ]},
+      { answers: [
+        { q: 'Persistente', type: 'single', ok: false, question: { id: 'qp', type: 'single', text: 'Persistente', options: [] } },
+      ]},
+    ]
+    const seenCorrect = new Set()
+    const seenWrong = new Set()
+    const wrong = []
+    resultsNewestFirst.forEach(r => {
+      ;(r.answers || []).forEach(a => {
+        if (a.type === 'open') return
+        const key = a.q
+        if (a.ok === true) seenCorrect.add(key)
+        if (a.ok === false && a.question && !seenCorrect.has(key) && !seenWrong.has(key)) {
+          seenWrong.add(key)
+          wrong.push(a.question)
+        }
+      })
+    })
+    expect(wrong).toHaveLength(1)
+    expect(wrong[0].text).toBe('Persistente')
+  })
+})

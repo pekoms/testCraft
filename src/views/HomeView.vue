@@ -1,5 +1,17 @@
 <template>
   <div id="home">
+    <!-- Promotional banner -->
+    <div v-if="showBanner" class="promo-banner">
+      <div class="promo-content">
+        <span>¡Bienvenido a la familia Vitastrong! 💪🎉</span>
+        <a href="https://www.vitastrong.es" target="_blank" rel="noopener" class="promo-link">www.vitastrong.es</a>
+        <span class="promo-sep">·</span>
+        <span>Tu cupón como Ambassador:</span>
+        <span class="promo-code">APFIRE</span>
+      </div>
+      <button class="promo-close" @click="dismissBanner" aria-label="Cerrar anuncio">✕</button>
+    </div>
+
     <div class="home-header">
       <h1 v-if="authStore.isTeacher">
         Crea y comparte<br>tus <span style="color:var(--accent)">tests</span>
@@ -103,10 +115,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+
+const BANNER_KEY = 'vitastrong_banner_v1'
+let _bannerVisible = true
+try { _bannerVisible = !localStorage.getItem(BANNER_KEY) } catch {}
+const showBanner = ref(_bannerVisible)
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -170,6 +187,11 @@ function deadlineInfo(t) {
     cls: expired ? 'deadline-expired' : soon ? 'deadline-soon' : '',
     label: expired ? 'Plazo vencido' : `Plazo: ${d.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}`,
   }
+}
+
+function dismissBanner() {
+  try { localStorage.setItem(BANNER_KEY, '1') } catch {}
+  showBanner.value = false
 }
 
 function newTest() {
