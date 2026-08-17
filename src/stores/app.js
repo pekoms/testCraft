@@ -29,6 +29,15 @@ export const useAppStore = defineStore('app', () => {
 
   function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2) }
 
+  function shuffle(arr) {
+    const a = [...arr]
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[a[i], a[j]] = [a[j], a[i]]
+    }
+    return a
+  }
+
   // ── Toast ──────────────────────────────────────
   let toastTimer = null
   function showToast(msg) {
@@ -165,7 +174,7 @@ export const useAppStore = defineStore('app', () => {
     }
 
     let qs = JSON.parse(JSON.stringify(t.questions))
-    if (t.shuffle) qs = qs.sort(() => Math.random() - 0.5)
+    if (t.shuffle) qs = shuffle(qs)
 
     clearInterval(playerState.value.timerInterval)
     playerState.value = {
@@ -325,9 +334,11 @@ export const useAppStore = defineStore('app', () => {
   // ── Retry wrong only (from current result) ─────
   function retryWrongOnly() {
     if (!resultData.value) return
-    const wrongQs = resultData.value.reviewItems
-      .filter(item => item.type !== 'open' && !item.isCorrect)
-      .map(item => item.q)
+    const wrongQs = shuffle(
+      resultData.value.reviewItems
+        .filter(item => item.type !== 'open' && !item.isCorrect)
+        .map(item => item.q)
+    )
     if (!wrongQs.length) return
     clearInterval(playerState.value.timerInterval)
     playerState.value = {
@@ -373,7 +384,7 @@ export const useAppStore = defineStore('app', () => {
 
   async function startWrongAnswersTest() {
     if (!wrongAnswers.value.length) return
-    const qs = [...wrongAnswers.value].sort(() => Math.random() - 0.5)
+    const qs = shuffle(wrongAnswers.value)
     clearInterval(playerState.value.timerInterval)
     playerState.value = {
       test: { id: 'wrong_' + Date.now(), title: 'Repaso de errores', questions: qs },
