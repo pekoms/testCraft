@@ -64,24 +64,6 @@
     </div>
   </div>
 
-  <!-- Floating side buttons for mobile — avoid scrolling to reach nav -->
-  <button
-    class="player-float-btn left"
-    :class="{ invisible: ps.current === 0 }"
-    @click="prev"
-    aria-label="Pregunta anterior"
-  >
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="15 18 9 12 15 6"/></svg>
-  </button>
-  <button
-    class="player-float-btn right"
-    :class="{ finish: isLast }"
-    @click="next"
-    :aria-label="isLast ? 'Finalizar test' : 'Siguiente pregunta'"
-  >
-    <svg v-if="isLast" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="20 6 9 17 4 12"/></svg>
-    <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="20" height="20"><polyline points="9 18 15 12 9 6"/></svg>
-  </button>
 </template>
 
 <script setup>
