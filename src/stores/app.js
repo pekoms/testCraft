@@ -372,11 +372,20 @@ export const useAppStore = defineStore('app', () => {
       wrongAnswers.value = []
       return
     }
-    const { data } = await supabase
+    let clearedAt = null
+    try {
+      const ts = localStorage.getItem(`wca_${auth.currentUser.id}`)
+      if (ts) clearedAt = ts
+    } catch {}
+
+    let query = supabase
       .from('test_results')
       .select('answers')
       .eq('user_id', auth.currentUser.id)
       .order('completed_at', { ascending: false })
+    if (clearedAt) query = query.gt('completed_at', clearedAt)
+
+    const { data } = await query
     if (!data) return
     // Results come newest-first. Track questions answered correctly in a recent
     // attempt so that a later wrong attempt on the same question doesn't surface.
@@ -397,6 +406,36 @@ export const useAppStore = defineStore('app', () => {
     wrongAnswers.value = wrong
   }
 
+  async function clearWrongAnswers() {
+    wrongAnswers.value = []
+    const auth = await getAuth()
+    if (!auth.currentUser) return
+    try { localStorage.setItem(`wca_${auth.currentUser.id}`, new Date().toISOString()) } catch {}
+  }
+
+  // ── Custom test ────────────────────────────────
+  function countAvailableQuestions() {
+    let n = 0
+    tests.value.forEach(t => t.questions.forEach(q => { if (q.type !== 'open') n++ }))
+    return n
+  }
+
+  function startCustomTest(numQuestions) {
+    const pool = []
+    tests.value.forEach(t => t.questions.forEach(q => { if (q.type !== 'open') pool.push(q) }))
+    if (!pool.length) { showToast('No hay preguntas disponibles'); return }
+    const n = Math.min(Math.max(1, numQuestions), pool.length)
+    const qs = shuffle(pool).slice(0, n)
+    clearInterval(playerState.value.timerInterval)
+    playerState.value = {
+      test: { id: 'custom_' + Date.now(), title: `Test personalizado (${n} preguntas)` },
+      questions: qs,
+      current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
+      startedAt: Date.now(),
+    }
+    router.push('/player')
+  }
+
   async function startWrongAnswersTest() {
     if (!wrongAnswers.value.length) return
     const qs = shuffle(wrongAnswers.value)
@@ -415,6 +454,7 @@ export const useAppStore = defineStore('app', () => {
     genId, showToast, showModal, closeModal,
     fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest,
     startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,
+    clearWrongAnswers, countAvailableQuestions, startCustomTest,
     nextQuestion, prevQuestion, selectOption, revealAnswer, finishTest, saveCurrentAnswer,
     checkImportFromUrl, showTopic, backToTopics,
   }

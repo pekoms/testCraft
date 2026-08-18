@@ -1,4 +1,31 @@
 <template>
+  <!-- Custom test config modal -->
+  <div v-if="showCustomModal" class="modal-overlay open" @click.self="showCustomModal = false">
+    <div class="modal custom-test-modal">
+      <h3>Test personalizado</h3>
+      <p>Elige cuántas preguntas quieres practicar mezclando todos los temas disponibles.</p>
+      <div class="custom-q-picker">
+        <div class="custom-q-display">{{ customQCount }}</div>
+        <input
+          type="range" v-model.number="customQCount"
+          :min="1" :max="maxAvailableQ" class="q-slider"
+          aria-label="Número de preguntas"
+        />
+        <div class="custom-q-labels">
+          <span>1 pregunta</span>
+          <span>{{ maxAvailableQ }} preguntas</span>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" @click="showCustomModal = false">Cancelar</button>
+        <button class="btn accent" @click="launchCustomTest">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Empezar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="home">
     <!-- Promotional banner -->
     <div v-if="showBanner" class="promo-banner">
@@ -24,13 +51,25 @@
         </svg>
         Nuevo test
       </button>
-      <button v-if="!authStore.isTeacher || authStore.isAdmin" class="btn" :disabled="!appStore.wrongAnswers.length" @click="appStore.startWrongAnswersTest()"
-        :title="appStore.wrongAnswers.length ? `Practicar ${appStore.wrongAnswers.length} pregunta${appStore.wrongAnswers.length !== 1 ? 's' : ''} errónea${appStore.wrongAnswers.length !== 1 ? 's' : ''}` : 'Completa algún test para usar esta función'">
+      <button v-if="!authStore.isTeacher || authStore.isAdmin" class="btn" :disabled="!maxAvailableQ" @click="openCustomModal"
+        title="Crear un test mezclando preguntas de todos los temas">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
         </svg>
-        Repaso de errores{{ appStore.wrongAnswers.length ? ` (${appStore.wrongAnswers.length})` : '' }}
+        Test personalizado
       </button>
+      <div v-if="!authStore.isTeacher || authStore.isAdmin" class="wrong-answers-group">
+        <button class="btn" :disabled="!appStore.wrongAnswers.length" @click="appStore.startWrongAnswersTest()"
+          :title="appStore.wrongAnswers.length ? `Practicar ${appStore.wrongAnswers.length} pregunta${appStore.wrongAnswers.length !== 1 ? 's' : ''} errónea${appStore.wrongAnswers.length !== 1 ? 's' : ''}` : 'Completa algún test para usar esta función'">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+          </svg>
+          Repaso de errores{{ appStore.wrongAnswers.length ? ` (${appStore.wrongAnswers.length})` : '' }}
+        </button>
+        <button v-if="appStore.wrongAnswers.length" class="btn sm danger reset-wrong-btn" @click="confirmResetWrong" title="Poner el contador de preguntas erróneas a 0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+        </button>
+      </div>
     </div>
 
     <!-- Breadcrumb when inside a topic -->
@@ -124,6 +163,28 @@ const BANNER_KEY = 'vitastrong_banner_v1'
 let _bannerVisible = true
 try { _bannerVisible = !localStorage.getItem(BANNER_KEY) } catch {}
 const showBanner = ref(_bannerVisible)
+
+// Custom test modal
+const showCustomModal = ref(false)
+const customQCount = ref(10)
+const maxAvailableQ = computed(() => appStore.countAvailableQuestions())
+
+function openCustomModal() {
+  customQCount.value = Math.min(10, maxAvailableQ.value || 1)
+  showCustomModal.value = true
+}
+function launchCustomTest() {
+  showCustomModal.value = false
+  appStore.startCustomTest(customQCount.value)
+}
+function confirmResetWrong() {
+  appStore.showModal(
+    'Resetear preguntas erróneas',
+    '¿Seguro? Se borrará el historial de preguntas erróneas y el contador volverá a 0.',
+    () => appStore.clearWrongAnswers(),
+    'Resetear', true,
+  )
+}
 
 const router = useRouter()
 const authStore = useAuthStore()
