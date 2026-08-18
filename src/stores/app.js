@@ -229,7 +229,7 @@ export const useAppStore = defineStore('app', () => {
     playerState.value = { ...playerState.value, current: playerState.value.current - 1 }
   }
 
-  function finishTest(openAnswerText) {
+  async function finishTest(openAnswerText) {
     saveCurrentAnswer(openAnswerText)
     clearInterval(playerState.value.timerInterval)
     playerState.value.timerInterval = null
@@ -267,6 +267,21 @@ export const useAppStore = defineStore('app', () => {
     saveTestResult(pct, correct, total, answerSummary, durationSeconds)
     resultData.value = { pct, correct, total, reviewItems, test: playerState.value.test, durationSeconds }
     router.push('/results')
+
+    // Optimistic local update — runs after navigation so the sync path above
+    // stays unblocked; wrongAnswers is reactive so HomeView reflects it instantly.
+    const auth = await getAuth()
+    if (!auth.isTeacher || auth.isAdmin) {
+      const justCorrectTexts = new Set(
+        reviewItems.filter(i => i.type !== 'open' && i.isCorrect).map(i => i.q.text)
+      )
+      wrongAnswers.value = wrongAnswers.value.filter(q => !justCorrectTexts.has(q.text))
+      const existingTexts = new Set(wrongAnswers.value.map(q => q.text))
+      reviewItems.forEach(item => {
+        if (item.type === 'open' || item.isCorrect) return
+        if (!existingTexts.has(item.q.text)) wrongAnswers.value = [...wrongAnswers.value, item.q]
+      })
+    }
   }
 
   async function saveTestResult(score, correct, total, answers = [], durationSeconds = null) {
@@ -280,8 +295,8 @@ export const useAppStore = defineStore('app', () => {
         score, correct, total, answers,
         duration_seconds: durationSeconds,
       })
-      // Refresh wrong-answers cache so the home button count stays accurate
-      loadWrongAnswers()
+      // Sync canonical state from DB (catches edge cases the optimistic update may miss)
+      await loadWrongAnswers()
     } catch (e) { console.error('Stats save error:', e) }
   }
 
