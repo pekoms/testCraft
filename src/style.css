@@ -657,26 +657,25 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
 }
 .grammar-list { display: flex; flex-direction: column; }
 .grammar-item {
-  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  display: flex; flex-direction: column; gap: 5px;
   padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 13px;
 }
 .grammar-item:last-child { border-bottom: none; }
-.grammar-item-meta { display: flex; align-items: baseline; gap: 8px; flex: 1; min-width: 0; }
+.grammar-item-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .grammar-item-label {
   font-size: 11px; font-weight: 600; color: var(--ink3);
-  white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em;
+  white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em; flex-shrink: 0;
 }
-.grammar-item-msg { color: var(--ink2); font-size: 12px; }
+.grammar-item-msg { color: var(--ink2); font-size: 12px; line-height: 1.4; }
 .grammar-item-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
 .grammar-original {
   background: var(--danger-light); color: var(--danger);
-  padding: 1px 6px; border-radius: 4px; font-size: 12px; font-weight: 500;
+  padding: 1px 6px; border-radius: 4px; font-size: 12px; font-weight: 500; flex-shrink: 0;
 }
 .grammar-apply-btn { background: var(--accent2-light) !important; color: var(--accent2) !important; border-color: var(--accent2-light) !important; font-weight: 600; }
 .grammar-apply-btn:hover { background: var(--accent2) !important; color: #fff !important; }
 
 @media (max-width: 600px) {
-  .grammar-item { flex-direction: column; align-items: flex-start; gap: 6px; }
   .grammar-panel-header { flex-wrap: wrap; }
 }
 
