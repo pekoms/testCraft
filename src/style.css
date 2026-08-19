@@ -625,6 +625,61 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
   max-width: 580px; width: 100%; border: 1px solid var(--border-strong);
 }
 
+/* ── Grammar check panel ─────────────── */
+.grammar-btn { position: relative; }
+.grammar-btn.has-issues { border-color: var(--accent); color: var(--accent); }
+.grammar-badge {
+  position: absolute; top: -6px; right: -6px;
+  background: var(--accent); color: #fff;
+  font-size: 10px; font-weight: 700; line-height: 1;
+  min-width: 16px; height: 16px; border-radius: 99px;
+  display: flex; align-items: center; justify-content: center; padding: 0 3px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.9s linear infinite; }
+
+.grammar-panel {
+  background: var(--surface); border: 1.5px solid var(--accent);
+  border-radius: var(--radius); margin-bottom: 1.5rem; overflow: hidden;
+}
+.grammar-panel-error {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 14px; font-size: 13px; color: var(--ink2);
+}
+.grammar-panel-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  background: var(--accent-light);
+}
+.grammar-panel-title {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 13px; font-weight: 600; color: var(--accent);
+}
+.grammar-list { display: flex; flex-direction: column; }
+.grammar-item {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 9px 14px; border-bottom: 1px solid var(--border); font-size: 13px;
+}
+.grammar-item:last-child { border-bottom: none; }
+.grammar-item-meta { display: flex; align-items: baseline; gap: 8px; flex: 1; min-width: 0; }
+.grammar-item-label {
+  font-size: 11px; font-weight: 600; color: var(--ink3);
+  white-space: nowrap; text-transform: uppercase; letter-spacing: 0.04em;
+}
+.grammar-item-msg { color: var(--ink2); font-size: 12px; }
+.grammar-item-actions { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.grammar-original {
+  background: var(--danger-light); color: var(--danger);
+  padding: 1px 6px; border-radius: 4px; font-size: 12px; font-weight: 500;
+}
+.grammar-apply-btn { background: var(--accent2-light) !important; color: var(--accent2) !important; border-color: var(--accent2-light) !important; font-weight: 600; }
+.grammar-apply-btn:hover { background: var(--accent2) !important; color: #fff !important; }
+
+@media (max-width: 600px) {
+  .grammar-item { flex-direction: column; align-items: flex-start; gap: 6px; }
+  .grammar-panel-header { flex-wrap: wrap; }
+}
+
 /* ── Wrong answers group ─────────────── */
 .wrong-answers-group {
   display: inline-flex; align-items: center; gap: 4px;

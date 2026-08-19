@@ -3,6 +3,17 @@
     <div class="editor-header">
       <h2>{{ appStore.editingId ? 'Editar test' : 'Nuevo test' }}</h2>
       <div class="actions">
+        <button class="btn grammar-btn" :class="{ 'has-issues': grammar.suggestions.value.length }"
+          :disabled="grammar.checking.value" @click="runGrammarCheck" title="Revisar ortografía y gramática de las preguntas">
+          <svg v-if="grammar.checking.value" class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12a9 9 0 1 1-6.22-8.56"/>
+          </svg>
+          <svg v-else viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+          </svg>
+          {{ grammar.checking.value ? 'Revisando…' : 'Revisar gramática' }}
+          <span v-if="grammar.suggestions.value.length" class="grammar-badge">{{ grammar.suggestions.value.length }}</span>
+        </button>
         <button class="btn" @click="confirmBack">Cancelar</button>
         <button class="btn accent" @click="saveTest">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -13,6 +24,44 @@
           Guardar
         </button>
       </div>
+    </div>
+
+    <!-- Grammar suggestions panel — purely advisory, saving works regardless -->
+    <div v-if="grammar.ltError.value || grammar.suggestions.value.length" class="grammar-panel">
+      <div v-if="grammar.ltError.value" class="grammar-panel-error">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        {{ grammar.ltError.value }}
+        <button class="btn sm" style="margin-left:auto" @click="grammar.clear()">Cerrar</button>
+      </div>
+      <template v-else>
+        <div class="grammar-panel-header">
+          <span class="grammar-panel-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+            {{ grammar.suggestions.value.length }} sugerencia{{ grammar.suggestions.value.length !== 1 ? 's' : '' }}
+          </span>
+          <div style="display:flex;gap:6px;flex-shrink:0">
+            <button class="btn sm accent" @click="grammar.applyAll(appStore.editingQuestions)">Aplicar todo</button>
+            <button class="btn sm" @click="grammar.clear()">Cerrar</button>
+          </div>
+        </div>
+        <div class="grammar-list">
+          <div v-for="(s, i) in grammar.suggestions.value" :key="`${s.questionIdx}-${s.field}-${s.offset}`" class="grammar-item">
+            <div class="grammar-item-meta">
+              <span class="grammar-item-label">{{ s.label }}</span>
+              <span class="grammar-item-msg">{{ s.message }}</span>
+            </div>
+            <div class="grammar-item-actions">
+              <span class="grammar-original">{{ s.original }}</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="flex-shrink:0;color:var(--ink3)"><polyline points="9 18 15 12 9 6"/></svg>
+              <button v-for="rep in s.replacements" :key="rep" class="btn sm grammar-apply-btn"
+                @click="grammar.apply(i, appStore.editingQuestions)" :title="`Cambiar a «${rep}»`">
+                {{ rep }}
+              </button>
+              <button class="btn sm" @click="grammar.dismiss(i)" title="Ignorar">✕</button>
+            </div>
+          </div>
+        </div>
+      </template>
     </div>
 
     <div class="field-group">
@@ -123,10 +172,16 @@ import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+import { useGrammarCheck } from '@/composables/useGrammarCheck'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const appStore = useAppStore()
+const grammar = useGrammarCheck()
+
+function runGrammarCheck() {
+  grammar.check(appStore.editingQuestions)
+}
 
 const title = ref('')
 const topic = ref('')
