@@ -73,10 +73,17 @@
     </div>
 
     <!-- Breadcrumb when inside a topic -->
-    <div v-if="appStore.currentTopic !== null" class="topic-breadcrumb" style="display:flex">
+    <div v-if="appStore.currentTopic !== null" class="topic-breadcrumb">
       <button class="btn sm" @click="appStore.backToTopics()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="15 18 9 12 15 6"/></svg>
         Todos los temas
+      </button>
+      <button v-if="!authStore.isTeacher || authStore.isAdmin"
+        class="btn sm accent" :disabled="!topicQuestionCount"
+        @click="appStore.startTopicTest(appStore.currentTopic)"
+        :title="topicQuestionCount ? `Practicar las ${topicQuestionCount} preguntas de este tema en orden aleatorio` : 'No hay preguntas en este tema'">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Practicar tema completo{{ topicQuestionCount ? ` (${topicQuestionCount})` : '' }}
       </button>
     </div>
 
@@ -228,6 +235,16 @@ function draftText(tests) {
   const n = tests.filter(t => !t.published).length
   return n ? ` · ${n} borrador${n !== 1 ? 'es' : ''}` : ''
 }
+
+const topicQuestionCount = computed(() => {
+  const topic = appStore.currentTopic
+  if (topic === null) return 0
+  let n = 0
+  appStore.tests
+    .filter(t => (t.topic || '') === topic && (authStore.isTeacher || t.published))
+    .forEach(t => t.questions.forEach(q => { if (q.type !== 'open') n++ }))
+  return n
+})
 
 const visibleTopicTests = computed(() => {
   const topic = appStore.currentTopic

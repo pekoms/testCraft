@@ -420,6 +420,23 @@ export const useAppStore = defineStore('app', () => {
     return n
   }
 
+  function startTopicTest(topic) {
+    const pool = []
+    tests.value
+      .filter(t => (t.topic || '') === topic)
+      .forEach(t => t.questions.forEach(q => { if (q.type !== 'open') pool.push(q) }))
+    if (!pool.length) { showToast('No hay preguntas disponibles en este tema'); return }
+    const qs = shuffle(pool)
+    clearInterval(playerState.value.timerInterval)
+    playerState.value = {
+      test: { id: 'topic_' + Date.now(), title: `${topic || 'Sin tema'} — Tema completo` },
+      questions: qs,
+      current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
+      startedAt: Date.now(),
+    }
+    router.push('/player')
+  }
+
   function startCustomTest(numQuestions) {
     const pool = []
     tests.value.forEach(t => t.questions.forEach(q => { if (q.type !== 'open') pool.push(q) }))
@@ -454,7 +471,7 @@ export const useAppStore = defineStore('app', () => {
     genId, showToast, showModal, closeModal,
     fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest,
     startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,
-    clearWrongAnswers, countAvailableQuestions, startCustomTest,
+    clearWrongAnswers, countAvailableQuestions, startCustomTest, startTopicTest,
     nextQuestion, prevQuestion, selectOption, revealAnswer, finishTest, saveCurrentAnswer,
     checkImportFromUrl, showTopic, backToTopics,
   }
