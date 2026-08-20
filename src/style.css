@@ -9,6 +9,7 @@
   --accent-light: #FBE9DF;
   --accent2: #2A6049;
   --accent2-light: #E0F0E8;
+  --on-accent: #fff;
   --border: rgba(26, 24, 20, 0.1);
   --border-strong: rgba(26, 24, 20, 0.2);
   --danger: #C0392B;
@@ -28,6 +29,7 @@ html[data-theme="dark"] {
   --accent-light: #3D2218;
   --accent2: #4A8B6A;
   --accent2-light: #152B21;
+  --on-accent: #fff;
   --border: rgba(240, 237, 232, 0.1);
   --border-strong: rgba(240, 237, 232, 0.2);
   --danger: #E05C4E;
@@ -47,6 +49,7 @@ html[data-theme="slate"] {
   --accent-light: #0D1D3D;
   --accent2: #3AB87A;
   --accent2-light: #0A2B1D;
+  --on-accent: #0F1623;
   --border: rgba(216, 228, 240, 0.1);
   --border-strong: rgba(216, 228, 240, 0.2);
   --danger: #FF6B5B;
@@ -98,7 +101,7 @@ nav {
 .btn:disabled { opacity: 0.6; cursor: default; }
 .btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 .btn.primary:hover { opacity: 0.85; }
-.btn.accent { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn.accent { background: var(--accent); color: var(--on-accent); border-color: var(--accent); }
 .btn.accent:hover { opacity: 0.88; }
 .btn.danger { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 30%, transparent); }
 .btn.danger:hover { background: var(--danger-light); }
@@ -116,11 +119,11 @@ nav {
 .promo-banner {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
   background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
-  color: #fff; padding: 10px 16px; border-radius: var(--radius); margin-bottom: 1rem;
+  color: var(--on-accent); padding: 10px 16px; border-radius: var(--radius); margin-bottom: 1rem;
   flex-wrap: wrap;
 }
 .promo-content { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13.5px; flex: 1; }
-.promo-link { color: #fff; font-weight: 700; text-underline-offset: 2px; }
+.promo-link { color: var(--on-accent); font-weight: 700; text-underline-offset: 2px; }
 .promo-sep { opacity: 0.6; }
 .promo-code {
   background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4);
@@ -128,7 +131,7 @@ nav {
   font-family: 'Syne', sans-serif; font-weight: 800; letter-spacing: 0.07em; font-size: 14px;
 }
 .promo-close {
-  background: rgba(255,255,255,0.18); border: none; color: #fff; cursor: pointer;
+  background: rgba(255,255,255,0.18); border: none; color: var(--on-accent); cursor: pointer;
   width: 22px; height: 22px; border-radius: 50%; font-size: 11px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0; line-height: 1;
 }
@@ -590,7 +593,7 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
 
 /* ── Student avatar ───────────────────────────── */
 .student-avatar {
-  width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: white;
+  width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--on-accent);
   font-family: 'Syne', sans-serif; font-weight: 800; font-size: 14px;
   display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
@@ -630,7 +633,7 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
 .grammar-btn.has-issues { border-color: var(--accent); color: var(--accent); }
 .grammar-badge {
   position: absolute; top: -6px; right: -6px;
-  background: var(--accent); color: #fff;
+  background: var(--accent); color: var(--on-accent);
   font-size: 10px; font-weight: 700; line-height: 1;
   min-width: 16px; height: 16px; border-radius: 99px;
   display: flex; align-items: center; justify-content: center; padding: 0 3px;
@@ -673,7 +676,7 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
   padding: 1px 6px; border-radius: 4px; font-size: 12px; font-weight: 500; flex-shrink: 0;
 }
 .grammar-apply-btn { background: var(--accent2-light) !important; color: var(--accent2) !important; border-color: var(--accent2-light) !important; font-weight: 600; }
-.grammar-apply-btn:hover { background: var(--accent2) !important; color: #fff !important; }
+.grammar-apply-btn:hover { background: var(--accent2) !important; color: var(--on-accent) !important; }
 
 @media (max-width: 600px) {
   .grammar-panel-header { flex-wrap: wrap; }

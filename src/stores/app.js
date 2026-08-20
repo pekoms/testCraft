@@ -182,6 +182,7 @@ export const useAppStore = defineStore('app', () => {
       answers: {}, revealed: {}, timerInterval: null,
       timeLeft: (t.timeLimit || 0) * 60,
       startedAt: Date.now(),
+      _retryContext: { type: 'normal', testId: id },
     }
     router.push('/player')
   }
@@ -265,7 +266,7 @@ export const useAppStore = defineStore('app', () => {
       : null
 
     saveTestResult(pct, correct, total, answerSummary, durationSeconds)
-    resultData.value = { pct, correct, total, reviewItems, test: playerState.value.test, durationSeconds }
+    resultData.value = { pct, correct, total, reviewItems, test: playerState.value.test, durationSeconds, retryContext: playerState.value._retryContext || null }
     router.push('/results')
 
     // Optimistic local update — runs after navigation so the sync path above
@@ -361,6 +362,7 @@ export const useAppStore = defineStore('app', () => {
       questions: wrongQs,
       current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
       startedAt: Date.now(),
+      _retryContext: { type: 'wrongOnly' },
     }
     router.push('/player')
   }
@@ -433,6 +435,7 @@ export const useAppStore = defineStore('app', () => {
       questions: qs,
       current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
       startedAt: Date.now(),
+      _retryContext: { type: 'topic', topic },
     }
     router.push('/player')
   }
@@ -449,6 +452,7 @@ export const useAppStore = defineStore('app', () => {
       questions: qs,
       current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
       startedAt: Date.now(),
+      _retryContext: { type: 'custom', numQuestions: n },
     }
     router.push('/player')
   }
@@ -462,6 +466,7 @@ export const useAppStore = defineStore('app', () => {
       questions: qs,
       current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
       startedAt: Date.now(),
+      _retryContext: { type: 'wrong' },
     }
     router.push('/player')
   }

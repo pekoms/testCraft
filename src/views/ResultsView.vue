@@ -94,6 +94,12 @@ function fmtDuration(s) {
 }
 
 function retry() {
-  if (appStore.resultData?.test) appStore.startTest(appStore.resultData.test.id)
+  const ctx = appStore.resultData?.retryContext
+  if (!ctx) return
+  if (ctx.type === 'normal') appStore.startTest(ctx.testId)
+  else if (ctx.type === 'custom') appStore.startCustomTest(ctx.numQuestions)
+  else if (ctx.type === 'topic') appStore.startTopicTest(ctx.topic)
+  else if (ctx.type === 'wrong') appStore.startWrongAnswersTest()
+  else if (ctx.type === 'wrongOnly') appStore.retryWrongOnly()
 }
 </script>
