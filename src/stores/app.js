@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import router from '@/router'
 
 const STORE_KEY = 'testcraft_tests_v1'
+const OFFLINE_CACHE_KEY = 'testcraft_offline_v1'
 
 // Returns auth store instance (lazy import avoids circular dep at module init)
 async function getAuth() {
@@ -16,6 +17,7 @@ export const useAppStore = defineStore('app', () => {
   const currentTopic = ref(null)
   const editingId = ref(null)
   const editingQuestions = ref([])
+  const isOffline = ref(false)
 
   const playerState = ref({
     test: null, questions: [], current: 0,
@@ -64,11 +66,26 @@ export const useAppStore = defineStore('app', () => {
   async function fetchTests() {
     const auth = await getAuth()
     if (supabase && auth.currentUser) {
-      let q = supabase.from('tests').select('data, updated_at, published, user_id')
-      if (!auth.isTeacher) q = q.eq('published', true)
-      const { data, error } = await q.order('updated_at', { ascending: false })
-      if (error) { showToast('Error al cargar los tests'); return [] }
-      return data.map(row => ({ ...row.data, published: row.published, _ownerId: row.user_id }))
+      const cacheKey = `${OFFLINE_CACHE_KEY}_${auth.currentUser.id}`
+      try {
+        let q = supabase.from('tests').select('data, updated_at, published, user_id')
+        if (!auth.isTeacher) q = q.eq('published', true)
+        const { data, error } = await q.order('updated_at', { ascending: false })
+        if (error) throw error
+        const result = data.map(row => ({ ...row.data, published: row.published, _ownerId: row.user_id }))
+        // Persist for offline use
+        try { localStorage.setItem(cacheKey, JSON.stringify(result)) } catch {}
+        isOffline.value = false
+        return result
+      } catch {
+        // Network unavailable — serve from offline cache
+        isOffline.value = true
+        try {
+          const cached = localStorage.getItem(cacheKey)
+          if (cached) return JSON.parse(cached)
+        } catch {}
+        return []
+      }
     }
     return loadTestsLocal()
   }
@@ -472,7 +489,7 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, toast, modal,
+    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, toast, modal, isOffline,
     genId, showToast, showModal, closeModal,
     fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest,
     startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,
