@@ -12,6 +12,11 @@ export const useAuthStore = defineStore('auth', () => {
   const resolvedEmail = ref('')
   const authMsg = ref({ text: '', type: '' })
 
+  // Misma normalización que aplican las edge functions al crear las cuentas.
+  function normalizeEmail(email) {
+    return (email ?? '').trim().toLowerCase()
+  }
+
   function showAuthMsg(text, type) {
     authMsg.value = { text, type }
   }
@@ -80,7 +85,11 @@ export const useAuthStore = defineStore('auth', () => {
     clearAuthMsg()
   }
 
-  async function checkEmailRole(email) {
+  async function checkEmailRole(rawEmail) {
+    // Las cuentas se crean siempre en minúsculas (ver manage-users), y la
+    // comparación `=` de Postgres distingue mayúsculas: hay que normalizar
+    // antes de cualquier consulta o el alumno no se encuentra.
+    const email = normalizeEmail(rawEmail)
     if (!email) { showAuthMsg('Introduce tu correo electrónico', 'error'); return }
     clearAuthMsg()
     try {
@@ -142,7 +151,7 @@ export const useAuthStore = defineStore('auth', () => {
     if (k && e) {
       window.history.replaceState({}, '', location.pathname + location.hash)
       const { error } = await supabase.auth.signInWithPassword({
-        email: decodeURIComponent(e), password: k,
+        email: normalizeEmail(decodeURIComponent(e)), password: k,
       })
       if (error) {
         authLocked.value = true
