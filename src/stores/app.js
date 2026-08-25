@@ -433,17 +433,25 @@ export const useAppStore = defineStore('app', () => {
   }
 
   // ── Custom test ────────────────────────────────
+  // Builds a deduplicated pool of non-open questions from the given tests (by question text).
+  function buildPool(testList) {
+    const seen = new Set()
+    const pool = []
+    testList.forEach(t => t.questions.forEach(q => {
+      if (q.type !== 'open' && !seen.has(q.text)) {
+        seen.add(q.text)
+        pool.push(q)
+      }
+    }))
+    return pool
+  }
+
   function countAvailableQuestions() {
-    let n = 0
-    tests.value.forEach(t => t.questions.forEach(q => { if (q.type !== 'open') n++ }))
-    return n
+    return buildPool(tests.value).length
   }
 
   function startTopicTest(topic) {
-    const pool = []
-    tests.value
-      .filter(t => (t.topic || '') === topic)
-      .forEach(t => t.questions.forEach(q => { if (q.type !== 'open') pool.push(q) }))
+    const pool = buildPool(tests.value.filter(t => (t.topic || '') === topic))
     if (!pool.length) { showToast('No hay preguntas disponibles en este tema'); return }
     const qs = shuffle(pool)
     clearInterval(playerState.value.timerInterval)
@@ -458,8 +466,7 @@ export const useAppStore = defineStore('app', () => {
   }
 
   function startCustomTest(numQuestions) {
-    const pool = []
-    tests.value.forEach(t => t.questions.forEach(q => { if (q.type !== 'open') pool.push(q) }))
+    const pool = buildPool(tests.value)
     if (!pool.length) { showToast('No hay preguntas disponibles'); return }
     const n = Math.min(Math.max(1, numQuestions), pool.length)
     const qs = shuffle(pool).slice(0, n)

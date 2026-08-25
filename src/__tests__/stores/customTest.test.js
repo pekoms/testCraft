@@ -2,15 +2,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAppStore } from '@/stores/app'
 
-function makeQ(type = 'single', text = 'Pregunta') {
+let _qIdx = 0
+function makeQ(type = 'single', text) {
+  const label = text ?? `Pregunta ${++_qIdx}`
   return {
-    type, text,
+    type, text: label,
     options: type === 'open' ? [] : [
       { text: 'A', correct: true },
       { text: 'B', correct: false },
     ],
   }
 }
+
+beforeEach(() => { _qIdx = 0 })
 
 function seedTests(store, tests) {
   store.tests = tests
@@ -41,7 +45,7 @@ describe('startCustomTest', () => {
     expect(store.playerState.questions).toHaveLength(2)
   })
 
-  it('no supera el total de preguntas disponibles si se pide más', () => {
+  it('no supera el total de preguntas únicas si se pide más', () => {
     seedTests(store, [
       { id: 't1', title: 'T1', questions: [makeQ(), makeQ()] },
     ])
@@ -85,6 +89,31 @@ describe('startCustomTest', () => {
     expect(texts).toContain('Q de T2')
   })
 
+  it('no repite preguntas con el mismo texto que aparecen en varios tests', () => {
+    const shared = makeQ('single', 'Pregunta compartida')
+    seedTests(store, [
+      { id: 't1', title: 'T1', questions: [shared] },
+      { id: 't2', title: 'T2', questions: [shared] },
+      { id: 't3', title: 'T3', questions: [makeQ('single', 'Única')] },
+    ])
+    store.startCustomTest(10)
+    const texts = store.playerState.questions.map(q => q.text)
+    // 'Pregunta compartida' debe aparecer exactamente una vez
+    expect(texts.filter(t => t === 'Pregunta compartida')).toHaveLength(1)
+    expect(store.playerState.questions).toHaveLength(2)
+  })
+
+  it('no repite preguntas dentro de un mismo test con textos duplicados', () => {
+    const dup = makeQ('single', 'Duplicada')
+    seedTests(store, [
+      { id: 't1', title: 'T1', questions: [dup, dup, makeQ('single', 'Otra')] },
+    ])
+    store.startCustomTest(10)
+    const texts = store.playerState.questions.map(q => q.text)
+    expect(texts.filter(t => t === 'Duplicada')).toHaveLength(1)
+    expect(store.playerState.questions).toHaveLength(2)
+  })
+
   it('registra startedAt al iniciar', () => {
     const before = Date.now()
     seedTests(store, [{ id: 't1', title: 'T1', questions: [makeQ()] }])
@@ -123,11 +152,21 @@ describe('countAvailableQuestions', () => {
     expect(store.countAvailableQuestions()).toBe(2)
   })
 
-  it('suma preguntas de varios tests', () => {
+  it('suma preguntas únicas de varios tests', () => {
     seedTests(store, [
       { id: 't1', title: 'T1', questions: [makeQ(), makeQ()] },
       { id: 't2', title: 'T2', questions: [makeQ()] },
     ])
+    expect(store.countAvailableQuestions()).toBe(3)
+  })
+
+  it('no cuenta duplicados entre tests distintos', () => {
+    const shared = makeQ('single', 'Compartida')
+    seedTests(store, [
+      { id: 't1', title: 'T1', questions: [shared, makeQ()] },
+      { id: 't2', title: 'T2', questions: [shared, makeQ()] },
+    ])
+    // 'Compartida' aparece en 2 tests pero solo cuenta 1 vez
     expect(store.countAvailableQuestions()).toBe(3)
   })
 })
@@ -171,14 +210,11 @@ describe('loadWrongAnswers — respeta timestamp de reset', () => {
   it('filtra resultados anteriores al timestamp de reset (simulación de lógica)', () => {
     const clearedAt = new Date('2026-01-15T12:00:00Z')
 
-    // Simulate: only results AFTER clearedAt are considered
     const allResults = [
-      // Newest: after clear — Q1 wrong
       {
         completed_at: '2026-01-20T10:00:00Z',
         answers: [{ q: 'Q1', type: 'single', ok: false, question: { id: 'q1', type: 'single', text: 'Q1', options: [] } }],
       },
-      // Older: before clear — Q2 wrong (should be ignored)
       {
         completed_at: '2026-01-10T10:00:00Z',
         answers: [{ q: 'Q2', type: 'single', ok: false, question: { id: 'q2', type: 'single', text: 'Q2', options: [] } }],
@@ -202,7 +238,6 @@ describe('loadWrongAnswers — respeta timestamp de reset', () => {
       })
     })
 
-    // Q2 is before clearedAt → ignored. Only Q1 should appear.
     expect(wrong.map(q => q.text)).toContain('Q1')
     expect(wrong.map(q => q.text)).not.toContain('Q2')
     expect(wrong).toHaveLength(1)
@@ -215,12 +250,11 @@ describe('loadWrongAnswers — respeta timestamp de reset', () => {
         answers: [{ q: 'Q1', type: 'single', ok: false, question: { id: 'q1', type: 'single', text: 'Q1', options: [] } }],
       },
     ]
-    const filtered = allResults // no clearedAt filter
 
     const seenCorrect = new Set()
     const seenWrong = new Set()
     const wrong = []
-    filtered.forEach(r => {
+    allResults.forEach(r => {
       ;(r.answers || []).forEach(a => {
         if (a.type === 'open') return
         const key = a.q
