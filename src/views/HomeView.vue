@@ -70,13 +70,13 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
         </button>
       </div>
-      <div v-if="(!authStore.isTeacher || authStore.isAdmin) && appStore.completedTestIds.size" class="wrong-answers-group">
+      <div v-if="(!authStore.isTeacher || authStore.isAdmin) && appStore.completedTestIds.length" class="wrong-answers-group">
         <button class="btn" disabled style="cursor:default">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
             <polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
-          {{ appStore.completedTestIds.size }} test{{ appStore.completedTestIds.size !== 1 ? 's' : '' }} completado{{ appStore.completedTestIds.size !== 1 ? 's' : '' }}
+          {{ appStore.completedTestIds.length }} test{{ appStore.completedTestIds.length !== 1 ? 's' : '' }} completado{{ appStore.completedTestIds.length !== 1 ? 's' : '' }}
         </button>
         <button class="btn sm danger reset-wrong-btn" @click="confirmResetCompleted" title="Borrar el registro de tests completados">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
@@ -131,7 +131,7 @@
         <p v-if="authStore.isTeacher">Crea un test y asígnale este tema.</p>
       </div>
       <div v-for="t in visibleTopicTests" :key="t.id" class="test-card" @click="appStore.startTest(t.id)">
-        <div v-if="(!authStore.isTeacher || authStore.isAdmin) && appStore.completedTestIds.has(t.id)"
+        <div v-if="(!authStore.isTeacher || authStore.isAdmin) && appStore.completedTestIds.includes(t.id)"
           class="test-done-badge" title="Ya has completado este test">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
@@ -273,7 +273,7 @@ const topicQuestionCount = computed(() => {
   let n = 0
   appStore.tests
     .filter(t => (t.topic || '') === topic && (authStore.isTeacher || t.published))
-    .forEach(t => t.questions.forEach(q => { if (q.type !== 'open') n++ }))
+    .forEach(t => t.questions?.forEach(q => { if (q.type !== 'open') n++ }))
   return n
 })
 

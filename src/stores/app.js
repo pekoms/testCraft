@@ -27,7 +27,7 @@ export const useAppStore = defineStore('app', () => {
 
   const resultData = ref(null)
   const wrongAnswers = ref([])
-  const completedTestIds = ref(new Set())
+  const completedTestIds = ref([])
   const toast = ref({ text: '', show: false })
   const modal = ref({ open: false, title: '', body: '', confirmLabel: 'Eliminar', danger: true, onConfirm: null })
 
@@ -81,9 +81,10 @@ export const useAppStore = defineStore('app', () => {
         try { localStorage.setItem(cacheKey, JSON.stringify(result)) } catch {}
         isOffline.value = false
         return result
-      } catch {
-        // Network unavailable — serve from offline cache
+      } catch (e) {
+        // Network/DB error — serve from offline cache and show a warning
         isOffline.value = true
+        showToast('Error al cargar los tests')
         try {
           const cached = localStorage.getItem(cacheKey)
           if (cached) return JSON.parse(cached)
@@ -297,8 +298,8 @@ export const useAppStore = defineStore('app', () => {
     if (!auth.isTeacher || auth.isAdmin) {
       // Mark this test as completed (only real test IDs, not synthetic ones)
       const tid = playerState.value.test?.id
-      if (tid && !tid.startsWith('custom_') && !tid.startsWith('topic_') && !tid.startsWith('wrong_')) {
-        completedTestIds.value = new Set([...completedTestIds.value, tid])
+      if (tid && !tid.startsWith('custom_') && !tid.startsWith('topic_') && !tid.startsWith('wrong_') && !completedTestIds.value.includes(tid)) {
+        completedTestIds.value = [...completedTestIds.value, tid]
       }
       const justCorrectTexts = new Set(
         reviewItems.filter(i => i.type !== 'open' && i.isCorrect).map(i => i.q.text)
@@ -446,7 +447,7 @@ export const useAppStore = defineStore('app', () => {
   async function loadCompletedTests() {
     const auth = await getAuth()
     if (!supabase || !auth.currentUser || (auth.isTeacher && !auth.isAdmin)) {
-      completedTestIds.value = new Set()
+      completedTestIds.value = []
       return
     }
     let resetAt = null
@@ -463,11 +464,11 @@ export const useAppStore = defineStore('app', () => {
 
     const { data } = await query
     if (!data) return
-    completedTestIds.value = new Set(data.map(r => r.test_id))
+    completedTestIds.value = data.map(r => r.test_id).filter(Boolean)
   }
 
   async function resetCompletedTests() {
-    completedTestIds.value = new Set()
+    completedTestIds.value = []
     const auth = await getAuth()
     if (!auth.currentUser) return
     try { localStorage.setItem(`${COMPLETED_RESET_KEY}_${auth.currentUser.id}`, new Date().toISOString()) } catch {}
@@ -479,7 +480,7 @@ export const useAppStore = defineStore('app', () => {
   function buildPool(testList) {
     const seen = new Set()
     const pool = []
-    testList.filter(t => !t.secret).forEach(t => t.questions.forEach(q => {
+    testList.filter(t => !t.secret && Array.isArray(t.questions)).forEach(t => t.questions.forEach(q => {
       if (q.type !== 'open' && !seen.has(q.text)) {
         seen.add(q.text)
         pool.push(q)
