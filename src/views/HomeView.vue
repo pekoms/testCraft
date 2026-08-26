@@ -70,18 +70,11 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
         </button>
       </div>
-      <div v-if="(!authStore.isTeacher || authStore.isAdmin) && appStore.completedTestIds.length" class="wrong-answers-group">
-        <button class="btn" disabled style="cursor:default">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-            <polyline points="22 4 12 14.01 9 11.01"/>
-          </svg>
-          {{ appStore.completedTestIds.length }} test{{ appStore.completedTestIds.length !== 1 ? 's' : '' }} completado{{ appStore.completedTestIds.length !== 1 ? 's' : '' }}
-        </button>
-        <button class="btn sm danger reset-wrong-btn" @click="confirmResetCompleted" title="Borrar el registro de tests completados">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
-        </button>
-      </div>
+      <button v-if="(!authStore.isTeacher || authStore.isAdmin) && appStore.completedTestIds.length"
+        class="btn sm" @click="confirmResetCompleted" title="Borrar el registro de tests completados">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+        Resetear progreso
+      </button>
     </div>
 
     <!-- Breadcrumb when inside a topic -->
@@ -119,6 +112,10 @@
           </div>
           <div class="topic-meta">
             {{ visibleCount(topicTests) }} test{{ visibleCount(topicTests) !== 1 ? 's' : '' }}{{ draftText(topicTests) }}
+            <span v-if="!authStore.isTeacher || authStore.isAdmin" class="topic-progress"
+              :class="completedCount(topicTests) > 0 && completedCount(topicTests) === visibleCount(topicTests) ? 'all-done' : ''">
+              · {{ completedCount(topicTests) }}/{{ visibleCount(topicTests) }} hechos
+            </span>
           </div>
         </div>
       </template>
@@ -259,6 +256,11 @@ const topicEntries = computed(() => {
 
 function visibleCount(tests) {
   return authStore.isTeacher ? tests.length : tests.filter(t => t.published).length
+}
+
+function completedCount(tests) {
+  const visible = authStore.isTeacher ? tests : tests.filter(t => t.published)
+  return visible.filter(t => appStore.completedTestIds.includes(t.id)).length
 }
 
 function draftText(tests) {
