@@ -74,7 +74,9 @@ export const useAppStore = defineStore('app', () => {
         if (!auth.isTeacher) q = q.eq('published', true)
         const { data, error } = await q.order('updated_at', { ascending: false })
         if (error) throw error
-        const result = data.map(row => ({ ...row.data, published: row.published, _ownerId: row.user_id }))
+        const raw = data.map(row => ({ ...row.data, published: row.published, _ownerId: row.user_id }))
+        // Secret tests are only visible to the admin who created them
+        const result = auth.isAdmin ? raw : raw.filter(t => !t.secret)
         // Persist for offline use
         try { localStorage.setItem(cacheKey, JSON.stringify(result)) } catch {}
         isOffline.value = false
@@ -101,7 +103,8 @@ export const useAppStore = defineStore('app', () => {
         id: test.id,
         user_id: ownerId,
         data: test,
-        published: !!test.published,
+        // Secret tests are never published at the DB level so other users' queries don't return them
+        published: test.secret ? false : !!test.published,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,id' })
       if (error) { showToast('Error al guardar en la nube'); return false }
@@ -472,10 +475,11 @@ export const useAppStore = defineStore('app', () => {
 
   // ── Custom test ────────────────────────────────
   // Builds a deduplicated pool of non-open questions from the given tests (by question text).
+  // Secret tests are excluded — they're personal and shouldn't mix into shared pools.
   function buildPool(testList) {
     const seen = new Set()
     const pool = []
-    testList.forEach(t => t.questions.forEach(q => {
+    testList.filter(t => !t.secret).forEach(t => t.questions.forEach(q => {
       if (q.type !== 'open' && !seen.has(q.text)) {
         seen.add(q.text)
         pool.push(q)

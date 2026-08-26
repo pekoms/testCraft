@@ -136,6 +136,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
         <h3>{{ t.title }}</h3>
+        <span v-if="t.secret && authStore.isAdmin" class="badge secret-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-right:3px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Secreto
+        </span>
         <p>{{ t.description || 'Sin descripción' }}</p>
         <span class="badge">{{ t.questions.length }} pregunta{{ t.questions.length !== 1 ? 's' : '' }}</span>
         <span v-if="t.timeLimit" class="badge" style="background:var(--accent2-light);color:var(--accent2);margin-left:4px">⏱ {{ t.timeLimit }} min</span>

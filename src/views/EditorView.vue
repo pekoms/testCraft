@@ -104,6 +104,16 @@
         <label>Fecha límite</label>
         <input type="datetime-local" v-model="deadline">
       </div>
+      <div v-if="authStore.isAdmin" class="field-group secret-field">
+        <label>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13" style="flex-shrink:0"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          Test secreto
+        </label>
+        <select v-model="secret">
+          <option :value="false">No — visible para profesores</option>
+          <option :value="true">Sí — solo tú lo ves</option>
+        </select>
+      </div>
     </div>
 
     <hr class="divider">
@@ -177,6 +187,7 @@ import { useGrammarCheck } from '@/composables/useGrammarCheck'
 const router = useRouter()
 const authStore = useAuthStore()
 const appStore = useAppStore()
+const secret = ref(false)
 const grammar = useGrammarCheck()
 
 function runGrammarCheck() {
@@ -201,6 +212,7 @@ onMounted(() => {
     timeLimit.value = t.timeLimit || 0
     shuffle.value = !!t.shuffle
     published.value = !!t.published
+    secret.value = !!t.secret
     maxAttempts.value = t.maxAttempts || 0
     deadline.value = t.deadline ? new Date(t.deadline).toISOString().slice(0, 16) : ''
   } else {
@@ -212,6 +224,7 @@ onMounted(() => {
     published.value = false
     maxAttempts.value = 0
     deadline.value = ''
+    secret.value = false
   }
 })
 
@@ -294,7 +307,8 @@ async function saveTest() {
     description: description.value.trim(),
     timeLimit: timeLimit.value || 0,
     shuffle: shuffle.value,
-    published: published.value,
+    published: secret.value ? false : published.value,
+    secret: secret.value || false,
     maxAttempts: maxAttempts.value || 0,
     deadline: deadline.value ? new Date(deadline.value).toISOString() : null,
     questions,
