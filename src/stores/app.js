@@ -5,6 +5,7 @@ import router from '@/router'
 
 const STORE_KEY = 'testcraft_tests_v1'
 const OFFLINE_CACHE_KEY = 'testcraft_offline_v1'
+const COMPLETED_RESET_KEY = 'testcraft_cr_v1'
 
 // Returns auth store instance (lazy import avoids circular dep at module init)
 async function getAuth() {
@@ -26,6 +27,7 @@ export const useAppStore = defineStore('app', () => {
 
   const resultData = ref(null)
   const wrongAnswers = ref([])
+  const completedTestIds = ref(new Set())
   const toast = ref({ text: '', show: false })
   const modal = ref({ open: false, title: '', body: '', confirmLabel: 'Eliminar', danger: true, onConfirm: null })
 
@@ -290,6 +292,11 @@ export const useAppStore = defineStore('app', () => {
     // stays unblocked; wrongAnswers is reactive so HomeView reflects it instantly.
     const auth = await getAuth()
     if (!auth.isTeacher || auth.isAdmin) {
+      // Mark this test as completed (only real test IDs, not synthetic ones)
+      const tid = playerState.value.test?.id
+      if (tid && !tid.startsWith('custom_') && !tid.startsWith('topic_') && !tid.startsWith('wrong_')) {
+        completedTestIds.value = new Set([...completedTestIds.value, tid])
+      }
       const justCorrectTexts = new Set(
         reviewItems.filter(i => i.type !== 'open' && i.isCorrect).map(i => i.q.text)
       )
@@ -432,6 +439,37 @@ export const useAppStore = defineStore('app', () => {
     try { localStorage.setItem(`wca_${auth.currentUser.id}`, new Date().toISOString()) } catch {}
   }
 
+  // ── Completed-test tracking ────────────────────
+  async function loadCompletedTests() {
+    const auth = await getAuth()
+    if (!supabase || !auth.currentUser || (auth.isTeacher && !auth.isAdmin)) {
+      completedTestIds.value = new Set()
+      return
+    }
+    let resetAt = null
+    try {
+      const ts = localStorage.getItem(`${COMPLETED_RESET_KEY}_${auth.currentUser.id}`)
+      if (ts) resetAt = ts
+    } catch {}
+
+    let query = supabase
+      .from('test_results')
+      .select('test_id')
+      .eq('user_id', auth.currentUser.id)
+    if (resetAt) query = query.gt('completed_at', resetAt)
+
+    const { data } = await query
+    if (!data) return
+    completedTestIds.value = new Set(data.map(r => r.test_id))
+  }
+
+  async function resetCompletedTests() {
+    completedTestIds.value = new Set()
+    const auth = await getAuth()
+    if (!auth.currentUser) return
+    try { localStorage.setItem(`${COMPLETED_RESET_KEY}_${auth.currentUser.id}`, new Date().toISOString()) } catch {}
+  }
+
   // ── Custom test ────────────────────────────────
   // Builds a deduplicated pool of non-open questions from the given tests (by question text).
   function buildPool(testList) {
@@ -496,11 +534,12 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, toast, modal, isOffline,
+    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, completedTestIds, toast, modal, isOffline,
     genId, showToast, showModal, closeModal,
     fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest,
     startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,
     clearWrongAnswers, countAvailableQuestions, startCustomTest, startTopicTest,
+    loadCompletedTests, resetCompletedTests,
     nextQuestion, prevQuestion, selectOption, revealAnswer, finishTest, saveCurrentAnswer,
     checkImportFromUrl, showTopic, backToTopics,
   }
