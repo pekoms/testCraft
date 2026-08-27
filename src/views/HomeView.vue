@@ -310,6 +310,7 @@ function doImportMD() {
   }
   appStore.editingId = null
   appStore.editingQuestions = parsed
+  appStore.importSecret = true
   closeImportModal()
   router.push('/editor')
   appStore.showToast(`${parsed.length} preguntas importadas ✓`)

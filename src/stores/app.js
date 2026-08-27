@@ -28,6 +28,7 @@ export const useAppStore = defineStore('app', () => {
   const resultData = ref(null)
   const wrongAnswers = ref([])
   const completedTestIds = ref([])
+  const importSecret = ref(false)
   const toast = ref({ text: '', show: false })
   const modal = ref({ open: false, title: '', body: '', confirmLabel: 'Eliminar', danger: true, onConfirm: null })
 
@@ -539,7 +540,7 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, completedTestIds, toast, modal, isOffline,
+    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, completedTestIds, toast, modal, isOffline, importSecret,
     genId, showToast, showModal, closeModal,
     fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest,
     startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,

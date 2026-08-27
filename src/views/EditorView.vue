@@ -224,7 +224,8 @@ onMounted(() => {
     published.value = false
     maxAttempts.value = 0
     deadline.value = ''
-    secret.value = false
+    secret.value = appStore.importSecret
+    appStore.importSecret = false
   }
 })
 
