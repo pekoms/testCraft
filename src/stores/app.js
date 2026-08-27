@@ -29,6 +29,7 @@ export const useAppStore = defineStore('app', () => {
   const wrongAnswers = ref([])
   const completedTestIds = ref([])
   const importSecret = ref(false)
+  const importMeta = ref(null)
   const toast = ref({ text: '', show: false })
   const modal = ref({ open: false, title: '', body: '', confirmLabel: 'Eliminar', danger: true, onConfirm: null })
 
@@ -477,13 +478,15 @@ export const useAppStore = defineStore('app', () => {
 
   // ── Custom test ────────────────────────────────
   // Builds a deduplicated pool of non-open questions from the given tests (by question text).
-  // Secret tests are excluded — they're personal and shouldn't mix into shared pools.
+  // fetchTests already strips secret tests for non-admins, so admins are the only ones who
+  // receive them in testList — and for them, secrets are intentionally included in the pool.
   function buildPool(testList) {
     const seen = new Set()
     const pool = []
-    testList.filter(t => !t.secret && Array.isArray(t.questions)).forEach(t => t.questions.forEach(q => {
-      if (q.type !== 'open' && !seen.has(q.text)) {
-        seen.add(q.text)
+    testList.filter(t => Array.isArray(t.questions)).forEach(t => t.questions.forEach(q => {
+      const key = (q.text || '').replace(/\s+/g, ' ').trim()
+      if (q.type !== 'open' && key && !seen.has(key)) {
+        seen.add(key)
         pool.push(q)
       }
     }))
@@ -540,7 +543,7 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, completedTestIds, toast, modal, isOffline, importSecret,
+    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, completedTestIds, toast, modal, isOffline, importSecret, importMeta,
     genId, showToast, showModal, closeModal,
     fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest,
     startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,

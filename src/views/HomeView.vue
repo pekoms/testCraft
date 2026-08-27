@@ -3,19 +3,55 @@
   <div v-if="showImportModal" class="modal-overlay open" @click.self="closeImportModal">
     <div class="modal import-md-modal">
       <h3>Importar test desde texto</h3>
-      <p class="import-hint">Pega el texto con las preguntas numeradas y la hoja de soluciones. Formato esperado:</p>
+
+      <div class="import-fields-row">
+        <div class="field-group" style="flex:2">
+          <label>Título del test</label>
+          <input type="text" v-model="importTitle" placeholder="Ej: Simulacro TREBEP — Tema 3" maxlength="80">
+        </div>
+        <div class="field-group" style="flex:1">
+          <label>Tema</label>
+          <input type="text" v-model="importTopic" placeholder="Ej: TREBEP" maxlength="60"
+            list="importTopicsList" autocomplete="off">
+          <datalist id="importTopicsList">
+            <option v-for="t in allTopics" :key="t" :value="t" />
+          </datalist>
+        </div>
+      </div>
+
+      <div class="import-fields-row" style="gap:12px;flex-wrap:wrap">
+        <div class="field-group" style="flex:1;min-width:120px">
+          <label>Orden</label>
+          <select v-model="importShuffle">
+            <option :value="false">Fijo</option>
+            <option :value="true">Aleatorio</option>
+          </select>
+        </div>
+        <div class="field-group" style="flex:1;min-width:120px">
+          <label>Tiempo límite (min)</label>
+          <input type="number" v-model.number="importTimeLimit" min="0" max="360" placeholder="0 = sin límite">
+        </div>
+        <div class="field-group" style="flex:1;min-width:140px">
+          <label>Descripción (opcional)</label>
+          <input type="text" v-model="importDescription" placeholder="Breve descripción" maxlength="200">
+        </div>
+      </div>
+
+      <p class="import-hint" style="margin-top:4px">Pega el texto con las preguntas numeradas y la hoja de soluciones:</p>
       <pre class="import-example">1. Texto de la pregunta
 A) Opción A B) Opción B C) Opción C D) Opción D
 
 HOJA DE SOLUCIONES
-1  B
-2  A</pre>
-      <textarea v-model="importMDText" rows="14" class="import-textarea"
-        placeholder="Pega aquí el texto completo..."></textarea>
+1  B    2  A</pre>
+      <div style="position:relative">
+        <textarea v-model="importMDText" rows="10" class="import-textarea"
+          placeholder="Pega aquí el texto completo..."></textarea>
+        <span v-if="importPreviewCount" class="import-count-badge">{{ importPreviewCount }} preguntas</span>
+      </div>
       <p v-if="importError" class="import-error">{{ importError }}</p>
       <div class="modal-actions">
         <button class="btn" @click="closeImportModal">Cancelar</button>
-        <button class="btn accent" @click="doImportMD" :disabled="!importMDText.trim()">
+        <button class="btn accent" @click="doImportMD" :disabled="!importMDText.trim() || !importTitle.trim()">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
             <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
@@ -139,13 +175,18 @@ HOJA DE SOLUCIONES
       </template>
       <template v-else>
         <div v-for="[topic, topicTests] in topicEntries" :key="topic"
-          class="topic-card" @click="appStore.showTopic(topic)">
+          class="topic-card" :class="{ 'secret-topic': hasSecretTests(topicTests) }"
+          @click="appStore.showTopic(topic)">
           <div class="topic-title">
             <span>{{ topic || 'Sin tema' }}</span>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="9 18 15 12 9 6"/></svg>
           </div>
           <div class="topic-meta">
             {{ visibleCount(topicTests) }} test{{ visibleCount(topicTests) !== 1 ? 's' : '' }}{{ draftText(topicTests) }}
+            <span v-if="hasSecretTests(topicTests)" class="topic-secret-count">
+              · <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align:-1px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              {{ secretCount(topicTests) }} secreto{{ secretCount(topicTests) !== 1 ? 's' : '' }}
+            </span>
             <span v-if="!authStore.isTeacher || authStore.isAdmin" class="topic-progress"
               :class="completedCount(topicTests) > 0 && completedCount(topicTests) === visibleCount(topicTests) ? 'all-done' : ''">
               · {{ completedCount(topicTests) }}/{{ visibleCount(topicTests) }} hechos
@@ -161,7 +202,9 @@ HOJA DE SOLUCIONES
         <strong>{{ authStore.isTeacher ? 'No hay tests en este tema' : 'No hay tests disponibles en este tema' }}</strong>
         <p v-if="authStore.isTeacher">Crea un test y asígnale este tema.</p>
       </div>
-      <div v-for="t in visibleTopicTests" :key="t.id" class="test-card" @click="appStore.startTest(t.id)">
+      <div v-for="t in visibleTopicTests" :key="t.id"
+        class="test-card" :class="{ 'secret-card': t.secret && authStore.isAdmin }"
+        @click="appStore.startTest(t.id)">
         <div v-if="(!authStore.isTeacher || authStore.isAdmin) && appStore.completedTestIds.includes(t.id)"
           class="test-done-badge" title="Ya has completado este test">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="11" height="11"><polyline points="20 6 9 17 4 12"/></svg>
@@ -225,11 +268,27 @@ const showBanner = ref(_bannerVisible)
 const showImportModal = ref(false)
 const importMDText = ref('')
 const importError = ref('')
+const importTitle = ref('')
+const importTopic = ref('')
+const importDescription = ref('')
+const importShuffle = ref(false)
+const importTimeLimit = ref(0)
+
+const importPreviewCount = computed(() => {
+  const text = importMDText.value
+  if (!text.trim()) return 0
+  return (text.match(/^\d+[.)]\s/gm) || []).length
+})
 
 function closeImportModal() {
   showImportModal.value = false
   importMDText.value = ''
   importError.value = ''
+  importTitle.value = ''
+  importTopic.value = ''
+  importDescription.value = ''
+  importShuffle.value = false
+  importTimeLimit.value = 0
 }
 
 function parseMDTest(text) {
@@ -303,14 +362,22 @@ function parseMDTest(text) {
 
 function doImportMD() {
   importError.value = ''
+  if (!importTitle.value.trim()) { importError.value = 'El título es obligatorio'; return }
   const parsed = parseMDTest(importMDText.value)
   if (!parsed.length) {
-    importError.value = 'No se encontraron preguntas. Revisa el formato: las preguntas deben estar numeradas (1. Texto...) y las opciones con A) B) C) D).'
+    importError.value = 'No se encontraron preguntas. Revisa el formato: preguntas numeradas (1. Texto...) y opciones A) B) C) D).'
     return
   }
   appStore.editingId = null
   appStore.editingQuestions = parsed
   appStore.importSecret = true
+  appStore.importMeta = {
+    title: importTitle.value.trim(),
+    topic: importTopic.value.trim(),
+    description: importDescription.value.trim(),
+    shuffle: importShuffle.value,
+    timeLimit: importTimeLimit.value || 0,
+  }
   closeImportModal()
   router.push('/editor')
   appStore.showToast(`${parsed.length} preguntas importadas ✓`)
@@ -390,6 +457,14 @@ function visibleCount(tests) {
 function completedCount(tests) {
   const visible = authStore.isTeacher ? tests : tests.filter(t => t.published)
   return visible.filter(t => appStore.completedTestIds.includes(t.id)).length
+}
+
+function hasSecretTests(tests) {
+  return authStore.isAdmin && tests.some(t => t.secret)
+}
+
+function secretCount(tests) {
+  return tests.filter(t => t.secret).length
 }
 
 function draftText(tests) {

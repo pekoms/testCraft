@@ -216,16 +216,18 @@ onMounted(() => {
     maxAttempts.value = t.maxAttempts || 0
     deadline.value = t.deadline ? new Date(t.deadline).toISOString().slice(0, 16) : ''
   } else {
-    title.value = ''
-    topic.value = appStore.currentTopic || ''
-    description.value = ''
-    timeLimit.value = 0
-    shuffle.value = false
+    const meta = appStore.importMeta
+    title.value = meta?.title || ''
+    topic.value = meta?.topic || appStore.currentTopic || ''
+    description.value = meta?.description || ''
+    timeLimit.value = meta?.timeLimit ?? 0
+    shuffle.value = meta?.shuffle ?? false
     published.value = false
     maxAttempts.value = 0
     deadline.value = ''
     secret.value = appStore.importSecret
     appStore.importSecret = false
+    appStore.importMeta = null
   }
 })
 

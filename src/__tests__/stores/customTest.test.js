@@ -114,6 +114,15 @@ describe('startCustomTest', () => {
     expect(store.playerState.questions).toHaveLength(2)
   })
 
+  it('no repite preguntas cuyo texto difiere solo en espacios en blanco', () => {
+    seedTests(store, [
+      { id: 't1', title: 'T1', questions: [{ type: 'single', text: 'Pregunta A ', options: [{ text: 'Sí', correct: true }] }] },
+      { id: 't2', title: 'T2', questions: [{ type: 'single', text: '  Pregunta A', options: [{ text: 'Sí', correct: true }] }] },
+    ])
+    store.startCustomTest(10)
+    expect(store.playerState.questions).toHaveLength(1)
+  })
+
   it('registra startedAt al iniciar', () => {
     const before = Date.now()
     seedTests(store, [{ id: 't1', title: 'T1', questions: [makeQ()] }])
