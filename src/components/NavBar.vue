@@ -28,6 +28,14 @@
         </svg>
         Estadísticas
       </button>
+      <button v-if="authStore.isAdmin" class="btn" @click="router.push('/pills')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+          <rect x="2" y="6" width="20" height="12" rx="6"/>
+          <circle cx="9" cy="12" r="4" fill="currentColor" stroke="none" opacity="0.35"/>
+          <circle cx="9" cy="12" r="2.5"/>
+        </svg>
+        Píldoras
+      </button>
     </div>
 
     <div class="nav-right">
@@ -129,6 +137,14 @@
             <line x1="6" y1="20" x2="6" y2="14"/>
           </svg>
           Estadísticas
+        </button>
+        <button v-if="authStore.isAdmin" class="mobile-link" @click="router.push('/pills'); menuOpen = false">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+            <rect x="2" y="6" width="20" height="12" rx="6"/>
+            <circle cx="9" cy="12" r="4" fill="currentColor" stroke="none" opacity="0.35"/>
+            <circle cx="9" cy="12" r="2.5"/>
+          </svg>
+          Píldoras
         </button>
 
         <div class="mobile-menu-divider"></div>

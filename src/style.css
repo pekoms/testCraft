@@ -854,3 +854,182 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
   .theme-switcher { padding: 2px; }
   .theme-btn { width: 24px; height: 24px; }
 }
+
+/* ═══════════════════════════════════════════════════
+   PILLS VIEW
+   ═══════════════════════════════════════════════════ */
+#pills { max-width: 680px; margin: 0 auto; padding: 1.5rem 1rem 4rem; }
+
+/* Header */
+.pills-header {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.75rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+}
+.pills-header h1 {
+  font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 700;
+  display: flex; align-items: center; gap: 10px;
+}
+.pills-count-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 22px; height: 22px; padding: 0 6px; border-radius: 99px;
+  background: var(--accent-light); color: var(--accent);
+  font-size: 11px; font-weight: 600; font-family: inherit;
+}
+.pills-header-btns { display: flex; gap: 8px; }
+
+/* ── Manage view ─────────────────────────────────── */
+.pills-new-btn { margin-bottom: 1.25rem; }
+.pills-empty-manage {
+  text-align: center; padding: 2.5rem 1rem; color: var(--ink3);
+  border: 2px dashed var(--border); border-radius: var(--radius);
+  font-size: 0.9rem;
+}
+.pills-manage-list { display: flex; flex-direction: column; gap: 8px; }
+.pill-manage-item {
+  display: flex; align-items: flex-start; gap: 0.75rem;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 0.9rem 1rem;
+  transition: border-color 0.15s;
+}
+.pill-manage-item:hover { border-color: var(--border-strong); }
+.pill-manage-texts { flex: 1; min-width: 0; }
+.pill-manage-front {
+  font-weight: 600; font-size: 0.88rem; color: var(--ink);
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin-bottom: 3px;
+}
+.pill-manage-back {
+  font-size: 0.8rem; color: var(--ink3);
+  display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pill-manage-actions { display: flex; gap: 4px; flex-shrink: 0; margin-top: 2px; }
+
+/* ── Study view ──────────────────────────────────── */
+.pills-empty-study {
+  display: flex; flex-direction: column; align-items: center; gap: 10px;
+  padding: 4rem 1rem; text-align: center; color: var(--ink3);
+}
+.pills-empty-study strong { font-size: 1rem; color: var(--ink); }
+
+.pills-nav-row {
+  display: flex; align-items: center; justify-content: center; gap: 1rem;
+  margin-bottom: 1rem;
+}
+.pills-counter {
+  font-size: 0.85rem; color: var(--ink3); font-weight: 500;
+  min-width: 54px; text-align: center;
+}
+.pill-nav-btn {
+  display: flex; align-items: center; justify-content: center;
+  width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--surface2); color: var(--ink);
+  cursor: pointer; transition: all 0.15s;
+}
+.pill-nav-btn:hover { background: var(--surface); border-color: var(--border-strong); transform: scale(1.08); }
+
+/* Card area — fixed height, clips the slide animation */
+.pills-card-area {
+  position: relative;
+  height: clamp(300px, 54vh, 480px);
+  overflow: hidden;
+  user-select: none;
+}
+
+/* The card wrapper — absolutely positioned so enter+leave overlap during slide */
+.pill-flip-outer {
+  position: absolute; inset: 0;
+  perspective: 1300px;
+  cursor: pointer;
+}
+
+/* 3-D flip container */
+.pill-flip {
+  width: 100%; height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+  border-radius: var(--radius);
+}
+.pill-flip.flipped { transform: rotateY(180deg); }
+
+/* Each face */
+.pill-face {
+  position: absolute; inset: 0;
+  border-radius: var(--radius);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 2rem 2.5rem; text-align: center; gap: 1rem;
+  overflow-y: auto;
+}
+.pill-front {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 28px rgba(0,0,0,0.07);
+}
+.pill-back {
+  background: var(--accent2-light);
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 28px rgba(0,0,0,0.07);
+  transform: rotateY(180deg);
+}
+.pill-face-label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--ink3); background: var(--surface2);
+  padding: 3px 10px; border-radius: 99px;
+}
+.pill-back .pill-face-label { background: rgba(0,0,0,0.1); color: var(--accent2); }
+.pill-face-text {
+  font-size: clamp(1rem, 2.8vw, 1.3rem); font-weight: 600;
+  color: var(--ink); line-height: 1.55; max-width: 480px;
+}
+.pill-back .pill-face-text { color: var(--accent2); }
+.pill-face-hint { font-size: 11px; color: var(--ink3); margin-top: 4px; }
+
+/* Progress dots */
+.pills-dots {
+  display: flex; align-items: center; justify-content: center;
+  gap: 6px; flex-wrap: wrap; margin-top: 1rem;
+}
+.pill-dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--border-strong); border: none;
+  cursor: pointer; padding: 0; transition: all 0.2s;
+}
+.pill-dot.active { background: var(--accent); transform: scale(1.5); }
+.pill-dot:hover:not(.active) { background: var(--ink3); }
+
+/* Modal */
+.pill-modal { max-width: 500px; }
+.pill-modal textarea {
+  width: 100%; padding: 0.75rem 0.9rem;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--bg); color: var(--ink);
+  font-family: inherit; font-size: 0.9rem;
+  resize: vertical; transition: border-color 0.15s; line-height: 1.5;
+}
+.pill-modal textarea:focus { outline: none; border-color: var(--accent); }
+
+/* ── Slide transitions (vertical scroll feel) ─────── */
+.pill-slide-next-enter-active,
+.pill-slide-next-leave-active,
+.pill-slide-prev-enter-active,
+.pill-slide-prev-leave-active {
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.32s ease;
+}
+
+/* Next: new card enters from below, old exits upward */
+.pill-slide-next-enter-from { transform: translateY(100%); opacity: 0; }
+.pill-slide-next-leave-to   { transform: translateY(-100%); opacity: 0; }
+
+/* Prev: new card enters from above, old exits downward */
+.pill-slide-prev-enter-from { transform: translateY(-100%); opacity: 0; }
+.pill-slide-prev-leave-to   { transform: translateY(100%); opacity: 0; }
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 600px) {
+  .pills-card-area { height: clamp(280px, 58vh, 440px); }
+  .pill-face { padding: 1.5rem 1.25rem; }
+  .pill-face-text { font-size: 1rem; }
+}
