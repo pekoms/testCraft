@@ -215,9 +215,7 @@ html[data-theme="slate"] .secret-card {
 .topic-card.secret-topic {
   border-left: 3px solid #C084FC;
 }
-.topic-secret-count { color: #C084FC; font-size: 11px; }
-html[data-theme="dark"] .topic-secret-count,
-html[data-theme="slate"] .topic-secret-count { color: #D8A4FF; }
+.topic-secret-badge { margin-top: 0 !important; display: inline-flex !important; align-items: center; }
 
 .test-done-badge {
   position: absolute; top: 10px; right: 10px;

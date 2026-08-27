@@ -179,14 +179,15 @@ HOJA DE SOLUCIONES
           @click="appStore.showTopic(topic)">
           <div class="topic-title">
             <span>{{ topic || 'Sin tema' }}</span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="9 18 15 12 9 6"/></svg>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span v-if="hasSecretTests(topicTests)" class="badge secret-badge topic-secret-badge">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="10" height="10" style="margin-right:3px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>{{ secretCount(topicTests) > 1 ? secretCount(topicTests) + ' secretos' : 'Secreto' }}
+              </span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
           </div>
           <div class="topic-meta">
             {{ visibleCount(topicTests) }} test{{ visibleCount(topicTests) !== 1 ? 's' : '' }}{{ draftText(topicTests) }}
-            <span v-if="hasSecretTests(topicTests)" class="topic-secret-count">
-              · <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align:-1px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-              {{ secretCount(topicTests) }} secreto{{ secretCount(topicTests) !== 1 ? 's' : '' }}
-            </span>
             <span v-if="!authStore.isTeacher || authStore.isAdmin" class="topic-progress"
               :class="completedCount(topicTests) > 0 && completedCount(topicTests) === visibleCount(topicTests) ? 'all-done' : ''">
               · {{ completedCount(topicTests) }}/{{ visibleCount(topicTests) }} hechos

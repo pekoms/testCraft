@@ -225,8 +225,7 @@ onMounted(() => {
     published.value = false
     maxAttempts.value = 0
     deadline.value = ''
-    secret.value = appStore.importSecret
-    appStore.importSecret = false
+    secret.value = authStore.isAdmin   // new tests always default to secret for admin
     appStore.importMeta = null
   }
 })
