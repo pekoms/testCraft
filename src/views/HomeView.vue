@@ -1,4 +1,31 @@
 <template>
+  <!-- MD Import modal -->
+  <div v-if="showImportModal" class="modal-overlay open" @click.self="closeImportModal">
+    <div class="modal import-md-modal">
+      <h3>Importar test desde texto</h3>
+      <p class="import-hint">Pega el texto con las preguntas numeradas y la hoja de soluciones. Formato esperado:</p>
+      <pre class="import-example">1. Texto de la pregunta
+A) Opción A B) Opción B C) Opción C D) Opción D
+
+HOJA DE SOLUCIONES
+1  B
+2  A</pre>
+      <textarea v-model="importMDText" rows="14" class="import-textarea"
+        placeholder="Pega aquí el texto completo..."></textarea>
+      <p v-if="importError" class="import-error">{{ importError }}</p>
+      <div class="modal-actions">
+        <button class="btn" @click="closeImportModal">Cancelar</button>
+        <button class="btn accent" @click="doImportMD" :disabled="!importMDText.trim()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Importar
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Custom test config modal -->
   <div v-if="showCustomModal" class="modal-overlay open" @click.self="showCustomModal = false">
     <div class="modal custom-test-modal">
@@ -45,6 +72,13 @@
       </h1>
       <h1 v-else>Tus <span style="color:var(--accent)">tests</span></h1>
       <p>{{ authStore.isTeacher ? 'Diseña tests y publícalos para que los vean tus alumnos.' : 'Estos son los tests que tu profesor ha publicado.' }}</p>
+      <button v-if="authStore.isAdmin" class="btn" @click="showImportModal = true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+        Importar .md
+      </button>
       <button v-if="authStore.isTeacher" class="btn accent" @click="newTest">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -186,6 +220,100 @@ const BANNER_KEY = 'vitastrong_banner_v1'
 let _bannerVisible = true
 try { _bannerVisible = !localStorage.getItem(BANNER_KEY) } catch {}
 const showBanner = ref(_bannerVisible)
+
+// MD Import modal
+const showImportModal = ref(false)
+const importMDText = ref('')
+const importError = ref('')
+
+function closeImportModal() {
+  showImportModal.value = false
+  importMDText.value = ''
+  importError.value = ''
+}
+
+function parseMDTest(text) {
+  const lines = text.replace(/\r\n/g, '\n').split('\n')
+
+  // Locate solutions section
+  let solIdx = -1
+  for (let i = 0; i < lines.length; i++) {
+    const l = lines[i].toLowerCase()
+    if (l.includes('hoja de soluciones') || (l.includes('pregunta') && l.includes('solución'))) {
+      solIdx = i; break
+    }
+  }
+
+  const bodyLines = solIdx > -1 ? lines.slice(0, solIdx) : lines
+  const solLines = solIdx > -1 ? lines.slice(solIdx + 1) : []
+
+  // Build { qNumber: 'A'|'B'|'C'|'D' } from solutions table
+  const solutions = {}
+  for (const line of solLines) {
+    const m = line.trim().match(/^(\d+)\s+([ABCD])(?:\s|$)/)
+    if (m) solutions[+m[1]] = m[2]
+  }
+
+  // Parse questions
+  const qs = []
+  let num = null, qtxt = '', opts = ''
+  const flush = () => {
+    if (num !== null && qtxt.trim()) qs.push({ num, text: qtxt.trim(), opts: opts.trim() })
+    num = null; qtxt = ''; opts = ''
+  }
+
+  for (const raw of bodyLines) {
+    const line = raw.trim()
+    if (!line) continue
+    const qm = line.match(/^(\d+)[.)]\s+(.+)/)
+    if (qm) {
+      flush()
+      num = +qm[1]
+      const rest = qm[2]
+      // Options may be embedded in the same line after the question text
+      const aPos = rest.search(/\sA\)/)
+      if (aPos >= 0) { qtxt = rest.slice(0, aPos); opts = rest.slice(aPos + 1) }
+      else qtxt = rest
+    } else if (num !== null) {
+      if (/[ABCD]\)/.test(line)) opts += (opts ? ' ' : '') + line
+      else if (!opts) qtxt += ' ' + line
+      else opts += ' ' + line
+    }
+  }
+  flush()
+
+  return qs.map(q => {
+    // Split "A) text B) text..." at each letter boundary preceded by whitespace
+    const raw = ' ' + q.opts
+    const parts = raw.split(/\s(?=[ABCD]\))/).filter(p => p.trim())
+    const optMap = {}
+    for (const part of parts) {
+      const m = part.trim().match(/^([ABCD])\)\s*(.+)/)
+      if (m) optMap[m[1]] = m[2].replace(/\s+/g, ' ').trim()
+    }
+    const correct = solutions[q.num]
+    const options = ['A', 'B', 'C', 'D']
+      .filter(l => optMap[l])
+      .map(l => ({ text: optMap[l], correct: l === correct }))
+    if (options.length < 2) return null
+    if (!options.some(o => o.correct)) options[0].correct = true // fallback
+    return { id: Date.now().toString(36) + Math.random().toString(36).slice(2), type: 'single', text: q.text, options }
+  }).filter(Boolean)
+}
+
+function doImportMD() {
+  importError.value = ''
+  const parsed = parseMDTest(importMDText.value)
+  if (!parsed.length) {
+    importError.value = 'No se encontraron preguntas. Revisa el formato: las preguntas deben estar numeradas (1. Texto...) y las opciones con A) B) C) D).'
+    return
+  }
+  appStore.editingId = null
+  appStore.editingQuestions = parsed
+  closeImportModal()
+  router.push('/editor')
+  appStore.showToast(`${parsed.length} preguntas importadas ✓`)
+}
 
 // Custom test modal
 const showCustomModal = ref(false)

@@ -719,6 +719,13 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
 }
 .reset-wrong-btn:hover { background: var(--danger-light) !important; }
 
+/* ── MD Import modal ────────────────── */
+.import-md-modal { max-width: 620px; width: 92%; }
+.import-hint { font-size: 13px; color: var(--ink3); margin-bottom: 6px; }
+.import-example { background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 12px; font-size: 11px; color: var(--ink3); margin-bottom: 10px; white-space: pre; overflow-x: auto; }
+.import-textarea { width: 100%; box-sizing: border-box; resize: vertical; font-size: 12px; font-family: monospace; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; color: var(--ink1); min-height: 200px; }
+.import-error { color: var(--danger); font-size: 12px; margin-top: 6px; }
+
 /* ── Custom test modal ───────────────── */
 .custom-test-modal { max-width: 440px; }
 .custom-q-picker { margin: 1.25rem 0; }
