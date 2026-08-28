@@ -307,11 +307,13 @@ function parseMDTest(text) {
   const bodyLines = solIdx > -1 ? lines.slice(0, solIdx) : lines
   const solLines = solIdx > -1 ? lines.slice(solIdx + 1) : []
 
-  // Build { qNumber: 'A'|'B'|'C'|'D' } from solutions table
+  // Build { qNumber: 'A'|'B'|'C'|'D' } from solutions table.
+  // Each line can have multiple pairs (e.g. "1  B    2  A    3  C"), so scan globally.
   const solutions = {}
   for (const line of solLines) {
-    const m = line.trim().match(/^(\d+)\s+([ABCD])(?:\s|$)/)
-    if (m) solutions[+m[1]] = m[2]
+    for (const m of line.matchAll(/(\d+)\s+([ABCD])(?=\s|$)/g)) {
+      solutions[+m[1]] = m[2]
+    }
   }
 
   // Parse questions
