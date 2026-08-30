@@ -305,7 +305,8 @@ function parseMDTest(text) {
   }
 
   const bodyLines = solIdx > -1 ? lines.slice(0, solIdx) : lines
-  const solLines = solIdx > -1 ? lines.slice(solIdx + 1) : []
+  // Include the header line itself — solutions may appear on the same line as "HOJA DE SOLUCIONES"
+  const solLines = solIdx > -1 ? lines.slice(solIdx) : []
 
   // Build { qNumber: 'A'|'B'|'C'|'D' } from solutions table.
   // Each line can have multiple pairs (e.g. "1  B    2  A    3  C"), so scan globally.
