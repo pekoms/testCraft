@@ -44,6 +44,10 @@ export const useAppStore = defineStore('app', () => {
     return a
   }
 
+  function shuffleOptions(qs) {
+    return qs.map(q => Array.isArray(q.options) ? { ...q, options: shuffle(q.options) } : q)
+  }
+
   // ── Toast ──────────────────────────────────────
   let toastTimer = null
   function showToast(msg) {
@@ -199,7 +203,7 @@ export const useAppStore = defineStore('app', () => {
     }
 
     let qs = JSON.parse(JSON.stringify(t.questions))
-    if (t.shuffle) qs = shuffle(qs)
+    if (t.shuffle) { qs = shuffle(qs); qs = shuffleOptions(qs) }
 
     clearInterval(playerState.value.timerInterval)
     playerState.value = {
@@ -380,11 +384,11 @@ export const useAppStore = defineStore('app', () => {
   // ── Retry wrong only (from current result) ─────
   function retryWrongOnly() {
     if (!resultData.value) return
-    const wrongQs = shuffle(
+    const wrongQs = shuffleOptions(shuffle(
       resultData.value.reviewItems
         .filter(item => item.type !== 'open' && !item.isCorrect)
         .map(item => item.q)
-    )
+    ))
     if (!wrongQs.length) return
     clearInterval(playerState.value.timerInterval)
     playerState.value = {
@@ -500,7 +504,7 @@ export const useAppStore = defineStore('app', () => {
   function startTopicTest(topic) {
     const pool = buildPool(tests.value.filter(t => (t.topic || '') === topic))
     if (!pool.length) { showToast('No hay preguntas disponibles en este tema'); return }
-    const qs = shuffle(pool)
+    const qs = shuffleOptions(shuffle(pool))
     clearInterval(playerState.value.timerInterval)
     playerState.value = {
       test: { id: 'topic_' + Date.now(), title: `${topic || 'Sin tema'} — Tema completo` },
@@ -516,7 +520,7 @@ export const useAppStore = defineStore('app', () => {
     const pool = buildPool(tests.value)
     if (!pool.length) { showToast('No hay preguntas disponibles'); return }
     const n = Math.min(Math.max(1, numQuestions), pool.length)
-    const qs = shuffle(pool).slice(0, n)
+    const qs = shuffleOptions(shuffle(pool).slice(0, n))
     clearInterval(playerState.value.timerInterval)
     playerState.value = {
       test: { id: 'custom_' + Date.now(), title: `Test personalizado (${n} preguntas)` },
@@ -530,7 +534,7 @@ export const useAppStore = defineStore('app', () => {
 
   async function startWrongAnswersTest() {
     if (!wrongAnswers.value.length) return
-    const qs = shuffle(wrongAnswers.value)
+    const qs = shuffleOptions(shuffle(wrongAnswers.value))
     clearInterval(playerState.value.timerInterval)
     playerState.value = {
       test: { id: 'wrong_' + Date.now(), title: 'Repaso de errores', questions: qs },

@@ -279,3 +279,81 @@ describe('loadWrongAnswers — respeta timestamp de reset', () => {
     expect(wrong[0].text).toBe('Q1')
   })
 })
+
+// ── shuffleOptions — las opciones se aleatorizan ──────────────────────────────
+
+function makeQ4(text) {
+  return {
+    type: 'single', text,
+    options: [
+      { text: 'Opción A', correct: true },
+      { text: 'Opción B', correct: false },
+      { text: 'Opción C', correct: false },
+      { text: 'Opción D', correct: false },
+    ],
+  }
+}
+
+describe('shuffleOptions en startCustomTest', () => {
+  let store
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useAppStore()
+    seedTests(store, [
+      { id: 't1', title: 'T1', questions: [makeQ4('P1'), makeQ4('P2'), makeQ4('P3')] },
+    ])
+    store.startCustomTest(3)
+  })
+
+  it('cada pregunta conserva sus 4 opciones tras el shuffle', () => {
+    const expected = ['Opción A', 'Opción B', 'Opción C', 'Opción D'].sort()
+    for (const q of store.playerState.questions) {
+      expect(q.options.map(o => o.text).sort()).toEqual(expected)
+    }
+  })
+
+  it('la opción correcta conserva correct=true independientemente de su posición', () => {
+    for (const q of store.playerState.questions) {
+      const correct = q.options.filter(o => o.correct)
+      expect(correct).toHaveLength(1)
+      expect(correct[0].text).toBe('Opción A')
+    }
+  })
+
+  it('las opciones incorrectas conservan correct=false', () => {
+    for (const q of store.playerState.questions) {
+      const incorrect = q.options.filter(o => !o.correct)
+      expect(incorrect).toHaveLength(3)
+      expect(incorrect.map(o => o.text).sort()).toEqual(['Opción B', 'Opción C', 'Opción D'].sort())
+    }
+  })
+})
+
+describe('shuffleOptions en startTopicTest', () => {
+  let store
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useAppStore()
+    seedTests(store, [
+      { id: 't1', title: 'T1', topic: 'Derecho', questions: [makeQ4('P1'), makeQ4('P2')] },
+    ])
+    store.startTopicTest('Derecho')
+  })
+
+  it('cada pregunta conserva sus 4 opciones', () => {
+    const expected = ['Opción A', 'Opción B', 'Opción C', 'Opción D'].sort()
+    for (const q of store.playerState.questions) {
+      expect(q.options.map(o => o.text).sort()).toEqual(expected)
+    }
+  })
+
+  it('la opción correcta conserva correct=true', () => {
+    for (const q of store.playerState.questions) {
+      const correct = q.options.filter(o => o.correct)
+      expect(correct).toHaveLength(1)
+      expect(correct[0].text).toBe('Opción A')
+    }
+  })
+})
