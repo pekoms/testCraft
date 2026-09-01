@@ -108,7 +108,7 @@ HOJA DE SOLUCIONES
       </h1>
       <h1 v-else>Tus <span style="color:var(--accent)">tests</span></h1>
       <p>{{ authStore.isTeacher ? 'Diseña tests y publícalos para que los vean tus alumnos.' : 'Estos son los tests que tu profesor ha publicado.' }}</p>
-      <button v-if="authStore.isAdmin" class="btn" @click="showImportModal = true">
+      <button v-if="authStore.isAdmin" class="btn" @click="openImportModal">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
@@ -281,6 +281,11 @@ const importPreviewCount = computed(() => {
   if (!text.trim()) return 0
   return (text.match(/^\d+[.)]\s/gm) || []).length
 })
+
+function openImportModal() {
+  importTopic.value = appStore.currentTopic || ''
+  showImportModal.value = true
+}
 
 function closeImportModal() {
   showImportModal.value = false
