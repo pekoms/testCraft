@@ -307,6 +307,7 @@ function doImportMD() {
     return
   }
   appStore.editingId = null
+  appStore.editingQuestions = parsed
   appStore.importMeta = {
     title: importTitle.value.trim(),
     topic: importTopic.value.trim(),
