@@ -217,6 +217,9 @@ onMounted(() => {
     deadline.value = t.deadline ? new Date(t.deadline).toISOString().slice(0, 16) : ''
   } else {
     const meta = appStore.importMeta
+    if (meta?.questions?.length) {
+      appStore.editingQuestions = meta.questions
+    }
     title.value = meta?.title || ''
     topic.value = meta?.topic || appStore.currentTopic || ''
     description.value = meta?.description || ''
@@ -225,7 +228,7 @@ onMounted(() => {
     published.value = false
     maxAttempts.value = 0
     deadline.value = ''
-    secret.value = authStore.isAdmin   // new tests always default to secret for admin
+    secret.value = meta?.secret ?? authStore.isAdmin
     appStore.importMeta = null
   }
 })

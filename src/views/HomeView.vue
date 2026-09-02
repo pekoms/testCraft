@@ -307,14 +307,14 @@ function doImportMD() {
     return
   }
   appStore.editingId = null
-  appStore.editingQuestions = parsed
-  appStore.importSecret = true
   appStore.importMeta = {
     title: importTitle.value.trim(),
     topic: importTopic.value.trim(),
     description: importDescription.value.trim(),
     shuffle: importShuffle.value,
     timeLimit: importTimeLimit.value || 0,
+    secret: true,
+    questions: parsed,
   }
   closeImportModal()
   router.push('/editor')
