@@ -876,7 +876,9 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
 .pills-header-btns { display: flex; gap: 8px; }
 
 /* ── Manage view ─────────────────────────────────── */
-.pills-new-btn { margin-bottom: 1.25rem; }
+.pills-manage-toolbar { display: flex; gap: 8px; margin-bottom: 1.25rem; flex-wrap: wrap; }
+.pills-new-btn { }
+.pills-import-btn { }
 .pills-empty-manage {
   text-align: center; padding: 2.5rem 1rem; color: var(--ink3);
   border: 2px dashed var(--border); border-radius: var(--radius);
@@ -1000,6 +1002,17 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
 
 /* Modal */
 .pill-modal { max-width: 500px; }
+.pill-import-modal { max-width: 580px; }
+.pill-import-hint { font-size: 13px; color: var(--ink2); margin-bottom: 10px; }
+.pill-import-formats { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 2px; }
+.pill-format-example {
+  flex: 1; min-width: 180px;
+  background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 6px; padding: 8px 12px;
+  font-size: 11px; color: var(--ink3);
+  white-space: pre-wrap; overflow-x: auto;
+  font-family: monospace; margin: 0;
+}
 .pill-modal textarea {
   width: 100%; padding: 0.75rem 0.9rem;
   border: 1px solid var(--border); border-radius: var(--radius-sm);

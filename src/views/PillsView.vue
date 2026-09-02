@@ -30,12 +30,21 @@
 
     <!-- MANAGE MODE -->
     <div v-if="managing" class="pills-manage-view">
-      <button class="btn accent pills-new-btn" @click="openCreate">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
-          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-        </svg>
-        Nueva píldora
-      </button>
+      <div class="pills-manage-toolbar">
+        <button class="btn accent pills-new-btn" @click="openCreate">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Nueva píldora
+        </button>
+        <button class="btn pills-import-btn" @click="openImportModal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Importar .md
+        </button>
+      </div>
 
       <div v-if="!store.pills.length" class="pills-empty-manage">
         No hay píldoras aún. Crea la primera con el botón de arriba.
@@ -161,6 +170,52 @@
       </div>
     </Teleport>
 
+    <!-- Import .md modal -->
+    <Teleport to="body">
+      <div v-if="importOpen" class="modal-overlay open" @click.self="importOpen = false">
+        <div class="modal pill-import-modal">
+          <h3>Importar píldoras desde texto</h3>
+
+          <p class="pill-import-hint">
+            Pega el texto con tus tarjetas. Formatos admitidos:
+          </p>
+          <div class="pill-import-formats">
+            <pre class="pill-format-example">P: Pregunta o concepto
+R: Respuesta o explicación
+
+P: Siguiente tarjeta
+R: Su respuesta</pre>
+            <pre class="pill-format-example">## Pregunta o concepto
+
+Respuesta o explicación
+
+## Siguiente tarjeta
+
+Su respuesta</pre>
+          </div>
+
+          <div class="field-group" style="margin-top:14px;position:relative">
+            <textarea v-model="importText" rows="10" class="import-textarea"
+              placeholder="Pega aquí el texto..."></textarea>
+            <span v-if="importPreviewCount" class="import-count-badge">{{ importPreviewCount }} píldoras</span>
+          </div>
+
+          <p v-if="importError" class="import-error">{{ importError }}</p>
+
+          <div class="modal-actions">
+            <button class="btn" @click="importOpen = false">Cancelar</button>
+            <button class="btn accent" @click="doImportPills" :disabled="!importText.trim()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Importar
+            </button>
+          </div>
+        </div>
+      </div>
+    </Teleport>
+
   </div>
 </template>
 
@@ -170,6 +225,7 @@ import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { usePillsStore } from '@/stores/pills'
+import { parseMDPills } from '@/utils/parseMDPills'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -301,5 +357,35 @@ function requestDelete(id) {
     },
     'Eliminar', true,
   )
+}
+
+// ── Import from .md ───────────────────────────────────────
+const importOpen = ref(false)
+const importText = ref('')
+const importError = ref('')
+
+const importPreviewCount = computed(() => {
+  if (!importText.value.trim()) return 0
+  return parseMDPills(importText.value).length
+})
+
+function openImportModal() {
+  importText.value = ''
+  importError.value = ''
+  importOpen.value = true
+}
+
+function doImportPills() {
+  importError.value = ''
+  const parsed = parseMDPills(importText.value)
+  if (!parsed.length) {
+    importError.value = 'No se encontraron píldoras. Usa el formato P:/R: o ## para cada tarjeta.'
+    return
+  }
+  parsed.forEach(p => store.save({ id: null, front: p.front, back: p.back }))
+  importOpen.value = false
+  importText.value = ''
+  appStore.showToast(`${parsed.length} píldora${parsed.length !== 1 ? 's' : ''} importada${parsed.length !== 1 ? 's' : ''} ✓`)
+  reshuffle()
 }
 </script>
