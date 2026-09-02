@@ -11,7 +11,7 @@
         </svg>
         Inicio
       </button>
-      <button v-if="authStore.isTeacher" class="btn" @click="router.push('/users')">
+      <button v-if="authStore.isTeacher" class="btn" @click="go('/users')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
           <circle cx="9" cy="7" r="4"/>
@@ -20,7 +20,7 @@
         </svg>
         Alumnos
       </button>
-      <button class="btn" @click="router.push('/stats')">
+      <button class="btn" @click="go('/stats')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
           <line x1="18" y1="20" x2="18" y2="10"/>
           <line x1="12" y1="20" x2="12" y2="4"/>
@@ -28,7 +28,7 @@
         </svg>
         Estadísticas
       </button>
-      <button v-if="authStore.isAdmin" class="btn" @click="router.push('/pills')">
+      <button v-if="authStore.isAdmin" class="btn" @click="go('/pills')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
           <rect x="2" y="6" width="20" height="12" rx="6"/>
           <circle cx="9" cy="12" r="4" fill="currentColor" stroke="none" opacity="0.35"/>
@@ -121,7 +121,7 @@
           </svg>
           Inicio
         </button>
-        <button v-if="authStore.isTeacher" class="mobile-link" @click="router.push('/users'); menuOpen = false">
+        <button v-if="authStore.isTeacher" class="mobile-link" @click="go('/users'); menuOpen = false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
             <circle cx="9" cy="7" r="4"/>
@@ -130,7 +130,7 @@
           </svg>
           Alumnos
         </button>
-        <button class="mobile-link" @click="router.push('/stats'); menuOpen = false">
+        <button class="mobile-link" @click="go('/stats'); menuOpen = false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <line x1="18" y1="20" x2="18" y2="10"/>
             <line x1="12" y1="20" x2="12" y2="4"/>
@@ -138,7 +138,7 @@
           </svg>
           Estadísticas
         </button>
-        <button v-if="authStore.isAdmin" class="mobile-link" @click="router.push('/pills'); menuOpen = false">
+        <button v-if="authStore.isAdmin" class="mobile-link" @click="go('/pills'); menuOpen = false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <rect x="2" y="6" width="20" height="12" rx="6"/>
             <circle cx="9" cy="12" r="4" fill="currentColor" stroke="none" opacity="0.35"/>
@@ -184,8 +184,18 @@ const roleLabel = computed(() =>
   authStore.isAdmin ? 'Admin' : authStore.isTeacher ? 'Profesor' : 'Alumno'
 )
 
+// Wraps router.push so that duplicate-navigation errors are suppressed
+// (those are benign) while real errors surface to the console.
+function go(path) {
+  router.push(path).catch(err => {
+    if (err?.name !== 'NavigationDuplicated' && !err?.message?.includes('Avoided redundant navigation')) {
+      console.error('[NavBar] navigation error:', err)
+    }
+  })
+}
+
 function goHome() {
   appStore.backToTopics()
-  router.push('/')
+  go('/')
 }
 </script>
