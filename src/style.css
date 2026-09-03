@@ -929,6 +929,13 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
   transition: border-color 0.15s;
 }
 .pill-topic-input:focus { outline: none; border-color: var(--accent); }
+.pill-topic-select {
+  width: 100%; padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  font-size: 0.9rem; font-family: inherit; cursor: pointer;
+  transition: border-color 0.15s; appearance: auto;
+}
+.pill-topic-select:focus { outline: none; border-color: var(--accent); }
 
 /* ── Study view ──────────────────────────────────── */
 .pills-empty-study {

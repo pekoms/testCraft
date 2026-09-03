@@ -172,11 +172,13 @@
           </div>
           <div class="field-group" style="margin-top:14px">
             <label>Tema</label>
-            <input list="pill-topics-list" v-model="editTopic"
-              placeholder="ej. Tema 01. La Función Pública" maxlength="80" class="pill-topic-input" />
-            <datalist id="pill-topics-list">
-              <option v-for="t in store.topics" :key="t" :value="t" />
-            </datalist>
+            <select v-model="editTopicSel" class="pill-topic-select">
+              <option v-for="t in store.topics" :key="t" :value="t">{{ t }}</option>
+              <option value="__new__">＋ Nuevo tema...</option>
+            </select>
+            <input v-if="editTopicSel === '__new__'" v-model="editTopicNew"
+              placeholder="Nombre del nuevo tema" maxlength="80"
+              class="pill-topic-input" style="margin-top:8px" />
           </div>
           <div class="modal-actions">
             <button class="btn" @click="editOpen = false">Cancelar</button>
@@ -221,11 +223,13 @@ Su respuesta</pre>
 
           <div class="field-group" style="margin-top:14px;margin-bottom:10px">
             <label>Asignar al tema</label>
-            <input list="pill-import-topics-list" v-model="importTopic"
-              placeholder="ej. Tema 01. La Función Pública" maxlength="80" class="pill-topic-input" />
-            <datalist id="pill-import-topics-list">
-              <option v-for="t in store.topics" :key="t" :value="t" />
-            </datalist>
+            <select v-model="importTopicSel" class="pill-topic-select">
+              <option v-for="t in store.topics" :key="t" :value="t">{{ t }}</option>
+              <option value="__new__">＋ Nuevo tema...</option>
+            </select>
+            <input v-if="importTopicSel === '__new__'" v-model="importTopicNew"
+              placeholder="Nombre del nuevo tema" maxlength="80"
+              class="pill-topic-input" style="margin-top:8px" />
           </div>
           <div class="field-group" style="position:relative">
             <textarea v-model="importText" rows="10" class="import-textarea"
@@ -371,14 +375,19 @@ const editOpen = ref(false)
 const editId = ref(null)
 const editFront = ref('')
 const editBack = ref('')
-const editTopic = ref('')
+const editTopicSel = ref('')   // selected value in <select>; '__new__' = new topic
+const editTopicNew = ref('')   // text when '__new__' is selected
+const editTopicFinal = computed(() =>
+  editTopicSel.value === '__new__' ? editTopicNew.value.trim() : editTopicSel.value
+)
 const editFrontEl = ref(null)
 
 function openCreate() {
   editId.value = null
   editFront.value = ''
   editBack.value = ''
-  editTopic.value = allTopics.value[0] || ''
+  editTopicSel.value = allTopics.value[0] || '__new__'
+  editTopicNew.value = ''
   editOpen.value = true
   nextTick(() => editFrontEl.value?.focus())
 }
@@ -387,14 +396,16 @@ function openEdit(p) {
   editId.value = p.id
   editFront.value = p.front
   editBack.value = p.back
-  editTopic.value = p.topic || ''
+  const t = p.topic || ''
+  editTopicSel.value = store.topics.includes(t) ? t : '__new__'
+  editTopicNew.value = store.topics.includes(t) ? '' : t
   editOpen.value = true
   nextTick(() => editFrontEl.value?.focus())
 }
 
 function doSave() {
   if (!editFront.value.trim() || !editBack.value.trim()) return
-  store.save({ id: editId.value, front: editFront.value, back: editBack.value, topic: editTopic.value })
+  store.save({ id: editId.value, front: editFront.value, back: editBack.value, topic: editTopicFinal.value })
   editOpen.value = false
   appStore.showToast(editId.value ? 'Píldora actualizada ✓' : 'Píldora creada ✓')
 }
@@ -414,7 +425,11 @@ function requestDelete(id) {
 // ── Import from .md ───────────────────────────────────────
 const importOpen = ref(false)
 const importText = ref('')
-const importTopic = ref('')
+const importTopicSel = ref('')  // selected value in <select>; '__new__' = new topic
+const importTopicNew = ref('')  // text when '__new__' is selected
+const importTopicFinal = computed(() =>
+  importTopicSel.value === '__new__' ? importTopicNew.value.trim() : importTopicSel.value
+)
 const importError = ref('')
 
 const importPreviewCount = computed(() => {
@@ -425,7 +440,8 @@ const importPreviewCount = computed(() => {
 function openImportModal() {
   importText.value = ''
   importError.value = ''
-  importTopic.value = allTopics.value[0] || 'Tema 01. La Función Pública'
+  importTopicSel.value = allTopics.value[0] || '__new__'
+  importTopicNew.value = ''
   importOpen.value = true
 }
 
@@ -436,7 +452,7 @@ function doImportPills() {
     importError.value = 'No se encontraron píldoras. Usa el formato P:/R: o ## para cada tarjeta.'
     return
   }
-  const topic = importTopic.value.trim() || 'Tema 01. La Función Pública'
+  const topic = importTopicFinal.value || 'Tema 01. La Función Pública'
   parsed.forEach(p => store.save({ id: null, front: p.front, back: p.back, topic }))
   importOpen.value = false
   importText.value = ''
