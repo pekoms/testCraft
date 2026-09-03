@@ -3,7 +3,12 @@ import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath, URL } from 'node:url'
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
+  define: mode === 'e2e' ? {
+    // Hard-code empty strings so supabase.js sees null → dev/teacher mode in tests
+    'import.meta.env.VITE_SUPABASE_URL': '""',
+    'import.meta.env.VITE_SUPABASE_ANON_KEY': '""',
+  } : {},
   plugins: [
     vue(),
     VitePWA({
@@ -51,4 +56,4 @@ export default defineConfig({
     setupFiles: ['./src/__tests__/setup.js'],
     include: ['src/__tests__/**/*.test.js'],
   },
-})
+}))

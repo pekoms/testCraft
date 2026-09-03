@@ -1,3 +1,7 @@
 node_modules/
 dist/
 .env.local
+
+# Playwright generated output — regenerated on every test run
+playwright-report/
+test-results/
