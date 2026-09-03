@@ -185,6 +185,13 @@ R: Respuesta o explicación
 
 P: Siguiente tarjeta
 R: Su respuesta</pre>
+            <pre class="pill-format-example">##
+P: Pregunta o concepto
+R: Respuesta o explicación
+
+##
+P: Siguiente tarjeta
+R: Su respuesta</pre>
             <pre class="pill-format-example">## Pregunta o concepto
 
 Respuesta o explicación

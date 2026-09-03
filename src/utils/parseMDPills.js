@@ -11,8 +11,13 @@
  *   ## Texto del anverso
  *   Texto del reverso
  *
- * Both formats support multi-line content. A blank line between pills
- * is optional in Format A (the next P:/## always flushes the previous one).
+ * Format C — ## alone as separator before P:/R: markers:
+ *   ##
+ *   P: Texto del anverso
+ *   R: Texto del reverso
+ *
+ * All formats support multi-line content and can be mixed in the same file.
+ * A blank line between pills is optional (the next P:/## always flushes the previous one).
  */
 export function parseMDPills(text) {
   const lines = text.replace(/\r\n/g, '\n').split('\n')
@@ -33,14 +38,18 @@ export function parseMDPills(text) {
   for (const raw of lines) {
     const line = raw.trim()
 
-    // Format B trigger: ## heading
-    const h2 = line.match(/^##\s+(.+)/)
+    // Format B/C trigger: ## with text (heading) or ## alone (separator)
+    const h2 = line.match(/^##(?:\s+(.+))?$/)
     if (h2) {
       flush()
-      front = h2[1].trim()
-      back = ''
-      mode = 'front'
-      fmt = 'heading'
+      if (h2[1]) {
+        // Format B: ## Texto del anverso
+        front = h2[1].trim()
+        back = ''
+        mode = 'front'
+        fmt = 'heading'
+      }
+      // Format C: ## alone — separator; P:/R: markers that follow fill front/back
       continue
     }
 

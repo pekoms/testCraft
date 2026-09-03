@@ -61,6 +61,18 @@ El plan define tres situaciones:
 Segunda respuesta
 `
 
+// ── Format C: ## separator + P:/R: markers ───────────────────────────────────
+
+const FORMAT_C = `
+##
+P: ¿Cuáles son las cuatro clases de empleados públicos según el artículo 8.2 del TREBEP?
+R: **1) Funcionarios de carrera, 2) Funcionarios interinos, 3) Personal laboral** (ya sea fijo, por tiempo indefinido o temporal) y **4) Personal eventual.**
+
+##
+P: ¿Qué define a un funcionario de carrera conforme al artículo 9.1 del TREBEP?
+R: Son quienes, en virtud de **nombramiento legal**, están vinculados a una Administración Pública por una **relación estatutaria** regulada por el **Derecho Administrativo** para el desempeño de servicios profesionales retribuidos de carácter **permanente.**
+`
+
 // ── Mixed formats ─────────────────────────────────────────────────────────────
 
 const FORMAT_MIXED = `
@@ -140,6 +152,27 @@ describe('parseMDPills — formato B (## headings)', () => {
     expect(result[0].back).toContain('Situación 0')
     expect(result[0].back).toContain('Situación 1')
     expect(result[0].back).toContain('Situación 2')
+  })
+})
+
+describe('parseMDPills — formato C (## separador + P:/R:)', () => {
+  it('parsea 2 píldoras con ## como separador', () => {
+    const result = parseMDPills(FORMAT_C)
+    expect(result).toHaveLength(2)
+  })
+
+  it('extrae el front correctamente', () => {
+    const result = parseMDPills(FORMAT_C)
+    expect(result[0].front).toContain('cuatro clases de empleados públicos')
+    expect(result[1].front).toContain('funcionario de carrera')
+  })
+
+  it('extrae el back con formato markdown', () => {
+    const result = parseMDPills(FORMAT_C)
+    expect(result[0].back).toContain('Funcionarios de carrera')
+    expect(result[0].back).toContain('Personal eventual')
+    expect(result[1].back).toContain('nombramiento legal')
+    expect(result[1].back).toContain('permanente')
   })
 })
 
