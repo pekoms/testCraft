@@ -903,6 +903,32 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
   display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden;
 }
 .pill-manage-actions { display: flex; gap: 4px; flex-shrink: 0; margin-top: 2px; }
+.pill-manage-topic {
+  display: inline-block; margin-top: 5px;
+  font-size: 0.72rem; font-weight: 600; letter-spacing: 0.02em;
+  padding: 1px 7px; border-radius: 99px;
+  background: var(--accent-light); color: var(--accent);
+}
+
+/* ── Topic filter ────────────────────────────────── */
+.pills-topic-filter {
+  display: flex; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 1.25rem;
+}
+.topic-chip {
+  padding: 4px 14px; border-radius: 99px; font-size: 0.8rem; font-weight: 600;
+  border: 1.5px solid var(--border); background: var(--surface2); color: var(--ink3);
+  cursor: pointer; transition: all 0.15s;
+}
+.topic-chip:hover { border-color: var(--accent); color: var(--accent); }
+.topic-chip.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+.pill-topic-input {
+  width: 100%; padding: 8px 12px; border-radius: var(--radius-sm);
+  border: 1px solid var(--border); background: var(--surface); color: var(--ink);
+  font-size: 0.9rem; font-family: inherit;
+  transition: border-color 0.15s;
+}
+.pill-topic-input:focus { outline: none; border-color: var(--accent); }
 
 /* ── Study view ──────────────────────────────────── */
 .pills-empty-study {

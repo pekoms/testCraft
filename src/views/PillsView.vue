@@ -55,6 +55,7 @@
           <div class="pill-manage-texts">
             <div class="pill-manage-front">{{ p.front }}</div>
             <div class="pill-manage-back">{{ p.back }}</div>
+            <span v-if="p.topic" class="pill-manage-topic">{{ p.topic }}</span>
           </div>
           <div class="pill-manage-actions">
             <button class="btn sm" @click="openEdit(p)" title="Editar">
@@ -78,6 +79,15 @@
     <!-- STUDY MODE -->
     <div v-else class="pills-study-view">
 
+      <!-- Topic filter chips -->
+      <div v-if="allTopics.length >= 2" class="pills-topic-filter">
+        <button
+          v-for="t in allTopics" :key="t"
+          class="topic-chip" :class="{ active: selectedTopics.includes(t) }"
+          @click="toggleTopic(t)"
+        >{{ t }}</button>
+      </div>
+
       <!-- Empty state -->
       <div v-if="!shuffled.length" class="pills-empty-study">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="48" height="48" style="color:var(--ink3)">
@@ -85,9 +95,9 @@
           <rect x="5" y="2" width="14" height="14" rx="2"/>
           <line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="12" x2="13" y2="12"/>
         </svg>
-        <strong>No hay píldoras</strong>
-        <p>Crea la primera desde «Gestionar».</p>
-        <button class="btn accent" @click="managing = true">Crear primera</button>
+        <strong>{{ selectedTopics.length ? 'Sin resultados' : 'No hay píldoras' }}</strong>
+        <p>{{ selectedTopics.length ? 'Ninguna píldora coincide con los temas seleccionados.' : 'Crea la primera desde «Gestionar».' }}</p>
+        <button v-if="!selectedTopics.length" class="btn accent" @click="managing = true">Crear primera</button>
       </div>
 
       <!-- Card carousel -->
@@ -160,6 +170,14 @@
               placeholder="Escribe la respuesta o la explicación..." maxlength="500">
             </textarea>
           </div>
+          <div class="field-group" style="margin-top:14px">
+            <label>Tema</label>
+            <input list="pill-topics-list" v-model="editTopic"
+              placeholder="ej. Tema 01. La Función Pública" maxlength="80" class="pill-topic-input" />
+            <datalist id="pill-topics-list">
+              <option v-for="t in store.topics" :key="t" :value="t" />
+            </datalist>
+          </div>
           <div class="modal-actions">
             <button class="btn" @click="editOpen = false">Cancelar</button>
             <button class="btn accent" @click="doSave" :disabled="!editFront.trim() || !editBack.trim()">
@@ -201,7 +219,15 @@ Respuesta o explicación
 Su respuesta</pre>
           </div>
 
-          <div class="field-group" style="margin-top:14px;position:relative">
+          <div class="field-group" style="margin-top:14px;margin-bottom:10px">
+            <label>Asignar al tema</label>
+            <input list="pill-import-topics-list" v-model="importTopic"
+              placeholder="ej. Tema 01. La Función Pública" maxlength="80" class="pill-topic-input" />
+            <datalist id="pill-import-topics-list">
+              <option v-for="t in store.topics" :key="t" :value="t" />
+            </datalist>
+          </div>
+          <div class="field-group" style="position:relative">
             <textarea v-model="importText" rows="10" class="import-textarea"
               placeholder="Pega aquí el texto..."></textarea>
             <span v-if="importPreviewCount" class="import-count-badge">{{ importPreviewCount }} píldoras</span>
@@ -227,7 +253,7 @@ Su respuesta</pre>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
@@ -259,13 +285,29 @@ const direction = ref('next')
 
 const current = computed(() => shuffled.value[idx.value] || null)
 
-function reshuffle() {
-  const arr = [...store.pills]
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+// ── Topic filter ──────────────────────────────────────────
+const allTopics = computed(() => store.topics)
+const selectedTopics = ref([]) // empty = show all
+
+function toggleTopic(t) {
+  if (selectedTopics.value.includes(t)) {
+    selectedTopics.value = selectedTopics.value.filter(x => x !== t)
+  } else {
+    selectedTopics.value = [...selectedTopics.value, t]
   }
-  shuffled.value = arr
+}
+
+watch(selectedTopics, () => reshuffle())
+
+function reshuffle() {
+  const src = selectedTopics.value.length
+    ? store.pills.filter(p => selectedTopics.value.includes(p.topic || ''))
+    : [...store.pills]
+  for (let i = src.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[src[i], src[j]] = [src[j], src[i]]
+  }
+  shuffled.value = src
   idx.value = 0
   flipped.value = false
 }
@@ -329,12 +371,14 @@ const editOpen = ref(false)
 const editId = ref(null)
 const editFront = ref('')
 const editBack = ref('')
+const editTopic = ref('')
 const editFrontEl = ref(null)
 
 function openCreate() {
   editId.value = null
   editFront.value = ''
   editBack.value = ''
+  editTopic.value = allTopics.value[0] || ''
   editOpen.value = true
   nextTick(() => editFrontEl.value?.focus())
 }
@@ -343,13 +387,14 @@ function openEdit(p) {
   editId.value = p.id
   editFront.value = p.front
   editBack.value = p.back
+  editTopic.value = p.topic || ''
   editOpen.value = true
   nextTick(() => editFrontEl.value?.focus())
 }
 
 function doSave() {
   if (!editFront.value.trim() || !editBack.value.trim()) return
-  store.save({ id: editId.value, front: editFront.value, back: editBack.value })
+  store.save({ id: editId.value, front: editFront.value, back: editBack.value, topic: editTopic.value })
   editOpen.value = false
   appStore.showToast(editId.value ? 'Píldora actualizada ✓' : 'Píldora creada ✓')
 }
@@ -369,6 +414,7 @@ function requestDelete(id) {
 // ── Import from .md ───────────────────────────────────────
 const importOpen = ref(false)
 const importText = ref('')
+const importTopic = ref('')
 const importError = ref('')
 
 const importPreviewCount = computed(() => {
@@ -379,6 +425,7 @@ const importPreviewCount = computed(() => {
 function openImportModal() {
   importText.value = ''
   importError.value = ''
+  importTopic.value = allTopics.value[0] || 'Tema 01. La Función Pública'
   importOpen.value = true
 }
 
@@ -389,7 +436,8 @@ function doImportPills() {
     importError.value = 'No se encontraron píldoras. Usa el formato P:/R: o ## para cada tarjeta.'
     return
   }
-  parsed.forEach(p => store.save({ id: null, front: p.front, back: p.back }))
+  const topic = importTopic.value.trim() || 'Tema 01. La Función Pública'
+  parsed.forEach(p => store.save({ id: null, front: p.front, back: p.back, topic }))
   importOpen.value = false
   importText.value = ''
   appStore.showToast(`${parsed.length} píldora${parsed.length !== 1 ? 's' : ''} importada${parsed.length !== 1 ? 's' : ''} ✓`)

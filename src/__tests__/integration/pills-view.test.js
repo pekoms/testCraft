@@ -12,9 +12,9 @@ import { usePillsStore } from '@/stores/pills'
 import PillsView from '@/views/PillsView.vue'
 
 const PILLS = [
-  { id: '1', front: '¿Cuál es la capital de España?', back: 'Madrid' },
-  { id: '2', front: '¿Cuántos planetas hay en el sistema solar?', back: 'Ocho' },
-  { id: '3', front: '¿En qué año llegó el hombre a la Luna?', back: '1969' },
+  { id: '1', front: '¿Cuál es la capital de España?', back: 'Madrid', topic: 'Tema 01. La Función Pública' },
+  { id: '2', front: '¿Cuántos planetas hay en el sistema solar?', back: 'Ocho', topic: 'Tema 01. La Función Pública' },
+  { id: '3', front: '¿En qué año llegó el hombre a la Luna?', back: '1969', topic: 'Tema 2' },
 ]
 
 function makeRouter() {
@@ -201,5 +201,62 @@ describe('PillsView — integración', () => {
 
     const items = w.findAll('.pill-manage-item')
     expect(items).toHaveLength(3)
+  })
+
+  it('el modo gestión muestra la etiqueta de tema en cada píldora', async () => {
+    const w = mount$()
+    await flushPromises()
+
+    const manageBtn = w.findAll('button').find(b => b.text().includes('Gestionar'))
+    await manageBtn.trigger('click')
+
+    const badges = w.findAll('.pill-manage-topic')
+    expect(badges.length).toBeGreaterThan(0)
+    expect(badges[0].text()).toBe('Tema 01. La Función Pública')
+  })
+
+  // ── Topic filter ─────────────────────────────────────────────────────────────
+
+  it('muestra chips de tema cuando hay 2 o más temas distintos', async () => {
+    const w = mount$()
+    await flushPromises()
+    // PILLS has Tema 01. La Función Pública (x2) and Tema 2 (x1)
+    expect(w.find('.pills-topic-filter').exists()).toBe(true)
+    const chips = w.findAll('.topic-chip')
+    expect(chips).toHaveLength(2)
+    expect(chips[0].text()).toBe('Tema 01. La Función Pública')
+    expect(chips[1].text()).toBe('Tema 2')
+  })
+
+  it('al activar un chip solo se muestran las píldoras de ese tema', async () => {
+    const w = mount$()
+    await flushPromises()
+
+    const chips = w.findAll('.topic-chip')
+    // Activate "Tema 2" — only 1 pill belongs to Tema 2
+    await chips[1].trigger('click')
+
+    expect(w.find('.pills-counter').text()).toMatch(/1\s*\/\s*1/)
+  })
+
+  it('activar un chip lo marca como active', async () => {
+    const w = mount$()
+    await flushPromises()
+
+    const chips = w.findAll('.topic-chip')
+    expect(chips[0].classes()).not.toContain('active')
+
+    await chips[0].trigger('click')
+    expect(chips[0].classes()).toContain('active')
+  })
+
+  it('desactivar el chip vuelve a mostrar todas las píldoras', async () => {
+    const w = mount$()
+    await flushPromises()
+
+    const chips = w.findAll('.topic-chip')
+    await chips[1].trigger('click') // Tema 2 → 1 pill
+    await chips[1].trigger('click') // deactivate → all pills
+    expect(w.find('.pills-counter').text()).toMatch(/1\s*\/\s*3/)
   })
 })
