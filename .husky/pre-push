@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+# Pre-push hook — blocks push if any test suite fails.
+# Override with: git push --no-verify
+
+set -e
+
+echo ""
+echo "=== Pre-push: ejecutando pruebas ==="
+echo ""
+
+echo "--- Vitest (unitarias + integración) ---"
+npm run test
+
+echo ""
+echo "--- Playwright (E2E) ---"
+npm run test:e2e
+
+echo ""
+echo "=== Todas las pruebas pasaron. Enviando push... ==="
