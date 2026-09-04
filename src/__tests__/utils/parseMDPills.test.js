@@ -225,6 +225,41 @@ R: Esto no tiene front
   })
 })
 
+// ── Format D: P: pregunta R: respuesta en una sola línea ─────────────────────
+
+const FORMAT_D = `P: ¿Cuál es la estructura de la Ley Orgánica 3/2007? R: Un Título preliminar, ocho Títulos, treinta y una disposiciones adicionales.
+P: ¿Cuál es la duración del permiso de paternidad? R: Trece días de duración, ampliable en caso de parto múltiple.
+P: ¿En cuántas semanas se amplía el permiso de maternidad con discapacidad? R: En dos semanas.`
+
+describe('parseMDPills — formato D (P: pregunta R: respuesta en línea)', () => {
+  it('parsea 3 píldoras en línea', () => {
+    const result = parseMDPills(FORMAT_D)
+    expect(result).toHaveLength(3)
+  })
+
+  it('extrae el front correctamente', () => {
+    const result = parseMDPills(FORMAT_D)
+    expect(result[0].front).toBe('¿Cuál es la estructura de la Ley Orgánica 3/2007?')
+    expect(result[1].front).toBe('¿Cuál es la duración del permiso de paternidad?')
+    expect(result[2].front).toBe('¿En cuántas semanas se amplía el permiso de maternidad con discapacidad?')
+  })
+
+  it('extrae el back correctamente', () => {
+    const result = parseMDPills(FORMAT_D)
+    expect(result[0].back).toBe('Un Título preliminar, ocho Títulos, treinta y una disposiciones adicionales.')
+    expect(result[1].back).toBe('Trece días de duración, ampliable en caso de parto múltiple.')
+    expect(result[2].back).toBe('En dos semanas.')
+  })
+
+  it('no confunde P:/R: multilínea con formato D', () => {
+    const multi = `P: Pregunta\nR: Respuesta separada`
+    const result = parseMDPills(multi)
+    expect(result).toHaveLength(1)
+    expect(result[0].front).toBe('Pregunta')
+    expect(result[0].back).toBe('Respuesta separada')
+  })
+})
+
 describe('parseMDPills — texto real PLATERCAM (formato P:/R:)', () => {
   const PLATERCAM_PILLS = `
 P: ¿Qué es la Amenaza según el apartado 1.4 del PLATERCAM?

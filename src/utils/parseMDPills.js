@@ -16,6 +16,9 @@
  *   P: Texto del anverso
  *   R: Texto del reverso
  *
+ * Format D — inline on a single line:
+ *   P: Texto del anverso R: Texto del reverso
+ *
  * All formats support multi-line content and can be mixed in the same file.
  * A blank line between pills is optional (the next P:/## always flushes the previous one).
  */
@@ -50,6 +53,15 @@ export function parseMDPills(text) {
         fmt = 'heading'
       }
       // Format C: ## alone — separator; P:/R: markers that follow fill front/back
+      continue
+    }
+
+    // Format D — inline: "P: pregunta R: respuesta" all on one line
+    const inlineMarker = line.match(/^(?:P|Q|Pregunta|Anverso)\s*[:.]\s*(.*?)\s+(?:R|A|Respuesta|Reverso)\s*[:.]\s*(.+)$/i)
+    if (inlineMarker) {
+      flush()
+      pills.push({ front: inlineMarker[1].trim(), back: inlineMarker[2].trim() })
+      front = null; back = null; mode = null; fmt = null
       continue
     }
 
