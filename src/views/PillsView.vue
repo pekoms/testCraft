@@ -80,9 +80,9 @@
     <div v-else class="pills-study-view">
 
       <!-- Topic filter chips -->
-      <div v-if="allTopics.length >= 2" class="pills-topic-filter">
+      <div v-if="pillTopics.length >= 2" class="pills-topic-filter">
         <button
-          v-for="t in allTopics" :key="t"
+          v-for="t in pillTopics" :key="t"
           class="topic-chip" :class="{ active: selectedTopics.includes(t) }"
           @click="toggleTopic(t)"
         >{{ t }}</button>
@@ -263,11 +263,11 @@ const authStore = useAuthStore()
 const appStore = useAppStore()
 const store = usePillsStore()
 
-onMounted(() => {
+onMounted(async () => {
   if (!authStore.isAdmin) { router.replace('/'); return }
-  store.load()
-  reshuffle()
   window.addEventListener('keydown', globalKeyHandler)
+  await store.load()
+  reshuffle()
 })
 
 onUnmounted(() => {
@@ -283,11 +283,21 @@ const direction = ref('next')
 
 const current = computed(() => shuffled.value[idx.value] || null)
 
-// ── Topic filter ──────────────────────────────────────────
-// Derivado directamente de store.pills para garantizar reactividad completa
+// ── Topics ────────────────────────────────────────────────
+// Selector: mismos temas que en los tests (tests + píldoras), para poder
+// asignar píldoras a un tema que aún no tiene ninguna.
 const allTopics = computed(() => {
+  const set = new Set([
+    ...appStore.tests.map(t => t.topic),
+    ...store.pills.map(p => p.topic),
+  ].filter(Boolean))
+  return [...set].sort((a, b) => a.localeCompare(b, 'es'))
+})
+
+// Filtro de estudio: solo temas que tienen píldoras
+const pillTopics = computed(() => {
   const set = new Set(store.pills.map(p => p.topic).filter(Boolean))
-  return [...set].sort()
+  return [...set].sort((a, b) => a.localeCompare(b, 'es'))
 })
 const selectedTopics = ref([]) // empty = show all
 
@@ -380,7 +390,7 @@ function openCreate() {
   editId.value = null
   editFront.value = ''
   editBack.value = ''
-  editTopic.value = allTopics.value[0] || ''
+  editTopic.value = ''
   editOpen.value = true
   nextTick(() => editFrontEl.value?.focus())
 }
@@ -394,11 +404,12 @@ function openEdit(p) {
   nextTick(() => editFrontEl.value?.focus())
 }
 
-function doSave() {
+async function doSave() {
   if (!editFront.value.trim() || !editBack.value.trim()) return
-  store.save({ id: editId.value, front: editFront.value, back: editBack.value, topic: editTopic.value })
+  const wasEditing = !!editId.value
   editOpen.value = false
-  appStore.showToast(editId.value ? 'Píldora actualizada ✓' : 'Píldora creada ✓')
+  await store.save({ id: editId.value, front: editFront.value, back: editBack.value, topic: editTopic.value })
+  appStore.showToast(wasEditing ? 'Píldora actualizada ✓' : 'Píldora creada ✓')
 }
 
 function requestDelete(id) {
@@ -427,11 +438,11 @@ const importPreviewCount = computed(() => {
 function openImportModal() {
   importText.value = ''
   importError.value = ''
-  importTopic.value = allTopics.value[0] || ''
+  importTopic.value = ''
   importOpen.value = true
 }
 
-function doImportPills() {
+async function doImportPills() {
   importError.value = ''
   const parsed = parseMDPills(importText.value)
   if (!parsed.length) {
@@ -439,9 +450,9 @@ function doImportPills() {
     return
   }
   const topic = importTopic.value.trim() || 'Tema 01. La Función Pública'
-  parsed.forEach(p => store.save({ id: null, front: p.front, back: p.back, topic }))
   importOpen.value = false
   importText.value = ''
+  await Promise.all(parsed.map(p => store.save({ id: null, front: p.front, back: p.back, topic })))
   appStore.showToast(`${parsed.length} píldora${parsed.length !== 1 ? 's' : ''} importada${parsed.length !== 1 ? 's' : ''} ✓`)
   reshuffle()
 }
