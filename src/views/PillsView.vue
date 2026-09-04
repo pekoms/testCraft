@@ -175,9 +175,6 @@
             <input type="text" v-model="editTopic"
               placeholder="Ej: Tema 01. La Función Pública" maxlength="80"
               list="pillEditTopicsList" autocomplete="off" class="pill-topic-input" />
-            <datalist id="pillEditTopicsList">
-              <option v-for="t in allTopics" :key="t" :value="t" />
-            </datalist>
           </div>
           <div class="modal-actions">
             <button class="btn" @click="editOpen = false">Cancelar</button>
@@ -225,9 +222,6 @@ Su respuesta</pre>
             <input type="text" v-model="importTopic"
               placeholder="Ej: Tema 01. La Función Pública" maxlength="80"
               list="pillImportTopicsList" autocomplete="off" class="pill-topic-input" />
-            <datalist id="pillImportTopicsList">
-              <option v-for="t in allTopics" :key="t" :value="t" />
-            </datalist>
           </div>
           <div class="field-group" style="position:relative">
             <textarea v-model="importText" rows="10" class="import-textarea"
@@ -250,6 +244,14 @@ Su respuesta</pre>
         </div>
       </div>
     </Teleport>
+
+    <!-- Datalists always rendered so browser can find them by id regardless of modal v-if timing -->
+    <datalist id="pillEditTopicsList">
+      <option v-for="t in allTopics" :key="t" :value="t" />
+    </datalist>
+    <datalist id="pillImportTopicsList">
+      <option v-for="t in allTopics" :key="t" :value="t" />
+    </datalist>
 
   </div>
 </template>
