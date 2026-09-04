@@ -154,104 +154,98 @@
     </div>
 
     <!-- Create / Edit modal -->
-    <Teleport to="body">
-      <div v-if="editOpen" class="modal-overlay open" @click.self="editOpen = false">
-        <div class="modal pill-modal">
-          <h3>{{ editId ? 'Editar píldora' : 'Nueva píldora' }}</h3>
-          <div class="field-group">
-            <label>Anverso — pregunta o dato</label>
-            <textarea v-model="editFront" rows="4"
-              placeholder="Escribe la pregunta o el concepto clave..." maxlength="500"
-              ref="editFrontEl"></textarea>
-          </div>
-          <div class="field-group" style="margin-top:14px">
-            <label>Reverso — respuesta</label>
-            <textarea v-model="editBack" rows="4"
-              placeholder="Escribe la respuesta o la explicación..." maxlength="500">
-            </textarea>
-          </div>
-          <div class="field-group" style="margin-top:14px">
-            <label>Tema</label>
-            <input type="text" v-model="editTopic"
-              placeholder="Ej: Tema 01. La Función Pública" maxlength="80"
-              list="pillEditTopicsList" autocomplete="off" class="pill-topic-input" />
-          </div>
-          <div class="modal-actions">
-            <button class="btn" @click="editOpen = false">Cancelar</button>
-            <button class="btn accent" @click="doSave" :disabled="!editFront.trim() || !editBack.trim()">
-              Guardar
-            </button>
-          </div>
+    <div v-if="editOpen" class="modal-overlay open" @click.self="editOpen = false">
+      <div class="modal pill-modal">
+        <h3>{{ editId ? 'Editar píldora' : 'Nueva píldora' }}</h3>
+        <div class="field-group">
+          <label>Anverso — pregunta o dato</label>
+          <textarea v-model="editFront" rows="4"
+            placeholder="Escribe la pregunta o el concepto clave..." maxlength="500"
+            ref="editFrontEl"></textarea>
+        </div>
+        <div class="field-group" style="margin-top:14px">
+          <label>Reverso — respuesta</label>
+          <textarea v-model="editBack" rows="4"
+            placeholder="Escribe la respuesta o la explicación..." maxlength="500">
+          </textarea>
+        </div>
+        <div class="field-group" style="margin-top:14px">
+          <label>Tema</label>
+          <input type="text" v-model="editTopic"
+            placeholder="Ej: Tema 01. La Función Pública" maxlength="80"
+            list="pillEditTopicsList" autocomplete="off" class="pill-topic-input" />
+          <datalist id="pillEditTopicsList">
+            <option v-for="t in allTopics" :key="t" :value="t" />
+          </datalist>
+        </div>
+        <div class="modal-actions">
+          <button class="btn" @click="editOpen = false">Cancelar</button>
+          <button class="btn accent" @click="doSave" :disabled="!editFront.trim() || !editBack.trim()">
+            Guardar
+          </button>
         </div>
       </div>
-    </Teleport>
+    </div>
 
     <!-- Import .md modal -->
-    <Teleport to="body">
-      <div v-if="importOpen" class="modal-overlay open" @click.self="importOpen = false">
-        <div class="modal pill-import-modal">
-          <h3>Importar píldoras desde texto</h3>
+    <div v-if="importOpen" class="modal-overlay open" @click.self="importOpen = false">
+      <div class="modal pill-import-modal">
+        <h3>Importar píldoras desde texto</h3>
 
-          <p class="pill-import-hint">
-            Pega el texto con tus tarjetas. Formatos admitidos:
-          </p>
-          <div class="pill-import-formats">
-            <pre class="pill-format-example">P: Pregunta o concepto
+        <p class="pill-import-hint">
+          Pega el texto con tus tarjetas. Formatos admitidos:
+        </p>
+        <div class="pill-import-formats">
+          <pre class="pill-format-example">P: Pregunta o concepto
 R: Respuesta o explicación
 
 P: Siguiente tarjeta
 R: Su respuesta</pre>
-            <pre class="pill-format-example">##
+          <pre class="pill-format-example">##
 P: Pregunta o concepto
 R: Respuesta o explicación
 
 ##
 P: Siguiente tarjeta
 R: Su respuesta</pre>
-            <pre class="pill-format-example">## Pregunta o concepto
+          <pre class="pill-format-example">## Pregunta o concepto
 
 Respuesta o explicación
 
 ## Siguiente tarjeta
 
 Su respuesta</pre>
-          </div>
+        </div>
 
-          <div class="field-group" style="margin-top:14px;margin-bottom:10px">
-            <label>Asignar al tema</label>
-            <input type="text" v-model="importTopic"
-              placeholder="Ej: Tema 01. La Función Pública" maxlength="80"
-              list="pillImportTopicsList" autocomplete="off" class="pill-topic-input" />
-          </div>
-          <div class="field-group" style="position:relative">
-            <textarea v-model="importText" rows="10" class="import-textarea"
-              placeholder="Pega aquí el texto..."></textarea>
-            <span v-if="importPreviewCount" class="import-count-badge">{{ importPreviewCount }} píldoras</span>
-          </div>
+        <div class="field-group" style="margin-top:14px;margin-bottom:10px">
+          <label>Asignar al tema</label>
+          <input type="text" v-model="importTopic"
+            placeholder="Ej: Tema 01. La Función Pública" maxlength="80"
+            list="pillImportTopicsList" autocomplete="off" class="pill-topic-input" />
+          <datalist id="pillImportTopicsList">
+            <option v-for="t in allTopics" :key="t" :value="t" />
+          </datalist>
+        </div>
+        <div class="field-group" style="position:relative">
+          <textarea v-model="importText" rows="10" class="import-textarea"
+            placeholder="Pega aquí el texto..."></textarea>
+          <span v-if="importPreviewCount" class="import-count-badge">{{ importPreviewCount }} píldoras</span>
+        </div>
 
-          <p v-if="importError" class="import-error">{{ importError }}</p>
+        <p v-if="importError" class="import-error">{{ importError }}</p>
 
-          <div class="modal-actions">
-            <button class="btn" @click="importOpen = false">Cancelar</button>
-            <button class="btn accent" @click="doImportPills" :disabled="!importText.trim()">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
-              </svg>
-              Importar
-            </button>
-          </div>
+        <div class="modal-actions">
+          <button class="btn" @click="importOpen = false">Cancelar</button>
+          <button class="btn accent" @click="doImportPills" :disabled="!importText.trim()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Importar
+          </button>
         </div>
       </div>
-    </Teleport>
-
-    <!-- Datalists always rendered so browser can find them by id regardless of modal v-if timing -->
-    <datalist id="pillEditTopicsList">
-      <option v-for="t in allTopics" :key="t" :value="t" />
-    </datalist>
-    <datalist id="pillImportTopicsList">
-      <option v-for="t in allTopics" :key="t" :value="t" />
-    </datalist>
+    </div>
 
   </div>
 </template>
