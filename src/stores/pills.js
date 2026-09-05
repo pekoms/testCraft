@@ -5,10 +5,14 @@ import { supabase } from '@/lib/supabase'
 const STORAGE_KEY = 'testcraft_pills_v1'
 const DEFAULT_TOPIC = 'Tema 01. La Función Pública'
 
-// Lazy import avoids circular dep at module init
+// Lazy imports avoid circular deps at module init
 async function getAuth() {
   const { useAuthStore } = await import('./auth')
   return useAuthStore()
+}
+async function toast(msg) {
+  const { useAppStore } = await import('./app')
+  useAppStore().showToast(msg)
 }
 
 export const usePillsStore = defineStore('pills', () => {
@@ -31,6 +35,7 @@ export const usePillsStore = defineStore('pills', () => {
     return list.map(p => ({ topic: DEFAULT_TOPIC, ...p }))
   }
 
+  // Returns the Supabase error, or null on success
   async function upsertRemote(pill, userId) {
     const { error } = await supabase.from('pills').upsert({
       id: pill.id,
@@ -38,7 +43,7 @@ export const usePillsStore = defineStore('pills', () => {
       data: pill,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id,id' })
-    return !error
+    return error
   }
 
   // ── Load ───────────────────────────────────────
@@ -58,17 +63,21 @@ export const usePillsStore = defineStore('pills', () => {
         // First sync from a device that already had local pills: push them up
         // so switching devices doesn't look like the pills were lost.
         if (!remote.length && local.length) {
-          await Promise.all(local.map(p => upsertRemote(p, auth.currentUser.id)))
+          const errors = await Promise.all(local.map(p => upsertRemote(p, auth.currentUser.id)))
+          const failed = errors.filter(Boolean)
           pills.value = local
           saveLocal(local)
+          if (failed.length) toast(`Fallo al subir ${failed.length}/${local.length}: ${failed[0].message}`)
+          else toast(`${local.length} píldoras subidas a la nube ✓`)
           return
         }
 
         pills.value = remote
         saveLocal(remote)
         return
-      } catch {
+      } catch (e) {
         pills.value = local // offline — serve the cache
+        toast(`Error al cargar las píldoras: ${e.message || e}`)
         return
       }
     }
@@ -93,7 +102,10 @@ export const usePillsStore = defineStore('pills', () => {
     saveLocal(pills.value)
 
     const auth = await getAuth()
-    if (supabase && auth.currentUser) await upsertRemote(p, auth.currentUser.id)
+    if (supabase && auth.currentUser) {
+      const error = await upsertRemote(p, auth.currentUser.id)
+      if (error) toast(`Error al guardar en la nube: ${error.message}`)
+    }
 
     return p
   }
@@ -104,9 +116,10 @@ export const usePillsStore = defineStore('pills', () => {
 
     const auth = await getAuth()
     if (supabase && auth.currentUser) {
-      await supabase.from('pills').delete()
+      const { error } = await supabase.from('pills').delete()
         .eq('id', id)
         .eq('user_id', auth.currentUser.id)
+      if (error) toast(`Error al eliminar en la nube: ${error.message}`)
     }
   }
 
