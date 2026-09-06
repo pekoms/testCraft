@@ -368,3 +368,65 @@ describe('parseMDTest — preguntas sin numerar con opciones en línea', () => {
     expect(result[0].options[0].text).toContain('(edición de 2023)')
   })
 })
+
+// ── Sin numerar, con las opciones en la línea siguiente ──────────────────────
+
+const OPCIONES_LINEA_APARTE = `¿Qué es el motor según la definición mecánica que ofrece el tema?
+ A) Una máquina que reduce las pérdidas de energía por rozamiento B) Una máquina que varía la relación de transmisión C) Una máquina que transforma energía para obtener el desplazamiento del vehículo D) Una máquina destinada exclusivamente a accionar el alternador
+¿Cómo se identifica o clasifica principalmente un motor según el manual?
+ A) Según el tipo de energía transformada B) Por el número de cilindros fijos C) Por su cilindrada y par motor D) Por la disposición de sus válvulas de admisión
+Si la energía transformada por el motor es térmica, ¿de qué tipo de motor se trata?
+ A) Motor eléctrico B) Motor neumático C) Motor térmico D) Motor hidráulico
+Según el texto, ¿qué tipo de motores son los utilizados en la mayoría de los automóviles de momento?
+ A) Motores híbridos B) Motores eléctricos C) Motores de hidrógeno D) Motores térmicos
+HOJA DE SOLUCIONES
+1 C    2 A    3 C    4 D`
+
+describe('parseMDTest — sin numerar con las opciones en la línea siguiente', () => {
+  const result = parseMDTest(OPCIONES_LINEA_APARTE)
+
+  it('parsea las 4 preguntas', () => {
+    expect(result).toHaveLength(4)
+  })
+
+  it('cada pregunta tiene 4 opciones', () => {
+    for (const q of result) expect(q.options).toHaveLength(4)
+  })
+
+  it('el enunciado no arrastra marcadores ni texto de las opciones', () => {
+    expect(result[0].text).toBe('¿Qué es el motor según la definición mecánica que ofrece el tema?')
+    expect(result[2].text).toBe('Si la energía transformada por el motor es térmica, ¿de qué tipo de motor se trata?')
+  })
+
+  it('numera por orden para casar con la hoja de soluciones', () => {
+    expect(result[0].options.find(o => o.correct).text).toContain('transforma energía')
+    expect(result[1].options.find(o => o.correct).text).toBe('Según el tipo de energía transformada')
+    expect(result[2].options.find(o => o.correct).text).toBe('Motor térmico')
+    expect(result[3].options.find(o => o.correct).text).toBe('Motores térmicos')
+  })
+
+  it('un enunciado no se cuela como opción de la pregunta anterior', () => {
+    for (const q of result) {
+      for (const o of q.options) expect(o.text).not.toMatch(/^¿/)
+    }
+  })
+})
+
+// ── El enunciado puede ocupar varias líneas antes de las opciones ────────────
+
+describe('parseMDTest — enunciado sin numerar repartido en dos líneas', () => {
+  const result = parseMDTest(`¿Cuál es la pregunta
+que continúa en la línea siguiente?
+A) Primera B) Segunda C) Tercera D) Cuarta
+HOJA DE SOLUCIONES
+1 C`)
+
+  it('une las dos líneas en un único enunciado', () => {
+    expect(result).toHaveLength(1)
+    expect(result[0].text).toBe('¿Cuál es la pregunta que continúa en la línea siguiente?')
+  })
+
+  it('asigna la respuesta correcta', () => {
+    expect(result[0].options.find(o => o.correct).text).toBe('Tercera')
+  })
+})

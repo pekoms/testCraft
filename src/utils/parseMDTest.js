@@ -32,10 +32,15 @@ export function parseMDTest(text) {
     num = null; qtxt = ''; opts = ''
   }
 
-  const startQuestion = (n, rest) => {
+  // Unnumbered statement waiting for the options line that follows it
+  let pending = ''
+  let fromPending = false
+
+  const startQuestion = (n, rest, viaPending = false) => {
     flush()
     num = n
     lastNum = n
+    fromPending = viaPending
     // Options may be embedded in the same line after the question text
     const aPos = rest.search(/\sA\)/)
     if (aPos >= 0) { qtxt = rest.slice(0, aPos); opts = rest.slice(aPos + 1) }
@@ -47,19 +52,38 @@ export function parseMDTest(text) {
     if (!line) continue
 
     const qm = line.match(/^(\d+)[.)]\s+(.+)/)
-    if (qm) { startQuestion(+qm[1], qm[2]); continue }
+    if (qm) { pending = ''; startQuestion(+qm[1], qm[2]); continue }
 
     // Unnumbered question: statement with its options inline on the same line.
     // Numbered by order of appearance so it lines up with the solutions sheet.
     // A line *starting* with "A)" is a continuation, not a new question — hence
     // the required leading whitespace.
-    if (/\sA\)/.test(line) && /\sB\)/.test(line)) { startQuestion(lastNum + 1, line); continue }
+    if (/\sA\)/.test(line) && /\sB\)/.test(line)) { pending = ''; startQuestion(lastNum + 1, line); continue }
+
+    const isOptionsLine = /^[ABCD]\)/.test(line)
+
+    // Unnumbered question whose options sit on the next line
+    if (isOptionsLine && pending) {
+      startQuestion(lastNum + 1, `${pending} ${line}`, true)
+      pending = ''
+      continue
+    }
+
+    // In that same style, a plain line after the options opens the next question
+    if (num !== null && fromPending && !isOptionsLine && opts) {
+      flush()
+      pending = line
+      continue
+    }
 
     if (num !== null) {
       if (/[ABCD]\)/.test(line)) opts += (opts ? ' ' : '') + line
       else if (!opts) qtxt += ' ' + line
       else opts += ' ' + line
+      continue
     }
+
+    pending = pending ? `${pending} ${line}` : line
   }
   flush()
 
