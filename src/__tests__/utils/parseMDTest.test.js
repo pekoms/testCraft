@@ -327,3 +327,44 @@ describe('parseMDTest — PLATERCAM 30 preguntas (opciones en línea siguiente)'
     expect(new Set(ids).size).toBe(30)
   })
 })
+
+// ── Preguntas sin numerar, con opciones en la misma línea ────────────────────
+
+const SIN_NUMERAR = `Según la introducción del tema, ¿de qué manual de la Dirección General de Tráfico se han extraído todos los contenidos expuestos? A) "Mecánica básica y avanzada del automóvil" (edición de 2023) B) "Mecánica y entretenimiento simple del automóvil" (edición de 2024) C) "Manual del conductor profesional y mecánica básica" (edición de 2025) D) "Reglamento general de vehículos y su mecánica" (edición de 2024)
+Desde el punto de vista mecánico, ¿qué significa el término "automóvil"? A) Que se guía por sí mismo B) Que se mueve por sí mismo C) Que se frena de forma automática D) Que funciona exclusivamente con energía eléctrica
+¿Qué sistema del automóvil tiene la función específica de trasladar la energía de desplazamiento a las ruedas? A) El sistema de suspensión B) El sistema de dirección C) El sistema de transmisión D) El sistema de frenos
+¿A través de qué cualidad o elemento en contacto con el suelo se proporciona el movimiento al automóvil? A) De la suspensión independiente B) De la elasticidad del bastidor C) De la adherencia de las ruedas a la calzada D) Del par motor transmitido a la dirección
+HOJA DE SOLUCIONES
+1 B    2 B    3 C    4 C`
+
+describe('parseMDTest — preguntas sin numerar con opciones en línea', () => {
+  const result = parseMDTest(SIN_NUMERAR)
+
+  it('parsea las 4 preguntas', () => {
+    expect(result).toHaveLength(4)
+  })
+
+  it('cada pregunta tiene 4 opciones', () => {
+    for (const q of result) expect(q.options).toHaveLength(4)
+  })
+
+  it('el texto de la pregunta no arrastra los marcadores de opción', () => {
+    for (const q of result) expect(q.text).not.toMatch(/[ABCD]\)/)
+  })
+
+  it('numera por orden para casar con la hoja de soluciones', () => {
+    expect(result[0].options.find(o => o.correct).text).toContain('entretenimiento simple')
+    expect(result[1].options.find(o => o.correct).text).toBe('Que se mueve por sí mismo')
+    expect(result[2].options.find(o => o.correct).text).toBe('El sistema de transmisión')
+    expect(result[3].options.find(o => o.correct).text).toContain('adherencia de las ruedas')
+  })
+
+  it('conserva el enunciado completo de la primera pregunta', () => {
+    expect(result[0].text).toContain('Dirección General de Tráfico')
+    expect(result[0].text).toMatch(/\?$/)
+  })
+
+  it('las comillas y paréntesis dentro de las opciones se conservan', () => {
+    expect(result[0].options[0].text).toContain('(edición de 2023)')
+  })
+})

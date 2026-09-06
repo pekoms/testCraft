@@ -26,24 +26,36 @@ export function parseMDTest(text) {
   // Parse questions
   const qs = []
   let num = null, qtxt = '', opts = ''
+  let lastNum = 0
   const flush = () => {
     if (num !== null && qtxt.trim()) qs.push({ num, text: qtxt.trim(), opts: opts.trim() })
     num = null; qtxt = ''; opts = ''
   }
 
+  const startQuestion = (n, rest) => {
+    flush()
+    num = n
+    lastNum = n
+    // Options may be embedded in the same line after the question text
+    const aPos = rest.search(/\sA\)/)
+    if (aPos >= 0) { qtxt = rest.slice(0, aPos); opts = rest.slice(aPos + 1) }
+    else qtxt = rest
+  }
+
   for (const raw of bodyLines) {
     const line = raw.trim()
     if (!line) continue
+
     const qm = line.match(/^(\d+)[.)]\s+(.+)/)
-    if (qm) {
-      flush()
-      num = +qm[1]
-      const rest = qm[2]
-      // Options may be embedded in the same line after the question text
-      const aPos = rest.search(/\sA\)/)
-      if (aPos >= 0) { qtxt = rest.slice(0, aPos); opts = rest.slice(aPos + 1) }
-      else qtxt = rest
-    } else if (num !== null) {
+    if (qm) { startQuestion(+qm[1], qm[2]); continue }
+
+    // Unnumbered question: statement with its options inline on the same line.
+    // Numbered by order of appearance so it lines up with the solutions sheet.
+    // A line *starting* with "A)" is a continuation, not a new question — hence
+    // the required leading whitespace.
+    if (/\sA\)/.test(line) && /\sB\)/.test(line)) { startQuestion(lastNum + 1, line); continue }
+
+    if (num !== null) {
       if (/[ABCD]\)/.test(line)) opts += (opts ? ' ' : '') + line
       else if (!opts) qtxt += ' ' + line
       else opts += ' ' + line
