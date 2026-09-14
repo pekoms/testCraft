@@ -46,6 +46,26 @@
         </button>
       </div>
 
+      <!-- Pills created before the topic became mandatory -->
+      <div v-if="untagged.length" class="pills-untagged">
+        <p class="pills-untagged-text">
+          <strong>{{ untagged.length }}</strong>
+          {{ untagged.length === 1 ? 'píldora sin tema' : 'píldoras sin tema' }}.
+          Asígnales uno para que aparezcan al filtrar.
+        </p>
+        <div class="pills-untagged-actions">
+          <input type="text" v-model="bulkTopic"
+            placeholder="Ej: Tema 01. La Función Pública" maxlength="80"
+            list="pillBulkTopicsList" autocomplete="off" class="pill-topic-input" />
+          <datalist id="pillBulkTopicsList">
+            <option v-for="t in allTopics" :key="t" :value="t" />
+          </datalist>
+          <button class="btn accent" @click="assignBulkTopic" :disabled="!bulkTopic.trim()">
+            Asignar a {{ untagged.length }}
+          </button>
+        </div>
+      </div>
+
       <div v-if="!store.pills.length" class="pills-empty-manage">
         No hay píldoras aún. Crea la primera con el botón de arriba.
       </div>
@@ -210,7 +230,8 @@
         </div>
         <div class="modal-actions">
           <button class="btn" @click="editOpen = false">Cancelar</button>
-          <button class="btn accent" @click="doSave" :disabled="!editFront.trim() || !editBack.trim()">
+          <button class="btn accent" @click="doSave"
+            :disabled="!editFront.trim() || !editBack.trim() || !editTopic.trim()">
             Guardar
           </button>
         </div>
@@ -266,7 +287,8 @@ Su respuesta</pre>
 
         <div class="modal-actions">
           <button class="btn" @click="importOpen = false">Cancelar</button>
-          <button class="btn accent" @click="doImportPills" :disabled="!importText.trim()">
+          <button class="btn accent" @click="doImportPills"
+            :disabled="!importText.trim() || !importTopic.trim()">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
               <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
@@ -443,8 +465,20 @@ function openEdit(p) {
   nextTick(() => editFrontEl.value?.focus())
 }
 
+const untagged = computed(() => store.pills.filter(p => !p.topic))
+const bulkTopic = ref('')
+
+async function assignBulkTopic() {
+  const topic = bulkTopic.value.trim()
+  if (!topic) return
+  const targets = untagged.value
+  await Promise.all(targets.map(p => store.save({ ...p, topic })))
+  bulkTopic.value = ''
+  appStore.showToast(`${targets.length} píldora${targets.length !== 1 ? 's' : ''} asignada${targets.length !== 1 ? 's' : ''} a «${topic}» ✓`)
+}
+
 async function doSave() {
-  if (!editFront.value.trim() || !editBack.value.trim()) return
+  if (!editFront.value.trim() || !editBack.value.trim() || !editTopic.value.trim()) return
   const wasEditing = !!editId.value
   editOpen.value = false
   await store.save({ id: editId.value, front: editFront.value, back: editBack.value, topic: editTopic.value })
@@ -488,7 +522,8 @@ async function doImportPills() {
     importError.value = 'No se encontraron píldoras. Usa el formato P:/R: o ## para cada tarjeta.'
     return
   }
-  const topic = importTopic.value.trim() || 'Tema 01. La Función Pública'
+  const topic = importTopic.value.trim()
+  if (!topic) { importError.value = 'Elige un tema para las píldoras importadas.'; return }
   importOpen.value = false
   importText.value = ''
   await Promise.all(parsed.map(p => store.save({ id: null, front: p.front, back: p.back, topic })))

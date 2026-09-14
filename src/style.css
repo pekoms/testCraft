@@ -910,6 +910,17 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
   background: var(--accent-light); color: var(--accent);
 }
 
+/* ── Untagged pills notice ───────────────────────── */
+.pills-untagged {
+  margin-bottom: 1rem; padding: 12px 14px;
+  border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  background: var(--accent-light);
+}
+.pills-untagged-text { margin: 0 0 10px; font-size: 0.85rem; color: var(--ink); }
+.pills-untagged-text strong { color: var(--accent); }
+.pills-untagged-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.pills-untagged-actions .pill-topic-input { flex: 1; min-width: 180px; width: auto; }
+
 /* ── Topic filter ────────────────────────────────── */
 .pills-topic-filter { position: relative; margin-bottom: 1rem; }
 

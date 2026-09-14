@@ -317,3 +317,113 @@ describe('PillsView — integración', () => {
     expect(w.findAll('.topic-menu-item')).toHaveLength(0)
   })
 })
+
+describe('PillsView — el tema es obligatorio', () => {
+  let pinia, authStore, pillsStore, router
+
+  const SIN_TEMA = [
+    { id: 'a', front: 'Pregunta A', back: 'Respuesta A', topic: '' },
+    { id: 'b', front: 'Pregunta B', back: 'Respuesta B', topic: '' },
+    { id: 'c', front: 'Pregunta C', back: 'Respuesta C', topic: 'Tema 01. La Función Pública' },
+  ]
+
+  beforeEach(async () => {
+    pinia = createPinia()
+    setActivePinia(pinia)
+    authStore = useAuthStore()
+    pillsStore = usePillsStore()
+
+    authStore.authLocked = false
+    authStore.isTeacher = true
+    authStore.isAdmin = true
+    authStore.currentUser = { id: 'admin-1', email: 'admin@test.com' }
+
+    pillsStore.pills = [...SIN_TEMA]
+    vi.spyOn(pillsStore, 'load').mockImplementation(() => {
+      pillsStore.pills = [...SIN_TEMA]
+    })
+    vi.spyOn(pillsStore, 'save').mockImplementation(p => {
+      const i = pillsStore.pills.findIndex(x => x.id === p.id)
+      if (i >= 0) pillsStore.pills = pillsStore.pills.map((x, j) => j === i ? { ...p } : x)
+      return Promise.resolve(p)
+    })
+
+    router = createRouter({
+      history: createMemoryHistory(),
+      routes: [
+        { path: '/', component: { template: '<div />' } },
+        { path: '/pills', component: PillsView },
+      ],
+    })
+    await router.push('/pills')
+    await router.isReady()
+  })
+
+  async function manageMode() {
+    const w = mount(PillsView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+    const btn = w.findAll('button').find(b => b.text().includes('Gestionar'))
+    await btn.trigger('click')
+    return w
+  }
+
+  it('avisa de cuántas píldoras están sin tema', async () => {
+    const w = await manageMode()
+    expect(w.find('.pills-untagged').exists()).toBe(true)
+    expect(w.find('.pills-untagged-text').text()).toContain('2')
+  })
+
+  it('el botón de asignar está deshabilitado sin escribir un tema', async () => {
+    const w = await manageMode()
+    const btn = w.findAll('.pills-untagged-actions button')[0]
+    expect(btn.attributes('disabled')).toBeDefined()
+  })
+
+  it('asigna el tema a todas las píldoras que no lo tienen', async () => {
+    const w = await manageMode()
+
+    await w.find('.pills-untagged-actions input').setValue('Tema 02. El Motor')
+    await w.findAll('.pills-untagged-actions button')[0].trigger('click')
+    await flushPromises()
+
+    expect(pillsStore.pills.filter(p => !p.topic)).toHaveLength(0)
+    expect(pillsStore.pills.find(p => p.id === 'a').topic).toBe('Tema 02. El Motor')
+    expect(pillsStore.pills.find(p => p.id === 'b').topic).toBe('Tema 02. El Motor')
+  })
+
+  it('no toca las píldoras que ya tenían tema', async () => {
+    const w = await manageMode()
+
+    await w.find('.pills-untagged-actions input').setValue('Tema 02. El Motor')
+    await w.findAll('.pills-untagged-actions button')[0].trigger('click')
+    await flushPromises()
+
+    expect(pillsStore.pills.find(p => p.id === 'c').topic).toBe('Tema 01. La Función Pública')
+  })
+
+  it('el aviso desaparece cuando ya no quedan píldoras sin tema', async () => {
+    const w = await manageMode()
+
+    await w.find('.pills-untagged-actions input').setValue('Tema 02. El Motor')
+    await w.findAll('.pills-untagged-actions button')[0].trigger('click')
+    await flushPromises()
+
+    expect(w.find('.pills-untagged').exists()).toBe(false)
+  })
+
+  it('no deja guardar una píldora nueva sin tema', async () => {
+    const w = await manageMode()
+
+    const nueva = w.findAll('button').find(b => b.text().includes('Nueva píldora'))
+    await nueva.trigger('click')
+
+    await w.findAll('.pill-modal textarea')[0].setValue('Anverso')
+    await w.findAll('.pill-modal textarea')[1].setValue('Reverso')
+
+    const guardar = w.findAll('.pill-modal button').find(b => b.text().includes('Guardar'))
+    expect(guardar.attributes('disabled')).toBeDefined()
+
+    await w.find('.pill-modal .pill-topic-input').setValue('Tema 02. El Motor')
+    expect(guardar.attributes('disabled')).toBeUndefined()
+  })
+})
