@@ -54,17 +54,23 @@ export function parseMDTest(text) {
     const qm = line.match(/^(\d+)[.)]\s+(.+)/)
     if (qm) { pending = ''; startQuestion(+qm[1], qm[2]); continue }
 
+    // Exports sometimes prefix the options line with a stray bullet or period
+    // (". A) uno B) dos"), which would otherwise read as a question whose
+    // statement is that punctuation.
+    const body = line.replace(/^[.•*\-–—]+\s*/, '')
+    const isOptionsLine = /^[ABCD]\)/.test(body)
+
     // Unnumbered question: statement with its options inline on the same line.
     // Numbered by order of appearance so it lines up with the solutions sheet.
-    // A line *starting* with "A)" is a continuation, not a new question — hence
-    // the required leading whitespace.
-    if (/\sA\)/.test(line) && /\sB\)/.test(line)) { pending = ''; startQuestion(lastNum + 1, line); continue }
-
-    const isOptionsLine = /^[ABCD]\)/.test(line)
+    if (!isOptionsLine && /\sA\)/.test(line) && /\sB\)/.test(line)) {
+      pending = ''
+      startQuestion(lastNum + 1, line)
+      continue
+    }
 
     // Unnumbered question whose options sit on the next line
     if (isOptionsLine && pending) {
-      startQuestion(lastNum + 1, `${pending} ${line}`, true)
+      startQuestion(lastNum + 1, `${pending} ${body}`, true)
       pending = ''
       continue
     }
@@ -77,7 +83,7 @@ export function parseMDTest(text) {
     }
 
     if (num !== null) {
-      if (/[ABCD]\)/.test(line)) opts += (opts ? ' ' : '') + line
+      if (/[ABCD]\)/.test(body)) opts += (opts ? ' ' : '') + body
       else if (!opts) qtxt += ' ' + line
       else opts += ' ' + line
       continue

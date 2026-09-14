@@ -430,3 +430,44 @@ HOJA DE SOLUCIONES
     expect(result[0].options.find(o => o.correct).text).toBe('Tercera')
   })
 })
+
+// ── Línea de opciones precedida por un punto suelto ──────────────────────────
+
+const OPCIONES_CON_PUNTO = `De acuerdo con la RAE, ¿cómo se define el término "edificio"?
+. A) Una construcción de hormigón armado destinada a vivienda. B) Una construcción estable, hecha con materiales resistentes. C) Todo recinto cubierto con cimentación profunda. D) Una estructura metálica destinada a uso público.
+¿En qué año entró en vigor el Código Técnico de la Edificación (CTE)?
+. A) 1980. B) 1992. C) 2006. D) 2013.
+El peso propio de los materiales y de la estructura se clasifica como una acción:
+. A) Variable. B) Permanente. C) Accidental. D) Dinámica de uso.
+HOJA DE SOLUCIONES 1  B    2  C    3  B`
+
+describe('parseMDTest — opciones precedidas por un punto', () => {
+  const result = parseMDTest(OPCIONES_CON_PUNTO)
+
+  it('parsea las 3 preguntas', () => {
+    expect(result).toHaveLength(3)
+  })
+
+  it('ninguna pregunta tiene el punto como enunciado', () => {
+    for (const q of result) expect(q.text).not.toBe('.')
+  })
+
+  it('conserva el enunciado real de la línea anterior', () => {
+    expect(result[0].text).toBe('De acuerdo con la RAE, ¿cómo se define el término "edificio"?')
+    expect(result[1].text).toBe('¿En qué año entró en vigor el Código Técnico de la Edificación (CTE)?')
+  })
+
+  it('el punto no se cuela en la primera opción', () => {
+    for (const q of result) expect(q.options[0].text).not.toMatch(/^\./)
+  })
+
+  it('cada pregunta tiene 4 opciones', () => {
+    for (const q of result) expect(q.options).toHaveLength(4)
+  })
+
+  it('asigna las respuestas de la hoja en la misma línea que el título', () => {
+    expect(result[0].options.find(o => o.correct).text).toContain('construcción estable')
+    expect(result[1].options.find(o => o.correct).text).toBe('2006.')
+    expect(result[2].options.find(o => o.correct).text).toBe('Permanente.')
+  })
+})
