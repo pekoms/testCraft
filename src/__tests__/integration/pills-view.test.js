@@ -217,46 +217,103 @@ describe('PillsView — integración', () => {
 
   // ── Topic filter ─────────────────────────────────────────────────────────────
 
-  it('muestra chips de tema cuando hay 2 o más temas distintos', async () => {
+  // Opens the topic dropdown and returns its items (skipping "Todos los temas")
+  async function openTopicMenu(w) {
+    await w.find('.topic-filter-trigger').trigger('click')
+    const items = w.findAll('.topic-menu-item')
+    return { all: items[0], topics: items.slice(1) }
+  }
+
+  it('el filtro se muestra plegado, sin ocupar una fila por tema', async () => {
     const w = mount$()
     await flushPromises()
-    // PILLS has Tema 01. La Función Pública (x2) and Tema 2 (x1)
+
     expect(w.find('.pills-topic-filter').exists()).toBe(true)
-    const chips = w.findAll('.topic-chip')
-    expect(chips).toHaveLength(2)
-    expect(chips[0].text()).toBe('Tema 01. La Función Pública')
-    expect(chips[1].text()).toBe('Tema 2')
+    expect(w.find('.topic-filter-trigger').exists()).toBe(true)
+    // Collapsed: no topic list rendered until it is opened
+    expect(w.findAll('.topic-menu-item')).toHaveLength(0)
   })
 
-  it('al activar un chip solo se muestran las píldoras de ese tema', async () => {
+  it('el desplegable lista todos los temas al abrirlo', async () => {
     const w = mount$()
     await flushPromises()
 
-    const chips = w.findAll('.topic-chip')
-    // Activate "Tema 2" — only 1 pill belongs to Tema 2
-    await chips[1].trigger('click')
+    const { topics } = await openTopicMenu(w)
+    expect(topics).toHaveLength(2)
+    expect(topics[0].text()).toContain('Tema 01. La Función Pública')
+    expect(topics[1].text()).toContain('Tema 2')
+  })
+
+  it('sin filtro el botón muestra "Todos los temas"', async () => {
+    const w = mount$()
+    await flushPromises()
+    expect(w.find('.topic-filter-label').text()).toBe('Todos los temas')
+  })
+
+  it('al elegir un tema solo se muestran sus píldoras', async () => {
+    const w = mount$()
+    await flushPromises()
+
+    const { topics } = await openTopicMenu(w)
+    await topics[1].trigger('click') // Tema 2 → 1 pill
 
     expect(w.find('.pills-counter').text()).toMatch(/1\s*\/\s*1/)
   })
 
-  it('activar un chip lo marca como active', async () => {
+  it('el botón refleja el tema elegido', async () => {
     const w = mount$()
     await flushPromises()
 
-    const chips = w.findAll('.topic-chip')
-    expect(chips[0].classes()).not.toContain('active')
+    const { topics } = await openTopicMenu(w)
+    await topics[1].trigger('click')
 
-    await chips[0].trigger('click')
-    expect(chips[0].classes()).toContain('active')
+    expect(w.find('.topic-filter-label').text()).toBe('Tema 2')
+    expect(w.find('.topic-filter-trigger').classes()).toContain('filtered')
   })
 
-  it('desactivar el chip vuelve a mostrar todas las píldoras', async () => {
+  it('con varios temas elegidos el botón resume cuántos son', async () => {
     const w = mount$()
     await flushPromises()
 
-    const chips = w.findAll('.topic-chip')
-    await chips[1].trigger('click') // Tema 2 → 1 pill
-    await chips[1].trigger('click') // deactivate → all pills
+    const { topics } = await openTopicMenu(w)
+    await topics[0].trigger('click')
+    await topics[1].trigger('click')
+
+    expect(w.find('.topic-filter-label').text()).toBe('2 temas')
     expect(w.find('.pills-counter').text()).toMatch(/1\s*\/\s*3/)
+  })
+
+  it('el tema elegido se marca en el desplegable', async () => {
+    const w = mount$()
+    await flushPromises()
+
+    let { topics } = await openTopicMenu(w)
+    expect(topics[0].classes()).not.toContain('active')
+
+    await topics[0].trigger('click')
+    expect(w.findAll('.topic-menu-item')[1].classes()).toContain('active')
+  })
+
+  it('"Todos los temas" limpia el filtro', async () => {
+    const w = mount$()
+    await flushPromises()
+
+    const { all, topics } = await openTopicMenu(w)
+    await topics[1].trigger('click') // Tema 2 → 1 pill
+    await all.trigger('click')
+
+    expect(w.find('.pills-counter').text()).toMatch(/1\s*\/\s*3/)
+    expect(w.find('.topic-filter-label').text()).toBe('Todos los temas')
+  })
+
+  it('el clic en el fondo cierra el desplegable', async () => {
+    const w = mount$()
+    await flushPromises()
+
+    await openTopicMenu(w)
+    expect(w.findAll('.topic-menu-item').length).toBeGreaterThan(0)
+
+    await w.find('.topic-menu-backdrop').trigger('click')
+    expect(w.findAll('.topic-menu-item')).toHaveLength(0)
   })
 })

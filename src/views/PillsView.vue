@@ -79,13 +79,43 @@
     <!-- STUDY MODE -->
     <div v-else class="pills-study-view">
 
-      <!-- Topic filter chips -->
+      <!-- Topic filter -->
       <div v-if="pillTopics.length >= 2" class="pills-topic-filter">
         <button
-          v-for="t in pillTopics" :key="t"
-          class="topic-chip" :class="{ active: selectedTopics.includes(t) }"
-          @click="toggleTopic(t)"
-        >{{ t }}</button>
+          class="topic-filter-trigger" :class="{ filtered: selectedTopics.length }"
+          @click="topicMenuOpen = !topicMenuOpen"
+          :aria-expanded="topicMenuOpen"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+          </svg>
+          <span class="topic-filter-label">{{ topicFilterLabel }}</span>
+          <svg class="topic-filter-caret" :class="{ open: topicMenuOpen }" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" stroke-width="2.5" width="13" height="13">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+
+        <template v-if="topicMenuOpen">
+          <div class="topic-menu-backdrop" @click="topicMenuOpen = false"></div>
+          <div class="topic-menu">
+            <button
+              class="topic-menu-item" :class="{ active: !selectedTopics.length }"
+              @click="selectedTopics = []"
+            >
+              <span class="topic-menu-check">{{ selectedTopics.length ? '' : '✓' }}</span>
+              Todos los temas
+            </button>
+            <button
+              v-for="t in pillTopics" :key="t"
+              class="topic-menu-item" :class="{ active: selectedTopics.includes(t) }"
+              @click="toggleTopic(t)"
+            >
+              <span class="topic-menu-check">{{ selectedTopics.includes(t) ? '✓' : '' }}</span>
+              {{ t }}
+            </button>
+          </div>
+        </template>
       </div>
 
       <!-- Empty state -->
@@ -300,6 +330,14 @@ const pillTopics = computed(() => {
   return [...set].sort((a, b) => a.localeCompare(b, 'es'))
 })
 const selectedTopics = ref([]) // empty = show all
+const topicMenuOpen = ref(false)
+
+const topicFilterLabel = computed(() => {
+  const n = selectedTopics.value.length
+  if (!n) return 'Todos los temas'
+  if (n === 1) return selectedTopics.value[0]
+  return `${n} temas`
+})
 
 function toggleTopic(t) {
   if (selectedTopics.value.includes(t)) {
@@ -370,6 +408,7 @@ function onTouchEnd(e) {
 
 // Global keyboard: arrows navigate, space/enter flips
 function globalKeyHandler(e) {
+  if (e.key === 'Escape' && topicMenuOpen.value) { topicMenuOpen.value = false; return }
   if (editOpen.value || e.target.matches('input, textarea, select, button')) return
   if (e.key === 'ArrowDown' || e.key === 'ArrowRight') { e.preventDefault(); goNext() }
   else if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') { e.preventDefault(); goPrev() }
