@@ -4,8 +4,9 @@
   --surface2: #F0EDE6;
   --ink: #1A1814;
   --ink2: #5A5650;
-  --ink3: #9A968F;
-  --accent: #D4571C;
+  /* ink3 y accent cumplen 4.5:1 sobre surface2 y accent-light respectivamente */
+  --ink3: #6F6B64;
+  --accent: #B44A18;
   --accent-light: #FBE9DF;
   --accent2: #2A6049;
   --accent2-light: #E0F0E8;
@@ -24,15 +25,16 @@ html[data-theme="dark"] {
   --surface2: #2A2730;
   --ink: #F0EDE8;
   --ink2: #A09C96;
-  --ink3: #6A6660;
+  --ink3: #928E87;
   --accent: #E8693A;
   --accent-light: #3D2218;
-  --accent2: #4A8B6A;
+  --accent2: #539B76;
   --accent2-light: #152B21;
-  --on-accent: #fff;
+  /* Tinta oscura: sobre los acentos claros del tema el blanco no llega a 4.5:1 */
+  --on-accent: #18161A;
   --border: rgba(240, 237, 232, 0.1);
   --border-strong: rgba(240, 237, 232, 0.2);
-  --danger: #E05C4E;
+  --danger: #E16153;
   --danger-light: #3D1715;
   --radius: 12px;
   --radius-sm: 8px;
@@ -44,7 +46,7 @@ html[data-theme="slate"] {
   --surface2: #1D2A3F;
   --ink: #D8E4F0;
   --ink2: #8A9BB8;
-  --ink3: #5A6B88;
+  --ink3: #8191AC;
   --accent: #6B9FFF;
   --accent-light: #0D1D3D;
   --accent2: #3AB87A;
@@ -134,7 +136,8 @@ nav {
 .promo-link { color: var(--on-accent); font-weight: 700; text-underline-offset: 2px; }
 .promo-sep { opacity: 0.6; }
 .promo-code {
-  background: rgba(255,255,255,0.22); border: 1px solid rgba(255,255,255,0.4);
+  /* Sin velo: aclaraba el fondo bajo un texto ya claro (3.58:1 en tema claro) */
+  border: 1px solid rgba(255,255,255,0.4);
   padding: 1px 8px; border-radius: 4px;
   font-family: 'Syne', sans-serif; font-weight: 800; letter-spacing: 0.07em; font-size: 14px;
 }
@@ -400,7 +403,8 @@ html[data-theme="slate"] .secret-card {
 /* ── TOAST ───────────────────────────── */
 .toast {
   position: fixed; bottom: 1.5rem; right: 1.5rem;
-  background: var(--ink); color: #fff;
+  /* Invierte con el tema: en oscuro --ink es casi blanco y #fff desaparecía */
+  background: var(--ink); color: var(--bg);
   padding: 10px 16px; border-radius: var(--radius-sm);
   font-size: 13px; transform: translateY(80px); opacity: 0;
   transition: all 0.25s ease; z-index: 300; max-width: 280px;
@@ -550,7 +554,7 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
 .student-row .student-actions { display: flex; gap: 6px; flex-shrink: 0; }
 .student-status { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 500; white-space: nowrap; }
 .student-status.active { background: var(--accent2-light); color: var(--accent2); }
-.student-status.blocked { background: #FBE9DF; color: var(--accent); }
+.student-status.blocked { background: var(--accent-light); color: var(--accent); }
 .student-status.pending { background: var(--surface2); color: var(--ink3); }
 .students-empty { text-align: center; padding: 3rem 1rem; color: var(--ink3); font-size: 0.9rem; }
 
