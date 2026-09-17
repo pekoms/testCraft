@@ -471,3 +471,55 @@ describe('parseMDTest — opciones precedidas por un punto', () => {
     expect(result[2].options.find(o => o.correct).text).toBe('Permanente.')
   })
 })
+
+// ── La puntuación final del enunciado cae al inicio de la línea de opciones ──
+
+const PUNTUACION_PARTIDA = `¿Cómo se define la "Longitud de llama" en las variables de comportamiento del incendio
+? A) La máxima distancia entre la base y la punta de la llama B) La distancia horizontal entre la cola y la cabeza C) La altura vertical del frente D) La distancia de los focos secundarios
+Cuando las llamas están inclinadas por el viento, la longitud de llama se mide sobre
+: A) La vertical matemática del suelo B) El ángulo de inclinación de la llama C) La pendiente del terreno D) El eje horizontal
+¿Qué significan las siglas en inglés ROS
+? A) Rate of Spread B) Range of Surface C) Ratio of Suppression D) Radiation of Soil
+HOJA DE SOLUCIONES
+1  A    2  B    3  A`
+
+describe('parseMDTest — "?" y ":" del enunciado al inicio de las opciones', () => {
+  const result = parseMDTest(PUNTUACION_PARTIDA)
+
+  it('parsea las 3 preguntas', () => {
+    expect(result).toHaveLength(3)
+  })
+
+  it('ninguna pregunta queda reducida a la puntuación', () => {
+    for (const q of result) expect(q.text).not.toMatch(/^[?:.]$/)
+  })
+
+  it('el enunciado recupera su "?" final', () => {
+    expect(result[0].text).toBe('¿Cómo se define la "Longitud de llama" en las variables de comportamiento del incendio?')
+    expect(result[2].text).toBe('¿Qué significan las siglas en inglés ROS?')
+  })
+
+  it('el enunciado recupera su ":" final', () => {
+    expect(result[1].text).toBe('Cuando las llamas están inclinadas por el viento, la longitud de llama se mide sobre:')
+  })
+
+  it('la puntuación no se cuela en la primera opción', () => {
+    for (const q of result) expect(q.options[0].text).not.toMatch(/^[?:.]/)
+  })
+
+  it('asigna las respuestas de la hoja', () => {
+    expect(result[0].options.find(o => o.correct).text).toContain('base y la punta')
+    expect(result[1].options.find(o => o.correct).text).toBe('El ángulo de inclinación de la llama')
+    expect(result[2].options.find(o => o.correct).text).toBe('Rate of Spread')
+  })
+})
+
+describe('parseMDTest — no duplica la puntuación de un enunciado ya cerrado', () => {
+  it('un punto suelto tras "?" no se añade al enunciado', () => {
+    const result = parseMDTest(`¿Pregunta ya cerrada?
+. A) Uno B) Dos C) Tres D) Cuatro
+HOJA DE SOLUCIONES
+1 B`)
+    expect(result[0].text).toBe('¿Pregunta ya cerrada?')
+  })
+})

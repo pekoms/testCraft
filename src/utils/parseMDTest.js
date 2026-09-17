@@ -54,10 +54,12 @@ export function parseMDTest(text) {
     const qm = line.match(/^(\d+)[.)]\s+(.+)/)
     if (qm) { pending = ''; startQuestion(+qm[1], qm[2]); continue }
 
-    // Exports sometimes prefix the options line with a stray bullet or period
-    // (". A) uno B) dos"), which would otherwise read as a question whose
-    // statement is that punctuation.
-    const body = line.replace(/^[.•*\-–—]+\s*/, '')
+    // The options line may start with punctuation that isn't an option: a stray
+    // bullet (". A) uno") or the question's own "?" / ":" wrapped onto it
+    // ("? A) uno"). Any such prefix would otherwise read as a question whose
+    // whole statement is that punctuation.
+    const lead = line.match(/^[^\p{L}\p{N}\s]*\s*/u)[0]
+    const body = line.slice(lead.length)
     const isOptionsLine = /^[ABCD]\)/.test(body)
 
     // Unnumbered question: statement with its options inline on the same line.
@@ -70,7 +72,11 @@ export function parseMDTest(text) {
 
     // Unnumbered question whose options sit on the next line
     if (isOptionsLine && pending) {
-      startQuestion(lastNum + 1, `${pending} ${body}`, true)
+      // Give the statement back its closing "?" / ":" if it was wrapped onto
+      // this line — but not a stray "." after a question that already ends
+      const tail = lead.match(/[?:.!…]+/)?.[0] ?? ''
+      const stmt = tail && !/[?:.!…]$/.test(pending) ? pending + tail : pending
+      startQuestion(lastNum + 1, `${stmt} ${body}`, true)
       pending = ''
       continue
     }
