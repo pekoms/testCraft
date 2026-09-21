@@ -46,6 +46,29 @@ export const usePillsStore = defineStore('pills', () => {
     return error
   }
 
+  // PostgREST caps rows per response (1000 on Supabase by default), so a single
+  // select silently truncates large collections. Page until a request comes
+  // back empty, advancing by however many rows the server actually returned —
+  // that way a cap lower than PAGE still terminates correctly. Ordering by id
+  // (unique per user) keeps the window stable across requests; updated_at ties
+  // could otherwise duplicate or skip rows between pages.
+  async function fetchAllRemote() {
+    const PAGE = 1000
+    const rows = []
+    for (let from = 0; ;) {
+      const { data, error } = await supabase
+        .from('pills').select('data, updated_at')
+        .order('id', { ascending: true })
+        .range(from, from + PAGE - 1)
+      if (error) throw error
+      if (!data.length) break
+      rows.push(...data)
+      from += data.length
+    }
+    rows.sort((a, b) => String(b.updated_at).localeCompare(String(a.updated_at)))
+    return rows
+  }
+
   // ── Load ───────────────────────────────────────
   async function load() {
     const local = withTopic(loadLocal())
@@ -53,11 +76,7 @@ export const usePillsStore = defineStore('pills', () => {
 
     if (supabase && auth.currentUser) {
       try {
-        const { data, error } = await supabase
-          .from('pills').select('data')
-          .order('updated_at', { ascending: false })
-        if (error) throw error
-
+        const data = await fetchAllRemote()
         const remote = withTopic(data.map(r => r.data))
 
         // First sync from a device that already had local pills: push them up
