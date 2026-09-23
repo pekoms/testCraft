@@ -86,13 +86,13 @@ describe('retryWrongOnly', () => {
     expect(store.playerState.startedAt).toBeGreaterThanOrEqual(before)
   })
 
-  it('inicia con timeLeft 0 (sin límite de tiempo en modo retry)', () => {
+  it('inicia sin instante límite (sin límite de tiempo en modo retry)', () => {
     const q = makeQuestion([false, true], 'Incorrecta')
     store.resultData = buildResultData([
       { q, ans: [0], correctIndices: [1], isCorrect: false },
     ])
     store.retryWrongOnly()
-    expect(store.playerState.timeLeft).toBe(0)
+    expect(store.playerState.deadline).toBe(null)
   })
 })
 
@@ -127,10 +127,10 @@ describe('startWrongAnswersTest', () => {
     expect(store.playerState.startedAt).toBeGreaterThanOrEqual(before)
   })
 
-  it('el test sintético no tiene timeLeft (no hay límite de tiempo)', async () => {
+  it('el test sintético no tiene instante límite (no hay límite de tiempo)', async () => {
     store.wrongAnswers = [makeQuestion([true, false], 'Q')]
     await store.startWrongAnswersTest()
-    expect(store.playerState.timeLeft).toBe(0)
+    expect(store.playerState.deadline).toBe(null)
   })
 })
 

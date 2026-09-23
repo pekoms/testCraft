@@ -135,7 +135,7 @@ describe('startCustomTest', () => {
     store.startCustomTest(2)
     expect(store.playerState.current).toBe(0)
     expect(store.playerState.answers).toEqual({})
-    expect(store.playerState.timeLeft).toBe(0)
+    expect(store.playerState.deadline).toBe(null)
   })
 })
 

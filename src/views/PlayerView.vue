@@ -68,8 +68,10 @@
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAppStore } from '@/stores/app'
 
+const router = useRouter()
 const appStore = useAppStore()
 const openAnswer = ref('')
 const timerText = ref('')
@@ -109,29 +111,40 @@ function optionClass(oi) {
   return classes.join(' ')
 }
 
+// Read the clock rather than counting down: background tabs throttle timers,
+// so a decremented counter drifts behind real elapsed time.
+function secondsLeft() {
+  const d = appStore.playerState.deadline
+  return d ? Math.max(0, Math.round((d - Date.now()) / 1000)) : 0
+}
+
 // Sync open answer back when current changes
 let stopWatch = null
 onMounted(() => {
+  // A reload lands here with an empty store — bring the test back from storage
+  if (!ps.value.test && !appStore.restorePlayer()) { router.replace('/'); return }
+
   // Restore saved open answer if any
   const saved = ps.value.answers[ps.value.current]
   if (currentQ.value?.type === 'open') openAnswer.value = saved || ''
 
   // Start timer if needed
-  if (ps.value.timeLeft > 0 && !ps.value.timerInterval) {
-    const interval = setInterval(() => {
-      if (appStore.playerState.timeLeft <= 0) {
+  if (ps.value.deadline && !ps.value.timerInterval) {
+    let interval = null
+    const tick = () => {
+      const left = secondsLeft()
+      const m = Math.floor(left / 60)
+      const s = left % 60
+      timerText.value = `⏱ ${m}:${String(s).padStart(2, '0')}`
+      if (left <= 0) {
         clearInterval(interval)
-        timerText.value = '⏱ 0:00'
         appStore.showToast('⏱ Tiempo agotado')
         appStore.finishTest()
-        return
       }
-      appStore.playerState.timeLeft--
-      const m = Math.floor(appStore.playerState.timeLeft / 60)
-      const s = appStore.playerState.timeLeft % 60
-      timerText.value = `⏱ ${m}:${String(s).padStart(2, '0')}`
-    }, 1000)
+    }
+    interval = setInterval(tick, 1000)
     appStore.playerState.timerInterval = interval
+    tick() // paint at once, and end the test if it expired while away
   }
 })
 

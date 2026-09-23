@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase'
 import router from '@/router'
 
 const STORE_KEY = 'testcraft_tests_v1'
+const PLAYER_KEY = 'testcraft_player_v1'
 const OFFLINE_CACHE_KEY = 'testcraft_offline_v1'
 const COMPLETED_RESET_KEY = 'testcraft_cr_v1'
 
@@ -20,10 +21,36 @@ export const useAppStore = defineStore('app', () => {
   const editingQuestions = ref([])
   const isOffline = ref(false)
 
+  // deadline is an absolute timestamp, not a countdown: browsers throttle timers
+  // in background tabs, so a decrementing counter loses real time while the tab
+  // is hidden — and could not be resumed correctly after a reload either.
   const playerState = ref({
     test: null, questions: [], current: 0,
-    answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
+    answers: {}, revealed: {}, timerInterval: null, deadline: null,
   })
+
+  // An in-progress test must survive a reload: mobile browsers discard
+  // backgrounded tabs and the OS kills the PWA to reclaim memory.
+  function persistPlayer() {
+    try {
+      const { timerInterval, ...rest } = playerState.value
+      if (rest.test) localStorage.setItem(PLAYER_KEY, JSON.stringify(rest))
+      else localStorage.removeItem(PLAYER_KEY)
+    } catch {}
+  }
+
+  function clearPlayer() {
+    try { localStorage.removeItem(PLAYER_KEY) } catch {}
+  }
+
+  function restorePlayer() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(PLAYER_KEY) || 'null')
+      if (!saved?.test || !saved.questions?.length) return false
+      playerState.value = { ...saved, timerInterval: null }
+      return true
+    } catch { return false }
+  }
 
   const resultData = ref(null)
   const wrongAnswers = ref([])
@@ -209,10 +236,11 @@ export const useAppStore = defineStore('app', () => {
     playerState.value = {
       test: t, questions: qs, current: 0,
       answers: {}, revealed: {}, timerInterval: null,
-      timeLeft: (t.timeLimit || 0) * 60,
+      deadline: t.timeLimit ? Date.now() + t.timeLimit * 60_000 : null,
       startedAt: Date.now(),
       _retryContext: { type: 'normal', testId: id },
     }
+    persistPlayer()
     router.push('/player')
   }
 
@@ -229,6 +257,7 @@ export const useAppStore = defineStore('app', () => {
       playerState.value.answers = { ...playerState.value.answers, [current]: [oi] }
       playerState.value.revealed = { ...playerState.value.revealed, [current]: true }
     }
+    persistPlayer()
   }
 
   function revealAnswer() {
@@ -236,6 +265,7 @@ export const useAppStore = defineStore('app', () => {
     const sel = playerState.value.answers[current]
     if (!sel || !sel.length) { showToast('Selecciona al menos una opción'); return }
     playerState.value.revealed = { ...playerState.value.revealed, [current]: true }
+    persistPlayer()
   }
 
   function saveCurrentAnswer(openAnswerText) {
@@ -251,18 +281,21 @@ export const useAppStore = defineStore('app', () => {
     const { questions, current } = playerState.value
     if (current === questions.length - 1) { finishTest(); return }
     playerState.value = { ...playerState.value, current: current + 1 }
+    persistPlayer()
   }
 
   function prevQuestion(openAnswerText) {
     saveCurrentAnswer(openAnswerText)
     if (playerState.value.current === 0) return
     playerState.value = { ...playerState.value, current: playerState.value.current - 1 }
+    persistPlayer()
   }
 
   async function finishTest(openAnswerText) {
     saveCurrentAnswer(openAnswerText)
     clearInterval(playerState.value.timerInterval)
     playerState.value.timerInterval = null
+    clearPlayer() // the test is over — nothing left to resume
 
     const { questions, answers } = playerState.value
     let correct = 0, total = 0
@@ -394,10 +427,11 @@ export const useAppStore = defineStore('app', () => {
     playerState.value = {
       test: resultData.value.test,
       questions: wrongQs,
-      current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
+      current: 0, answers: {}, revealed: {}, timerInterval: null, deadline: null,
       startedAt: Date.now(),
       _retryContext: { type: 'wrongOnly' },
     }
+    persistPlayer()
     router.push('/player')
   }
 
@@ -509,10 +543,11 @@ export const useAppStore = defineStore('app', () => {
     playerState.value = {
       test: { id: 'topic_' + Date.now(), title: `${topic || 'Sin tema'} — Tema completo` },
       questions: qs,
-      current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
+      current: 0, answers: {}, revealed: {}, timerInterval: null, deadline: null,
       startedAt: Date.now(),
       _retryContext: { type: 'topic', topic },
     }
+    persistPlayer()
     router.push('/player')
   }
 
@@ -525,10 +560,11 @@ export const useAppStore = defineStore('app', () => {
     playerState.value = {
       test: { id: 'custom_' + Date.now(), title: `Test personalizado (${n} preguntas)` },
       questions: qs,
-      current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
+      current: 0, answers: {}, revealed: {}, timerInterval: null, deadline: null,
       startedAt: Date.now(),
       _retryContext: { type: 'custom', numQuestions: n },
     }
+    persistPlayer()
     router.push('/player')
   }
 
@@ -539,10 +575,11 @@ export const useAppStore = defineStore('app', () => {
     playerState.value = {
       test: { id: 'wrong_' + Date.now(), title: 'Repaso de errores', questions: qs },
       questions: qs,
-      current: 0, answers: {}, revealed: {}, timerInterval: null, timeLeft: 0,
+      current: 0, answers: {}, revealed: {}, timerInterval: null, deadline: null,
       startedAt: Date.now(),
       _retryContext: { type: 'wrong' },
     }
+    persistPlayer()
     router.push('/player')
   }
 
@@ -554,6 +591,7 @@ export const useAppStore = defineStore('app', () => {
     clearWrongAnswers, countAvailableQuestions, startCustomTest, startTopicTest,
     loadCompletedTests, resetCompletedTests,
     nextQuestion, prevQuestion, selectOption, revealAnswer, finishTest, saveCurrentAnswer,
+    persistPlayer, restorePlayer, clearPlayer,
     checkImportFromUrl, showTopic, backToTopics,
   }
 })
