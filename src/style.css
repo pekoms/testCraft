@@ -914,6 +914,15 @@ html[data-theme="slate"] .role-pill.admin { background: #1D1040; color: #A78BFA;
   background: var(--accent-light); color: var(--accent);
 }
 
+/* ── Bulk actions over a topic ───────────────────── */
+.topic-bulk {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin-bottom: 1rem; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface2);
+}
+.topic-bulk-label { font-size: 0.8rem; font-weight: 600; color: var(--ink2); }
+
 /* ── Untagged pills notice ───────────────────────── */
 .pills-untagged {
   margin-bottom: 1rem; padding: 12px 14px;

@@ -176,6 +176,26 @@ export const useAppStore = defineStore('app', () => {
     showToast(t.published ? 'Test publicado para los alumnos ✓' : 'Test ocultado (borrador)')
   }
 
+  // Apply published/secret across a whole topic. Going test by test is
+  // unworkable with dozens of tests per topic.
+  // Publishing skips secret tests: persistTest forces published=false on them,
+  // so it would report a change the database never made.
+  async function bulkSetTopic(topic, patch) {
+    const targets = tests.value.filter(t => (t.topic || '') === (topic || ''))
+    let changed = 0, skipped = 0, failed = 0
+
+    // Sequential on purpose: a topic can hold dozens of tests, and firing every
+    // upsert at once is a burst against the API for no real gain here.
+    for (const t of targets) {
+      if (patch.published === true && t.secret) { skipped++; continue }
+      const before = { published: t.published, secret: t.secret }
+      Object.assign(t, patch)
+      if (await persistTest(t)) changed++
+      else { Object.assign(t, before); failed++ }
+    }
+    return { changed, skipped, failed, total: targets.length }
+  }
+
   function deleteTest(id) {
     const t = tests.value.find(x => x.id === id)
     if (!t) return
@@ -586,7 +606,7 @@ export const useAppStore = defineStore('app', () => {
   return {
     tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, completedTestIds, toast, modal, isOffline, importSecret, importMeta,
     genId, showToast, showModal, closeModal,
-    fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest,
+    fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest, bulkSetTopic,
     startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,
     clearWrongAnswers, countAvailableQuestions, startCustomTest, startTopicTest,
     loadCompletedTests, resetCompletedTests,

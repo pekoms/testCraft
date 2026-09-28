@@ -162,6 +162,38 @@ HOJA DE SOLUCIONES
       </button>
     </div>
 
+    <!-- Bulk actions over the whole topic -->
+    <div v-if="appStore.currentTopic !== null && authStore.isTeacher" class="topic-bulk">
+      <span class="topic-bulk-label">Todo el tema ({{ currentTopicTests.length }}):</span>
+      <button class="btn sm" :disabled="bulkBusy" @click="askBulk('publish')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+        </svg>
+        Publicar
+      </button>
+      <button class="btn sm" :disabled="bulkBusy" @click="askBulk('unpublish')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/>
+          <line x1="1" y1="1" x2="23" y2="23"/>
+        </svg>
+        Ocultar
+      </button>
+      <template v-if="authStore.isAdmin">
+        <button class="btn sm" :disabled="bulkBusy" @click="askBulk('secret')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+          </svg>
+          Marcar secreto
+        </button>
+        <button class="btn sm" :disabled="bulkBusy" @click="askBulk('unsecret')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/>
+          </svg>
+          Quitar secreto
+        </button>
+      </template>
+    </div>
+
     <div class="section-title">{{ sectionTitle }}</div>
 
     <!-- Topics grid -->
@@ -372,6 +404,42 @@ const sectionTitle = computed(() => {
 const allTopics = computed(() =>
   [...new Set(appStore.tests.map(t => t.topic).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'))
 )
+
+// ── Bulk actions over the current topic ──────────────────
+const bulkBusy = ref(false)
+
+const currentTopicTests = computed(() =>
+  appStore.tests.filter(t => (t.topic || '') === (appStore.currentTopic || ''))
+)
+
+const BULK = {
+  publish:  { patch: { published: true },  verb: 'Publicar',       body: 'se publicarán y los alumnos podrán verlos' },
+  unpublish:{ patch: { published: false }, verb: 'Ocultar',        body: 'pasarán a borrador y dejarán de verse' },
+  secret:   { patch: { secret: true },     verb: 'Marcar secreto', body: 'quedarán como secretos, solo visibles para ti, y dejarán de estar publicados' },
+  unsecret: { patch: { secret: false },    verb: 'Quitar secreto', body: 'dejarán de ser secretos (seguirán sin publicarse hasta que los publiques)' },
+}
+
+function askBulk(kind) {
+  const { patch, verb, body } = BULK[kind]
+  const n = currentTopicTests.value.length
+  if (!n) { appStore.showToast('Este tema no tiene tests'); return }
+
+  appStore.showModal(
+    `${verb}: ${appStore.currentTopic}`,
+    `${n} test${n !== 1 ? 's' : ''} de este tema ${body}.`,
+    async () => {
+      bulkBusy.value = true
+      let r
+      try { r = await appStore.bulkSetTopic(appStore.currentTopic, patch) }
+      finally { bulkBusy.value = false } // o los botones quedarían inertes
+      const parts = [`${r.changed} test${r.changed !== 1 ? 's' : ''} actualizado${r.changed !== 1 ? 's' : ''}`]
+      if (r.skipped) parts.push(`${r.skipped} omitido${r.skipped !== 1 ? 's' : ''} por ser secreto${r.skipped !== 1 ? 's' : ''}`)
+      if (r.failed) parts.push(`${r.failed} con error`)
+      appStore.showToast(parts.join(', ') + (r.failed ? '' : ' ✓'))
+    },
+    verb, kind === 'unpublish' || kind === 'secret',
+  )
+}
 
 const topicEntries = computed(() => {
   const map = {}
