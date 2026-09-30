@@ -15,7 +15,7 @@
           </svg>
           Barajar
         </button>
-        <button class="btn sm" :class="managing ? 'accent' : ''" @click="toggleManage">
+        <button v-if="canManage" class="btn sm" :class="managing ? 'accent' : ''" @click="toggleManage">
           <svg v-if="!managing" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
@@ -29,7 +29,7 @@
     </div>
 
     <!-- MANAGE MODE -->
-    <div v-if="managing" class="pills-manage-view">
+    <div v-if="managing && canManage" class="pills-manage-view">
       <div class="pills-manage-toolbar">
         <button class="btn accent pills-new-btn" @click="openCreate">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="15" height="15">
@@ -316,7 +316,7 @@ const appStore = useAppStore()
 const store = usePillsStore()
 
 onMounted(async () => {
-  if (!authStore.isAdmin) { router.replace('/'); return }
+  // Everyone may study the pills; only staff may change them (see canManage)
   window.addEventListener('keydown', globalKeyHandler)
   await store.load()
   reshuffle()
@@ -325,6 +325,9 @@ onMounted(async () => {
 onUnmounted(() => {
   window.removeEventListener('keydown', globalKeyHandler)
 })
+
+// Students study the pills; only staff create, edit or import them
+const canManage = computed(() => authStore.isTeacher || authStore.isAdmin)
 
 // ── Study state ──────────────────────────────────────────
 const managing = ref(false)

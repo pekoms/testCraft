@@ -80,8 +80,10 @@ export const usePillsStore = defineStore('pills', () => {
         const remote = withTopic(data.map(r => r.data))
 
         // First sync from a device that already had local pills: push them up
-        // so switching devices doesn't look like the pills were lost.
-        if (!remote.length && local.length) {
+        // so switching devices doesn't look like the pills were lost. Students
+        // may only read, so never attempt the upload for them — RLS would
+        // reject every row and they would get an error they cannot act on.
+        if (!remote.length && local.length && (auth.isTeacher || auth.isAdmin)) {
           const errors = await Promise.all(local.map(p => upsertRemote(p, auth.currentUser.id)))
           const failed = errors.filter(Boolean)
           pills.value = local

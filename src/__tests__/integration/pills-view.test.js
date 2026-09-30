@@ -155,15 +155,17 @@ describe('PillsView — integración', () => {
   })
 
   // ── Auth guard ───────────────────────────────────────────────────────────────
+  // Estudiar está abierto a todos; editar no. Los roles se cubren en el bloque
+  // "quién puede ver y quién puede editar" al final del archivo.
 
-  it('redirige a / si el usuario no es admin', async () => {
+  it('no expulsa de la página a quien no es admin', async () => {
     authStore.isAdmin = false
     const replaceSpy = vi.spyOn(router, 'replace')
 
     mount$()
     await flushPromises()
 
-    expect(replaceSpy).toHaveBeenCalledWith('/')
+    expect(replaceSpy).not.toHaveBeenCalledWith('/')
   })
 
   // ── Manage mode ──────────────────────────────────────────────────────────────
@@ -425,5 +427,87 @@ describe('PillsView — el tema es obligatorio', () => {
 
     await w.find('.pill-modal .pill-topic-input').setValue('Tema 02. El Motor')
     expect(guardar.attributes('disabled')).toBeUndefined()
+  })
+})
+
+describe('PillsView — quién puede ver y quién puede editar', () => {
+  let pinia, authStore, pillsStore, router
+
+  function setup(role) {
+    pinia = createPinia()
+    setActivePinia(pinia)
+    authStore = useAuthStore()
+    pillsStore = usePillsStore()
+
+    authStore.authLocked = false
+    authStore.currentUser = { id: 'u1', email: 'u@test.com' }
+    authStore.isTeacher = role !== 'alumno'
+    authStore.isAdmin = role === 'admin'
+
+    pillsStore.pills = [...PILLS]
+    vi.spyOn(pillsStore, 'load').mockImplementation(() => {
+      pillsStore.pills = [...PILLS]
+    })
+
+    router = makeRouter()
+    return router.push('/pills').then(() => router.isReady())
+  }
+
+  async function mountAs(role) {
+    await setup(role)
+    const w = mount(PillsView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+    return w
+  }
+
+  const manageBtn = w => w.findAll('button').find(b => b.text().includes('Gestionar'))
+
+  it('un alumno ya no es expulsado de la página', async () => {
+    await setup('alumno')
+    const replaceSpy = vi.spyOn(router, 'replace')
+    mount(PillsView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+    expect(replaceSpy).not.toHaveBeenCalledWith('/')
+  })
+
+  it('un alumno ve la tarjeta de estudio', async () => {
+    const w = await mountAs('alumno')
+    expect(w.find('.pills-study-view').exists()).toBe(true)
+    expect(w.find('.pill-flip').exists()).toBe(true)
+  })
+
+  it('un alumno puede voltear la tarjeta', async () => {
+    const w = await mountAs('alumno')
+    await w.find('.pill-flip-outer').trigger('click')
+    expect(w.find('.pill-flip').classes()).toContain('flipped')
+  })
+
+  it('un alumno no ve el botón Gestionar', async () => {
+    const w = await mountAs('alumno')
+    expect(manageBtn(w)).toBeUndefined()
+  })
+
+  it('el profesor sí ve el botón Gestionar', async () => {
+    const w = await mountAs('profesor')
+    expect(manageBtn(w)).toBeDefined()
+  })
+
+  it('el admin sí ve el botón Gestionar', async () => {
+    const w = await mountAs('admin')
+    expect(manageBtn(w)).toBeDefined()
+  })
+
+  it('el profesor puede entrar en modo gestión', async () => {
+    const w = await mountAs('profesor')
+    await manageBtn(w).trigger('click')
+    expect(w.find('.pills-manage-view').exists()).toBe(true)
+  })
+
+  it('aunque se fuerce el modo gestión, un alumno sigue viendo estudio', async () => {
+    const w = await mountAs('alumno')
+    w.vm.managing = true
+    await flushPromises()
+    expect(w.find('.pills-manage-view').exists()).toBe(false)
+    expect(w.find('.pills-study-view').exists()).toBe(true)
   })
 })

@@ -123,13 +123,23 @@ describe('NavBar — integración de navegación', () => {
     expect(btn).toBeUndefined()
   })
 
-  it('Píldoras solo aparece para isAdmin=true', async () => {
+  it('Píldoras aparece también para quien no es admin', async () => {
     authStore.isAdmin = false
     const w = mountNav()
     await flushPromises()
 
     const btn = w.findAll('button').find(b => b.text().includes('Píldoras'))
-    expect(btn).toBeUndefined()
+    expect(btn).toBeDefined()
+  })
+
+  it('Píldoras aparece para un alumno', async () => {
+    authStore.isTeacher = false
+    authStore.isAdmin = false
+    const w = mountNav()
+    await flushPromises()
+
+    const btn = w.findAll('button').find(b => b.text().includes('Píldoras'))
+    expect(btn).toBeDefined()
   })
 
   it('Estadísticas siempre aparece cuando authLocked=false', async () => {

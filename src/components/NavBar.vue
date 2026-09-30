@@ -28,7 +28,7 @@
         </svg>
         Estadísticas
       </button>
-      <button v-if="authStore.isAdmin" class="btn" @click="go('/pills')">
+      <button class="btn" @click="go('/pills')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
           <rect x="2" y="6" width="20" height="12" rx="6"/>
           <circle cx="9" cy="12" r="4" fill="currentColor" stroke="none" opacity="0.35"/>
@@ -138,7 +138,7 @@
           </svg>
           Estadísticas
         </button>
-        <button v-if="authStore.isAdmin" class="mobile-link" @click="go('/pills'); menuOpen = false">
+        <button class="mobile-link" @click="go('/pills'); menuOpen = false">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
             <rect x="2" y="6" width="20" height="12" rx="6"/>
             <circle cx="9" cy="12" r="4" fill="currentColor" stroke="none" opacity="0.35"/>
