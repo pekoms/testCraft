@@ -165,6 +165,13 @@ HOJA DE SOLUCIONES
     <!-- Bulk actions over the whole topic -->
     <div v-if="appStore.currentTopic !== null && authStore.isTeacher" class="topic-bulk">
       <span class="topic-bulk-label">Todo el tema ({{ currentTopicTests.length }}):</span>
+      <button class="btn sm" :disabled="bulkBusy" @click="openRename">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+        </svg>
+        Renombrar
+      </button>
       <button class="btn sm" :disabled="bulkBusy" @click="askBulk('publish')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
@@ -269,11 +276,73 @@ HOJA DE SOLUCIONES
           <button class="btn sm" @click="appStore.duplicateTest(t.id)" title="Duplicar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
           </button>
+          <button class="btn sm" @click="openMove(t)" title="Mover a otro tema">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+              <path d="M3 7V5a2 2 0 0 1 2-2h4l2 2h6a2 2 0 0 1 2 2v1"/>
+              <path d="M14 14l3-3-3-3"/><path d="M8 11h9"/>
+              <path d="M3 9h18l-1.5 9a2 2 0 0 1-2 2H6.5a2 2 0 0 1-2-2L3 9z"/>
+            </svg>
+          </button>
           <button class="btn sm" @click="editTest(t.id)" title="Editar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
           </button>
           <button class="btn sm danger" @click="appStore.deleteTest(t.id)" title="Eliminar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rename the current topic -->
+    <div v-if="renameOpen" class="modal-overlay open" @click.self="renameOpen = false">
+      <div class="modal move-topic-modal">
+        <h3>Renombrar tema</h3>
+        <p class="import-hint">
+          Se aplicará a {{ renameCounts.tests }} test{{ renameCounts.tests !== 1 ? 's' : '' }}<!--
+          -->{{ renameCounts.pills ? ` y ${renameCounts.pills} píldora${renameCounts.pills !== 1 ? 's' : ''}` : '' }}.
+        </p>
+        <div class="field-group" style="margin-top:14px">
+          <label>Nuevo nombre</label>
+          <input type="text" v-model="renameTarget" maxlength="60" autocomplete="off"
+            @keyup.enter="doRename" ref="renameInput">
+        </div>
+        <p v-if="renameMerges" class="import-hint" style="color:var(--accent);margin-top:8px">
+          Ese tema ya existe: los dos quedarán fundidos en uno.
+        </p>
+        <p v-if="renameError" class="import-error">{{ renameError }}</p>
+        <div class="modal-actions">
+          <button class="btn" @click="renameOpen = false">Cancelar</button>
+          <button class="btn accent" @click="doRename"
+            :disabled="bulkBusy || !renameTarget.trim() || renameTarget.trim() === appStore.currentTopic">
+            Renombrar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Move a test to another topic -->
+    <div v-if="moveTest" class="modal-overlay open" @click.self="moveTest = null">
+      <div class="modal move-topic-modal">
+        <h3>Mover a otro tema</h3>
+        <p class="import-hint">
+          «{{ moveTest.title }}» saldrá de
+          <strong>{{ moveTest.topic || 'Sin tema' }}</strong> y pasará al tema que elijas.
+        </p>
+        <div class="field-group" style="margin-top:14px">
+          <label>Tema de destino</label>
+          <input type="text" v-model="moveTarget" maxlength="60" autocomplete="off"
+            list="moveTopicsList" placeholder="Elige uno existente o escribe uno nuevo"
+            @keyup.enter="doMove">
+          <datalist id="moveTopicsList">
+            <option v-for="t in allTopics" :key="t" :value="t" />
+          </datalist>
+        </div>
+        <p v-if="moveError" class="import-error">{{ moveError }}</p>
+        <div class="modal-actions">
+          <button class="btn" @click="moveTest = null">Cancelar</button>
+          <button class="btn accent" @click="doMove"
+            :disabled="moveBusy || !moveTarget.trim() || moveTarget.trim() === (moveTest.topic || '')">
+            Mover
           </button>
         </div>
       </div>
@@ -287,10 +356,11 @@ HOJA DE SOLUCIONES
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, nextTick, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
+import { usePillsStore } from '@/stores/pills'
 import { parseMDTest } from '@/utils/parseMDTest'
 
 const BANNER_KEY = 'vitastrong_banner_v1'
@@ -388,6 +458,7 @@ function confirmResetCompleted() {
 const router = useRouter()
 const authStore = useAuthStore()
 const appStore = useAppStore()
+const pillsStore = usePillsStore()
 
 onMounted(() => {
   if (!authStore.isTeacher || authStore.isAdmin) {
@@ -404,6 +475,83 @@ const sectionTitle = computed(() => {
 const allTopics = computed(() =>
   [...new Set(appStore.tests.map(t => t.topic).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'))
 )
+
+// ── Rename the current topic ─────────────────────────────
+const renameOpen = ref(false)
+const renameTarget = ref('')
+const renameError = ref('')
+const renameInput = ref(null)
+
+const renameCounts = computed(() => ({
+  tests: currentTopicTests.value.length,
+  pills: pillsStore.pills.filter(p => (p.topic || '') === (appStore.currentTopic || '')).length,
+}))
+
+const renameMerges = computed(() => {
+  const t = renameTarget.value.trim()
+  return !!t && t !== appStore.currentTopic && allTopics.value.includes(t)
+})
+
+async function openRename() {
+  renameTarget.value = appStore.currentTopic || ''
+  renameError.value = ''
+  renameOpen.value = true
+  nextTick(() => renameInput.value?.select())
+  // This screen never loads the pills, and the rename has to reach them too
+  if (!pillsStore.pills.length) await pillsStore.load()
+}
+
+async function doRename() {
+  const next = renameTarget.value.trim()
+  const prev = appStore.currentTopic
+  if (!next || next === prev) return
+
+  bulkBusy.value = true
+  renameError.value = ''
+  let r, rp
+  try {
+    r = await appStore.renameTopic(prev, next)
+    // Topics are shared with the pills, so rename there too or both names stay
+    rp = await pillsStore.renameTopic(prev, next)
+  } finally { bulkBusy.value = false }
+
+  if (r.failed || rp.failed) {
+    renameError.value = `No se pudieron cambiar ${r.failed + rp.failed} elemento(s). Vuelve a intentarlo.`
+    return
+  }
+  renameOpen.value = false
+  const parts = [`${r.changed} test${r.changed !== 1 ? 's' : ''}`]
+  if (rp.changed) parts.push(`${rp.changed} píldora${rp.changed !== 1 ? 's' : ''}`)
+  appStore.showToast(`Renombrado a «${next}»: ${parts.join(' y ')} ✓`)
+}
+
+// ── Move one test to another topic ───────────────────────
+const moveTest = ref(null)
+const moveTarget = ref('')
+const moveError = ref('')
+const moveBusy = ref(false)
+
+function openMove(t) {
+  moveTest.value = t
+  moveTarget.value = ''
+  moveError.value = ''
+}
+
+async function doMove() {
+  const target = moveTarget.value.trim()
+  const t = moveTest.value
+  if (!t || !target || target === (t.topic || '')) return
+
+  moveBusy.value = true
+  moveError.value = ''
+  let ok
+  try { ok = await appStore.moveTestToTopic(t.id, target) }
+  finally { moveBusy.value = false }
+
+  if (!ok) { moveError.value = 'No se pudo mover el test. Inténtalo de nuevo.'; return }
+  moveTest.value = null
+  appStore.showToast(`Movido a «${target}» ✓`)
+}
 
 // ── Bulk actions over the current topic ──────────────────
 const bulkBusy = ref(false)

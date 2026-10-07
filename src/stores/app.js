@@ -196,6 +196,39 @@ export const useAppStore = defineStore('app', () => {
     return { changed, skipped, failed, total: targets.length }
   }
 
+  // Rename a topic across every test that carries it. Renaming onto a topic
+  // that already exists merges the two, which is a legitimate way to tidy up.
+  async function renameTopic(from, to) {
+    const prev = from || ''
+    const next = (to || '').trim()
+    if (!next || next === prev) return { changed: 0, failed: 0, total: 0 }
+
+    const targets = tests.value.filter(t => (t.topic || '') === prev)
+    let changed = 0, failed = 0
+    for (const t of targets) {
+      t.topic = next
+      if (await persistTest(t)) changed++
+      else { t.topic = prev; failed++ }
+    }
+    if (currentTopic.value === prev && changed) currentTopic.value = next
+    return { changed, failed, total: targets.length }
+  }
+
+  // Reassign a test to another topic. Keeps the same test — it leaves the old
+  // topic — rather than copying it, so the two never drift apart.
+  async function moveTestToTopic(id, topic) {
+    const t = tests.value.find(x => x.id === id)
+    if (!t) return false
+    const before = t.topic
+    const next = (topic || '').trim()
+    if (next === (before || '')) return true
+
+    t.topic = next
+    const ok = await persistTest(t)
+    if (!ok) { t.topic = before; return false }
+    return true
+  }
+
   function deleteTest(id) {
     const t = tests.value.find(x => x.id === id)
     if (!t) return
@@ -606,7 +639,7 @@ export const useAppStore = defineStore('app', () => {
   return {
     tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, completedTestIds, toast, modal, isOffline, importSecret, importMeta,
     genId, showToast, showModal, closeModal,
-    fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest, bulkSetTopic,
+    fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest, bulkSetTopic, moveTestToTopic, renameTopic,
     startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,
     clearWrongAnswers, countAvailableQuestions, startCustomTest, startTopicTest,
     loadCompletedTests, resetCompletedTests,

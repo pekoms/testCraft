@@ -131,6 +131,30 @@ export const usePillsStore = defineStore('pills', () => {
     return p
   }
 
+  // Topics are shared with the tests, so a rename there must reach the pills
+  // too — otherwise both names end up side by side in the topic pickers.
+  async function renameTopic(from, to) {
+    const prev = from || ''
+    const next = (to || '').trim()
+    if (!next || next === prev) return { changed: 0, failed: 0, total: 0 }
+
+    const targets = pills.value.filter(p => (p.topic || '') === prev)
+    if (!targets.length) return { changed: 0, failed: 0, total: 0 }
+
+    const auth = await getAuth()
+    const cloud = !!(supabase && auth.currentUser)
+
+    let changed = 0, failed = 0
+    for (const p of targets) {
+      const moved = { ...p, topic: next }
+      if (cloud && await upsertRemote(moved, auth.currentUser.id)) { failed++; continue }
+      pills.value = pills.value.map(x => x.id === p.id ? moved : x)
+      changed++
+    }
+    saveLocal(pills.value)
+    return { changed, failed, total: targets.length }
+  }
+
   async function remove(id) {
     pills.value = pills.value.filter(p => p.id !== id)
     saveLocal(pills.value)
@@ -144,5 +168,5 @@ export const usePillsStore = defineStore('pills', () => {
     }
   }
 
-  return { pills, load, save, remove, genId }
+  return { pills, load, save, remove, renameTopic, genId }
 })
