@@ -215,3 +215,65 @@ describe('HomeView — Repaso de errores', () => {
     expect(appStore.loadWrongAnswers).not.toHaveBeenCalled()
   })
 })
+
+describe('HomeView — mover un test de tema', () => {
+  let pinia, authStore, appStore
+
+  beforeEach(async () => {
+    pinia = createPinia()
+    setActivePinia(pinia)
+    authStore = useAuthStore()
+    appStore = useAppStore()
+    authStore.authLocked = false
+    authStore.isTeacher = true
+    authStore.isAdmin = true
+    authStore.currentUser = { id: 'teacher-id', email: 'teacher@test.com' }
+    appStore.tests = [SAMPLE_TEST, { ...SAMPLE_TEST, id: 'test-2', topic: 'Lengua' }]
+    appStore.currentTopic = 'Historia'
+    vi.spyOn(appStore, 'loadWrongAnswers').mockResolvedValue()
+  })
+
+  const mountView = () => mount(HomeView, { global: { plugins: [pinia, router] } })
+  const moveBtn = w => w.findAll('.card-actions button').find(b => b.attributes('title') === 'Mover a otro tema')
+
+  it('la tarjeta ofrece el botón de mover', async () => {
+    const w = mountView()
+    await flushPromises()
+    expect(moveBtn(w)).toBeDefined()
+  })
+
+  it('al pulsarlo se abre el diálogo', async () => {
+    const w = mountView()
+    await flushPromises()
+    await moveBtn(w).trigger('click')
+    expect(w.find('.move-topic-modal').exists()).toBe(true)
+  })
+
+  it('mover a otro tema no lanza y cambia el tema', async () => {
+    vi.spyOn(appStore, 'moveTestToTopic').mockResolvedValue(true)
+    const w = mountView()
+    await flushPromises()
+    await moveBtn(w).trigger('click')
+
+    await w.find('.move-topic-modal input').setValue('Lengua')
+    const ok = w.findAll('.move-topic-modal button').find(b => b.text().includes('Mover'))
+    await expect(ok.trigger('click')).resolves.not.toThrow()
+    await flushPromises()
+
+    expect(appStore.moveTestToTopic).toHaveBeenCalledWith('test-1', 'Lengua')
+  })
+
+  it('si el guardado falla, muestra el error y no cierra', async () => {
+    vi.spyOn(appStore, 'moveTestToTopic').mockResolvedValue(false)
+    const w = mountView()
+    await flushPromises()
+    await moveBtn(w).trigger('click')
+
+    await w.find('.move-topic-modal input').setValue('Lengua')
+    await w.findAll('.move-topic-modal button').find(b => b.text().includes('Mover')).trigger('click')
+    await flushPromises()
+
+    expect(w.find('.move-topic-modal').exists()).toBe(true)
+    expect(w.find('.move-topic-modal .import-error').exists()).toBe(true)
+  })
+})

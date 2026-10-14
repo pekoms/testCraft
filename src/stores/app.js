@@ -141,7 +141,7 @@ export const useAppStore = defineStore('app', () => {
         published: test.secret ? false : !!test.published,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,id' })
-      if (error) { showToast('Error al guardar en la nube'); return false }
+      if (error) { showToast(`Error al guardar en la nube: ${error.message}`); return false }
       return true
     }
     const arr = loadTestsLocal()
@@ -159,7 +159,7 @@ export const useAppStore = defineStore('app', () => {
       const { error, count } = await supabase.from('tests').delete({ count: 'exact' })
         .eq('id', id)
         .eq('user_id', ownerId)
-      if (error) { showToast('Error al eliminar'); return false }
+      if (error) { showToast(`Error al eliminar: ${error.message}`); return false }
       if (count === 0) { showToast('No se pudo eliminar el test'); return false }
       return true
     }
