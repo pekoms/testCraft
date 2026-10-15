@@ -516,7 +516,8 @@ async function doRename() {
   } finally { bulkBusy.value = false }
 
   if (r.failed || rp.failed) {
-    renameError.value = `No se pudieron cambiar ${r.failed + rp.failed} elemento(s). Vuelve a intentarlo.`
+    renameError.value = `No se pudieron cambiar ${r.failed + rp.failed} elemento(s).`
+      + (appStore.lastPersistError ? ` Motivo: ${appStore.lastPersistError}` : ' Vuelve a intentarlo.')
     return
   }
   renameOpen.value = false
@@ -548,7 +549,12 @@ async function doMove() {
   try { ok = await appStore.moveTestToTopic(t.id, target) }
   finally { moveBusy.value = false }
 
-  if (!ok) { moveError.value = 'No se pudo mover el test. Inténtalo de nuevo.'; return }
+  if (!ok) {
+    moveError.value = appStore.lastPersistError
+      ? `No se pudo mover: ${appStore.lastPersistError}`
+      : 'No se pudo mover el test. Inténtalo de nuevo.'
+    return
+  }
   moveTest.value = null
   appStore.showToast(`Movido a «${target}» ✓`)
 }

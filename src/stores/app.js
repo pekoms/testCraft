@@ -20,6 +20,7 @@ export const useAppStore = defineStore('app', () => {
   const editingId = ref(null)
   const editingQuestions = ref([])
   const isOffline = ref(false)
+  const lastPersistError = ref('')
 
   // deadline is an absolute timestamp, not a countdown: browsers throttle timers
   // in background tabs, so a decrementing counter loses real time while the tab
@@ -141,7 +142,13 @@ export const useAppStore = defineStore('app', () => {
         published: test.secret ? false : !!test.published,
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,id' })
-      if (error) { showToast(`Error al guardar en la nube: ${error.message}`); return false }
+      if (error) {
+        // The toast fades; callers that show a lasting message read this
+        lastPersistError.value = error.message || String(error)
+        showToast(`Error al guardar en la nube: ${lastPersistError.value}`)
+        return false
+      }
+      lastPersistError.value = ''
       return true
     }
     const arr = loadTestsLocal()
@@ -637,7 +644,7 @@ export const useAppStore = defineStore('app', () => {
   }
 
   return {
-    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, completedTestIds, toast, modal, isOffline, importSecret, importMeta,
+    tests, currentTopic, editingId, editingQuestions, playerState, resultData, wrongAnswers, completedTestIds, toast, modal, isOffline, lastPersistError, importSecret, importMeta,
     genId, showToast, showModal, closeModal,
     fetchTests, persistTest, removeTest, togglePublish, deleteTest, duplicateTest, bulkSetTopic, moveTestToTopic, renameTopic,
     startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,
