@@ -33,7 +33,7 @@
               <div class="fail-q">{{ f.q }}</div>
               <div class="fail-meta">
                 <div class="fail-bar-wrap">
-                  <div class="fail-bar" :style="{ width: Math.round(f.fails / f.total * 100) + '%' }"></div>
+                  <div class="fail-bar" :style="{ transform: `scaleX(${f.fails / f.total})` }"></div>
                 </div>
                 <span class="fail-pct">{{ Math.round(f.fails / f.total * 100) }}% errores ({{ f.fails }}/{{ f.total }})</span>
               </div>

@@ -3,7 +3,7 @@
     <div class="player-header">
       <h2>{{ ps.test?.title }}</h2>
       <div class="progress-bar-wrap">
-        <div class="progress-bar-fill" :style="{ width: progressPct + '%' }"></div>
+        <div class="progress-bar-fill" :style="{ transform: `scaleX(${progressPct / 100})` }"></div>
       </div>
       <div class="progress-label">
         <span>Pregunta {{ ps.current + 1 }} de {{ ps.questions.length }}</span>
