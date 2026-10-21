@@ -30,6 +30,28 @@ export const useAppStore = defineStore('app', () => {
     answers: {}, revealed: {}, timerInterval: null, deadline: null,
   })
 
+  // Bumped every second while a timed test is running, purely so a computed
+  // reading it (alongside deadline) re-evaluates each tick. Lives here — not
+  // as a component-local interval — so the countdown survives a user browsing
+  // away to another view (e.g. Leyes) and back: PlayerView can unmount and
+  // remount mid-test without the timer ever stopping or doubling up.
+  const clockTick = ref(0)
+
+  function ensurePlayerTimer() {
+    if (playerState.value.timerInterval || !playerState.value.deadline) return
+    const interval = setInterval(() => {
+      clockTick.value++
+      const left = Math.max(0, Math.round((playerState.value.deadline - Date.now()) / 1000))
+      if (left <= 0) {
+        clearInterval(playerState.value.timerInterval)
+        playerState.value.timerInterval = null
+        showToast('⏱ Tiempo agotado')
+        finishTest()
+      }
+    }, 1000)
+    playerState.value.timerInterval = interval
+  }
+
   // An in-progress test must survive a reload: mobile browsers discard
   // backgrounded tabs and the OS kills the PWA to reclaim memory.
   function persistPlayer() {
@@ -49,6 +71,7 @@ export const useAppStore = defineStore('app', () => {
       const saved = JSON.parse(localStorage.getItem(PLAYER_KEY) || 'null')
       if (!saved?.test || !saved.questions?.length) return false
       playerState.value = { ...saved, timerInterval: null }
+      ensurePlayerTimer()
       return true
     } catch { return false }
   }
@@ -301,6 +324,7 @@ export const useAppStore = defineStore('app', () => {
       _retryContext: { type: 'normal', testId: id },
     }
     persistPlayer()
+    ensurePlayerTimer()
     router.push('/player')
   }
 
@@ -351,13 +375,46 @@ export const useAppStore = defineStore('app', () => {
     persistPlayer()
   }
 
+  // Lets the student submit early, from the player or from the "volver al
+  // test" banner — unanswered questions just count as wrong, same as running
+  // out of time. Skips the confirmation when there's nothing left unanswered.
+  // openAnswerText: an open question the caller has typed but not yet saved
+  // to the store (PlayerView passes its local textarea ref; the global
+  // banner has none to pass, since nothing is mounted to hold it).
+  function requestFinishTest(openAnswerText) {
+    if (!playerState.value.test) return
+    const { questions, current, answers } = playerState.value
+    const pending = questions.filter((q, i) => {
+      if (i === current && q.type === 'open' && openAnswerText != null) return !openAnswerText.trim()
+      const a = answers[i]
+      return a == null || (Array.isArray(a) && a.length === 0) || a === ''
+    }).length
+
+    if (!pending) { finishTest(openAnswerText); return }
+
+    showModal(
+      'Finalizar test',
+      `Tienes ${pending} pregunta${pending !== 1 ? 's' : ''} sin responder. ${pending !== 1 ? 'Contarán' : 'Contará'} como incorrecta${pending !== 1 ? 's' : ''}. ¿Finalizar de todas formas?`,
+      () => finishTest(openAnswerText),
+      'Finalizar', false,
+    )
+  }
+
   async function finishTest(openAnswerText) {
     saveCurrentAnswer(openAnswerText)
     clearInterval(playerState.value.timerInterval)
-    playerState.value.timerInterval = null
     clearPlayer() // the test is over — nothing left to resume
 
-    const { questions, answers } = playerState.value
+    // Captured before the reset below so the rest of this function (including
+    // the bit that runs after an `await`) doesn't depend on playerState, which
+    // must empty out immediately — it's the global "resume your test" signal,
+    // and a finished test is not one to resume.
+    const { questions, answers, test: finishedTest, startedAt, _retryContext } = playerState.value
+    playerState.value = {
+      test: null, questions: [], current: 0,
+      answers: {}, revealed: {}, timerInterval: null, deadline: null,
+    }
+
     let correct = 0, total = 0
     const reviewItems = questions.map((q, i) => {
       const ans = answers[i]
@@ -383,12 +440,10 @@ export const useAppStore = defineStore('app', () => {
       }
     })
 
-    const durationSeconds = playerState.value.startedAt
-      ? Math.round((Date.now() - playerState.value.startedAt) / 1000)
-      : null
+    const durationSeconds = startedAt ? Math.round((Date.now() - startedAt) / 1000) : null
 
-    saveTestResult(pct, correct, total, answerSummary, durationSeconds)
-    resultData.value = { pct, correct, total, reviewItems, test: playerState.value.test, durationSeconds, retryContext: playerState.value._retryContext || null }
+    saveTestResult(finishedTest, pct, correct, total, answerSummary, durationSeconds)
+    resultData.value = { pct, correct, total, reviewItems, test: finishedTest, durationSeconds, retryContext: _retryContext || null }
     router.push('/results')
 
     // Optimistic local update — runs after navigation so the sync path above
@@ -396,7 +451,7 @@ export const useAppStore = defineStore('app', () => {
     const auth = await getAuth()
     if (!auth.isTeacher || auth.isAdmin) {
       // Mark this test as completed (only real test IDs, not synthetic ones)
-      const tid = playerState.value.test?.id
+      const tid = finishedTest?.id
       if (tid && !tid.startsWith('custom_') && !tid.startsWith('topic_') && !tid.startsWith('wrong_') && !completedTestIds.value.includes(tid)) {
         completedTestIds.value = [...completedTestIds.value, tid]
       }
@@ -412,14 +467,14 @@ export const useAppStore = defineStore('app', () => {
     }
   }
 
-  async function saveTestResult(score, correct, total, answers = [], durationSeconds = null) {
+  async function saveTestResult(test, score, correct, total, answers = [], durationSeconds = null) {
     const auth = await getAuth()
     if (!supabase || !auth.currentUser) return
     try {
       await supabase.from('test_results').insert({
         user_id: auth.currentUser.id,
-        test_id: playerState.value.test.id,
-        test_title: playerState.value.test.title,
+        test_id: test.id,
+        test_title: test.title,
         score, correct, total, answers,
         duration_seconds: durationSeconds,
       })
@@ -650,8 +705,8 @@ export const useAppStore = defineStore('app', () => {
     startTest, retryWrongOnly, loadWrongAnswers, startWrongAnswersTest,
     clearWrongAnswers, countAvailableQuestions, startCustomTest, startTopicTest,
     loadCompletedTests, resetCompletedTests,
-    nextQuestion, prevQuestion, selectOption, revealAnswer, finishTest, saveCurrentAnswer,
-    persistPlayer, restorePlayer, clearPlayer,
+    nextQuestion, prevQuestion, selectOption, revealAnswer, finishTest, requestFinishTest, saveCurrentAnswer,
+    persistPlayer, restorePlayer, clearPlayer, clockTick, ensurePlayerTimer,
     checkImportFromUrl, showTopic, backToTopics,
   }
 })

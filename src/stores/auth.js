@@ -71,7 +71,16 @@ export const useAuthStore = defineStore('auth', () => {
     resolvedEmail.value = ''
     clearAuthMsg()
     import('./app').then(({ useAppStore }) => {
-      useAppStore().tests = []
+      const appStore = useAppStore()
+      appStore.tests = []
+      // Shared devices are common in classrooms — don't leave the next
+      // person who signs in staring at someone else's in-progress test.
+      clearInterval(appStore.playerState.timerInterval)
+      appStore.playerState = {
+        test: null, questions: [], current: 0,
+        answers: {}, revealed: {}, timerInterval: null, deadline: null,
+      }
+      appStore.clearPlayer()
     })
   }
 

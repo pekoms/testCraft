@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { mount } from '@vue/test-utils'
 import { setActivePinia, createPinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
@@ -90,5 +90,147 @@ describe('PlayerView — encabezado y navegación', () => {
     const nextBtn = wrapper.findAll('.player-nav .btn')[1]
     await nextBtn.trigger('click')
     expect(appStore.playerState.current).toBe(1)
+  })
+})
+
+describe('PlayerView — navegar fuera y volver no pierde el progreso', () => {
+  // Reproduce el escenario pedido: a mitad de un test, el usuario va a Leyes
+  // (desmonta PlayerView) y vuelve (lo remonta). playerState vive en el store,
+  // así que sobrevive por sí solo — lo que este bloque verifica es que el
+  // componente, al remontarse, refleja fielmente ese estado y que el
+  // cronómetro (que vive en el store, no en el componente) sigue corriendo.
+  let pinia, appStore
+
+  beforeEach(() => {
+    pinia = createPinia()
+    setActivePinia(pinia)
+    appStore = useAppStore()
+  })
+
+  function mountView() {
+    return mount(PlayerView, { global: { plugins: [pinia, router] } })
+  }
+
+  it('al remontar, se ve la misma pregunta en la que estaba', async () => {
+    appStore.playerState = {
+      test: { id: 't1', title: 'Test' },
+      questions: [makeQuestion('Q1'), makeQuestion('Q2'), makeQuestion('Q3')],
+      current: 2, answers: {}, revealed: {}, timerInterval: null, deadline: null,
+    }
+    const first = mountView()
+    expect(first.text()).toContain('Pregunta 3 de 3')
+    first.unmount() // simula salir a /laws
+
+    const second = mountView() // simula volver a /player
+    expect(second.text()).toContain('Pregunta 3 de 3')
+  })
+
+  it('al remontar, la respuesta ya marcada sigue seleccionada', async () => {
+    appStore.playerState = {
+      test: { id: 't1', title: 'Test' },
+      questions: [makeQuestion('Q1')],
+      current: 0, answers: { 0: [0] }, revealed: {}, timerInterval: null, deadline: null,
+    }
+    const first = mountView()
+    expect(first.find('.option-play.selected').exists()).toBe(true)
+    first.unmount()
+
+    const second = mountView()
+    expect(second.find('.option-play.selected').exists()).toBe(true)
+  })
+
+  it('el cronómetro sigue actualizándose tras un desmontaje y remontaje', async () => {
+    vi.useFakeTimers()
+    appStore.playerState = {
+      test: { id: 't1', title: 'Test con tiempo' },
+      questions: [makeQuestion('Q1')],
+      current: 0, answers: {}, revealed: {}, timerInterval: null,
+      deadline: Date.now() + 60_000,
+    }
+    const first = mountView() // onMounted arranca el cronómetro en el store
+    vi.advanceTimersByTime(5000)
+    await first.vm.$nextTick()
+    expect(first.text()).toMatch(/0:5[0-5]/) // quedan ~55s
+
+    first.unmount() // simula ir a /laws — el cronómetro del store sigue vivo
+    vi.advanceTimersByTime(10_000) // pasan 10s mientras el componente no existe
+
+    const second = mountView() // simula volver — antes de mi fix se congelaba
+    await second.vm.$nextTick()
+    expect(second.text()).toMatch(/0:4[0-5]/) // ~45s: el tiempo avanzó de verdad
+
+    vi.advanceTimersByTime(5000)
+    await second.vm.$nextTick()
+    expect(second.text()).toMatch(/0:4[0-1]/) // sigue bajando en el componente nuevo
+
+    vi.useRealTimers()
+  })
+})
+
+describe('PlayerView — finalizar antes de llegar al final', () => {
+  let pinia, appStore
+
+  beforeEach(() => {
+    pinia = createPinia()
+    setActivePinia(pinia)
+    appStore = useAppStore()
+  })
+
+  function mountView() {
+    return mount(PlayerView, { global: { plugins: [pinia, router] } })
+  }
+
+  it('el botón "Finalizar ahora" está visible aunque no sea la última pregunta', () => {
+    appStore.playerState = {
+      test: { id: 't1', title: 'Test' },
+      questions: [makeQuestion('Q1'), makeQuestion('Q2'), makeQuestion('Q3')],
+      current: 0, answers: {}, revealed: {}, timerInterval: null, deadline: null,
+    }
+    const w = mountView()
+    const btn = w.findAll('button').find(b => b.text().includes('Finalizar ahora'))
+    expect(btn).toBeDefined()
+  })
+
+  it('al pulsarlo con preguntas sin responder, pide confirmación en vez de terminar ya', async () => {
+    appStore.playerState = {
+      test: { id: 't1', title: 'Test' },
+      questions: [makeQuestion('Q1'), makeQuestion('Q2'), makeQuestion('Q3')],
+      current: 0, answers: {}, revealed: {}, timerInterval: null, deadline: null,
+    }
+    const w = mountView()
+    const btn = w.findAll('button').find(b => b.text().includes('Finalizar ahora'))
+    await btn.trigger('click')
+
+    expect(appStore.modal.open).toBe(true)
+    expect(appStore.playerState.test).not.toBeNull() // sigue sin terminar
+  })
+
+  it('al confirmar desde la pregunta 1, el test termina', async () => {
+    appStore.playerState = {
+      test: { id: 't1', title: 'Test' },
+      questions: [makeQuestion('Q1'), makeQuestion('Q2')],
+      current: 0, answers: {}, revealed: {}, timerInterval: null, deadline: null,
+    }
+    const w = mountView()
+    const btn = w.findAll('button').find(b => b.text().includes('Finalizar ahora'))
+    await btn.trigger('click')
+    appStore.modal.onConfirm()
+
+    expect(appStore.resultData).not.toBeNull()
+    expect(appStore.playerState.test).toBeNull()
+  })
+
+  it('todo respondido, finaliza directamente sin preguntar', async () => {
+    appStore.playerState = {
+      test: { id: 't1', title: 'Test' },
+      questions: [makeQuestion('Q1')],
+      current: 0, answers: { 0: [0] }, revealed: {}, timerInterval: null, deadline: null,
+    }
+    const w = mountView()
+    const btn = w.findAll('button').find(b => b.text().includes('Finalizar ahora'))
+    await btn.trigger('click')
+
+    expect(appStore.modal.open).toBe(false)
+    expect(appStore.resultData).not.toBeNull()
   })
 })

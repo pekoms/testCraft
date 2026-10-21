@@ -110,3 +110,65 @@ describe('auth store — init sin supabase', () => {
     expect(store.isTeacher).toBe(true) // modo sin supabase: profesor por defecto
   })
 })
+
+describe('auth store — showLogin limpia el test en curso', () => {
+  // Dispositivos compartidos son habituales en aulas: cerrar sesión no debe
+  // dejar al siguiente alumno viendo (ni pudiendo reanudar) el test de otro.
+  let store
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useAuthStore()
+    localStorage.clear()
+  })
+
+  it('vacía playerState.test', async () => {
+    const { useAppStore } = await import('@/stores/app')
+    const appStore = useAppStore()
+    appStore.playerState = {
+      test: { id: 't1', title: 'Test de otro alumno' },
+      questions: [{ type: 'single', text: 'Q', options: [{ text: 'A', correct: true }] }],
+      answers: { 0: [0] }, revealed: {}, current: 0, timerInterval: null, deadline: null,
+    }
+
+    store.showLogin()
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(appStore.playerState.test).toBeNull()
+  })
+
+  it('borra también el test guardado en localStorage', async () => {
+    const { useAppStore } = await import('@/stores/app')
+    const appStore = useAppStore()
+    appStore.playerState = {
+      test: { id: 't1', title: 'T' },
+      questions: [{ type: 'single', text: 'Q', options: [{ text: 'A', correct: true }] }],
+      answers: {}, revealed: {}, current: 0, timerInterval: null, deadline: null,
+    }
+    appStore.persistPlayer()
+    expect(localStorage.getItem('testcraft_player_v1')).not.toBeNull()
+
+    store.showLogin()
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(localStorage.getItem('testcraft_player_v1')).toBeNull()
+  })
+
+  it('detiene el cronómetro si había uno activo', async () => {
+    const { useAppStore } = await import('@/stores/app')
+    const appStore = useAppStore()
+    appStore.playerState = {
+      test: { id: 't1', title: 'T' },
+      questions: [{ type: 'single', text: 'Q', options: [{ text: 'A', correct: true }] }],
+      answers: {}, revealed: {}, current: 0, timerInterval: null,
+      deadline: Date.now() + 60_000,
+    }
+    appStore.ensurePlayerTimer()
+    expect(appStore.playerState.timerInterval).not.toBeNull()
+
+    store.showLogin()
+    await new Promise(resolve => setTimeout(resolve, 0))
+
+    expect(appStore.playerState.timerInterval).toBeNull()
+  })
+})

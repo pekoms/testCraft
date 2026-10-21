@@ -111,6 +111,28 @@ body {
   padding: 6px 16px; font-size: 13px; font-weight: 500;
 }
 
+.resume-test-banner {
+  /* Below .mobile-menu's z-index (150) — it's fixed and must always win when open */
+  position: sticky; top: 0; z-index: 90;
+  background: var(--accent); color: var(--on-accent);
+  display: flex; align-items: center; justify-content: center;
+  gap: 14px; flex-wrap: wrap;
+  padding: 8px 16px; font-size: 13px;
+}
+.resume-test-info { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.resume-test-info strong { font-weight: 700; }
+.resume-test-actions { display: flex; align-items: center; gap: 8px; }
+.resume-test-banner .btn {
+  background: rgba(255,255,255,0.18); border-color: rgba(255,255,255,0.4); color: inherit;
+}
+.resume-test-banner .btn:hover { background: rgba(255,255,255,0.32); }
+/* Finalizar ahora stays visually secondary — Volver al test is the one we
+   want picked by default, this is for when the student really means it */
+.resume-test-banner .btn:not(.accent) {
+  background: transparent; border-color: rgba(255,255,255,0.35);
+}
+.resume-test-banner .btn:not(.accent):hover { background: rgba(255,255,255,0.14); }
+
 /* ── NAV ─────────────────────────────── */
 nav {
   background: var(--surface);
@@ -388,6 +410,7 @@ html[data-theme="slate"] .secret-card {
 #player { max-width: 640px; margin: 0 auto; padding: 2rem 1.5rem; }
 
 .player-header { margin-bottom: 2rem; }
+.player-header-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
 .player-header h2 { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.4rem; letter-spacing: -0.02em; margin-bottom: 4px; }
 
 .progress-bar-wrap { height: 4px; background: var(--surface2); border-radius: 99px; margin-top: 1rem; overflow: hidden; }

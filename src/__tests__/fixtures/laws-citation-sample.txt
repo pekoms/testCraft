@@ -1,0 +1,56 @@
+1. Marco Constitucional, Leyes Principales y Ámbito de Aplicación
+Artículo 40.2 de la Constitución Española:
+Ubicación en el texto: Epígrafe 1.1.1 Fuentes de origen de la LPRL (Pág. 4)
+.
+Texto literal: "En primer lugar, destacar que la seguridad e higiene en el trabajo es un mandato constitucional, figurando en el Artículo 40.2, que impone como uno de los principios rectores de la política social y económica, velar por la seguridad e higiene en el trabajo"
+.
+Ley 31/1995, de 8 de noviembre, de Prevención de Riesgos Laborales (LPRL):
+Ubicación en el texto: Epígrafes 1.1 Exposición de motivos y 1.2.1 Objeto (Págs. 4-5)
+.
+Texto literal: "Esta Ley tiene por objeto sentar las bases de las garantías y responsabilidades necesarias para establecer un adecuado nivel de protección de la salud de las personas trabajadoras frente a los riesgos derivados de las condiciones de trabajo..."
+. "Tiene pues un carácter laboral y de Derecho necesario mínimo indisponible, es decir, lo que contiene no se puede modificar a peor, pudiendo ser mejoradas y desarrolladas en los convenios colectivos"
+.
+Texto Refundido de la Ley del Estatuto de los Trabajadores:
+Ubicación en el texto: Epígrafe 1.2.2 Ámbito de aplicación (Pág. 5)
+.
+Texto literal: "Constituye su ámbito de aplicación: Relaciones laborales reguladas en el texto refundido de la Ley del Estatuto de los Trabajadores; Relaciones de carácter administrativo o estatutario del personal al servicio de las Administraciones Públicas; Sociedades cooperativas, en las que existan socios cuya actividad consista en la prestación de un trabajo personal"
+.
+Ley 21/1992, de 16 de julio, de Industria:
+Ubicación en el texto: Epígrafe 2.1 Agentes que intervienen en la certificación de un EPI (Pág. 23)
+.
+Texto literal: "Las DIRECTIVAS Europeas [...] se cuantifican a través de las NORMAS que el artículo 8 de la Ley 21/1992 de Industria define como 'La especificación técnica de aplicación repetitiva o continuada cuya observancia no es obligatoria, establecida con participación de todas las partes interesadas (administración, laboratorios, centros de investigación, fabricantes, consumidores y usuario)'"
+.
+2. Reales Decretos Principales de Desarrollo Reglamentario
+Real Decreto 1407/1992, de 20 de noviembre:
+Ubicación en el texto: Epígrafes 2 y 2.2 Marco normativo (Págs. 22, 25)
+.
+Texto literal: "El Real Decreto 1407/1992 (exigencias esenciales de seguridad que los EPI deben cumplir para preservar la salud y garantizar la seguridad de las personas usuarias), lo define en su artículo 2 como: 'cualquier dispositivo o medio que vaya a llevar o del que vaya a disponer una persona, con el objetivo de que la proteja contra uno o varios riesgos que puedan amenazar su salud y su seguridad'"
+. "Establece los requisitos que deben cumplir los EPI (diseño, fabricación, comercialización) para que garanticen la salud y seguridad de los usuarios, permitiendo así su comercialización en la Unión Europea. Para ello, define 3 tipos de exigencias esenciales de seguridad y salud (EESS): Exigencias generales, Exigencias complementarias y Exigencias específicas"
+.
+Real Decreto 773/1997, de 30 de mayo:
+Ubicación en el texto: Epígrafes 2 y 2.2 Marco normativo (Págs. 22, 26)
+.
+Texto literal: "Por su parte, el Real Decreto 773/1997 (disposiciones mínimas de seguridad y salud para la utilización de EPI por los trabajadores) entiende por EPI, 'cualquier equipo destinado a ser llevado o sujetado por el trabajador para que le proteja de uno o varios riesgos que puedan amenazar su seguridad o su salud, así como cualquier complemento o accesorio destinado a tal fin'"
+. Además, en relación con la exención de los servicios de socorro en su art. 2.b, la acepción más extendida "defiende que se debe permitir a los servicios de extinción y salvamentos la elección de soluciones técnicas —para EPI— semejantes o equivalentes a las definidas por el RD 773/1997, siempre que cumplan las citadas EESS"
+.
+Real Decreto 39/1997, de 17 de enero (Reglamento de los Servicios de Prevención):
+Ubicación en el texto: Epígrafe 1.5 Capítulo IV: Los servicios de prevención (Págs. 16-17)
+.
+Texto literal: "Sobre los servicios de prevención, la Ley nos obliga a contar con uno y ofrece [...] Servicio de Prevención Propio (SPP), o bien [...] Servicio de Prevención Ajeno (SPA). Estos Servicios de Prevención están regulados por el Real Decreto 39/1997, de 17 de enero"
+. Define los niveles de cualificación: Nivel Básico ("Formación básica no inferior a 50h en empresas de especial peligro o 30h el resto"), Nivel Intermedio ("Formación mínima de 300h") y Nivel Superior ("Formación universitaria y un máster de 600h")
+.
+Real Decreto 171/2004, de 30 de enero (Coordinación de Actividades Empresariales - CAE):
+Ubicación en el texto: Epígrafe 1.4.12.1 Real Decreto 171/2004, de 30 de enero (Pág. 15)
+.
+Texto literal: "Las empresas deberán informarse recíprocamente sobre los riesgos específicos de las actividades que desarrollen. La información e instrucciones se facilitará por escrito cuando el riesgo se califique como grave o muy grave. Cada empresa deberá informar a su plantilla"
+.
+Real Decreto 485/1997 (Señalización de Seguridad y Salud):
+Ubicación en el texto: Epígrafe 2.4.4 Uso por parte de las personas usuarias de los EPI (Págs. 30-31)
+.
+Texto literal: "Deben señalarse aquellos lugares del centro habitual de trabajo donde el uso del EPI pudiera ser obligatorio. En este sentido, existen una serie de señales, previstas en el RD 485/1997..."
+.
+Real Decreto 138/2000, de 4 de febrero:
+Ubicación en el texto: Epígrafe BIBLIOGRAFÍA (Pág. 33)
+.
+Texto literal: "Real Decreto 138/2000, de 4 de febrero, por el que se aprueba el Reglamento de Organización y Funcionamiento de la Inspección de Trabajo y Seguridad Social"
+.

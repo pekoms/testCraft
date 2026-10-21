@@ -1,7 +1,10 @@
 <template>
   <div id="player">
     <div class="player-header">
-      <h2>{{ ps.test?.title }}</h2>
+      <div class="player-header-top">
+        <h2>{{ ps.test?.title }}</h2>
+        <button class="btn sm" @click="requestFinish">Finalizar ahora</button>
+      </div>
       <div class="progress-bar-wrap">
         <div class="progress-bar-fill" :style="{ transform: `scaleX(${progressPct / 100})` }"></div>
       </div>
@@ -74,7 +77,6 @@ import { useAppStore } from '@/stores/app'
 const router = useRouter()
 const appStore = useAppStore()
 const openAnswer = ref('')
-const timerText = ref('')
 
 const ps = computed(() => appStore.playerState)
 const currentQ = computed(() => ps.value.questions[ps.value.current])
@@ -112,11 +114,23 @@ function optionClass(oi) {
 }
 
 // Read the clock rather than counting down: background tabs throttle timers,
-// so a decremented counter drifts behind real elapsed time.
+// so a decremented counter drifts behind real elapsed time. The interval that
+// drives this lives in the store (clockTick), not here — it must keep running
+// even while this component is unmounted, e.g. while the user checks a law
+// and comes back mid-test.
 function secondsLeft() {
   const d = appStore.playerState.deadline
   return d ? Math.max(0, Math.round((d - Date.now()) / 1000)) : 0
 }
+
+const timerText = computed(() => {
+  appStore.clockTick // eslint-disable-line no-unused-expressions -- reactive dependency, ticks every second
+  if (!ps.value.deadline) return ''
+  const left = secondsLeft()
+  const m = Math.floor(left / 60)
+  const s = left % 60
+  return `⏱ ${m}:${String(s).padStart(2, '0')}`
+})
 
 // Sync open answer back when current changes
 let stopWatch = null
@@ -128,24 +142,9 @@ onMounted(() => {
   const saved = ps.value.answers[ps.value.current]
   if (currentQ.value?.type === 'open') openAnswer.value = saved || ''
 
-  // Start timer if needed
-  if (ps.value.deadline && !ps.value.timerInterval) {
-    let interval = null
-    const tick = () => {
-      const left = secondsLeft()
-      const m = Math.floor(left / 60)
-      const s = left % 60
-      timerText.value = `⏱ ${m}:${String(s).padStart(2, '0')}`
-      if (left <= 0) {
-        clearInterval(interval)
-        appStore.showToast('⏱ Tiempo agotado')
-        appStore.finishTest()
-      }
-    }
-    interval = setInterval(tick, 1000)
-    appStore.playerState.timerInterval = interval
-    tick() // paint at once, and end the test if it expired while away
-  }
+  // Idempotent: a no-op if the store's interval is already running, which is
+  // the normal case when returning here from another view mid-test.
+  appStore.ensurePlayerTimer()
 })
 
 onUnmounted(() => {
@@ -162,11 +161,18 @@ function prev() {
 function next() {
   const ans = currentQ.value?.type === 'open' ? openAnswer.value : null
   if (isLast.value) {
-    appStore.finishTest(ans)
+    appStore.requestFinishTest(ans)
   } else {
     appStore.nextQuestion(ans)
     const saved = appStore.playerState.answers[appStore.playerState.current]
     openAnswer.value = currentQ.value?.type === 'open' ? (saved || '') : ''
   }
+}
+
+// Finish from any question, not just the last one — same confirmation path
+// as reaching the end, since either way some questions may be unanswered.
+function requestFinish() {
+  const ans = currentQ.value?.type === 'open' ? openAnswer.value : null
+  appStore.requestFinishTest(ans)
 }
 </script>

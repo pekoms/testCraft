@@ -200,3 +200,155 @@ describe('finishTest — durationSeconds', () => {
     expect(typeof rd.durationSeconds).toBe('number')
   })
 })
+
+describe('finishTest — vacía playerState al terminar', () => {
+  // playerState.test es la señal global de "hay un test en curso" (el banner
+  // "Volver al test" en App.vue la lee); un test terminado no debe seguir
+  // ofreciéndose como reanudable.
+  let store
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useAppStore()
+  })
+
+  it('playerState.test queda a null', () => {
+    setupPlayer(store, [makeQuestion('single', [true, false])], { 0: [0] })
+    store.finishTest()
+    expect(store.playerState.test).toBeNull()
+  })
+
+  it('playerState.questions y answers quedan vacíos', () => {
+    setupPlayer(store, [makeQuestion('single', [true, false])], { 0: [0] })
+    store.finishTest()
+    expect(store.playerState.questions).toEqual([])
+    expect(store.playerState.answers).toEqual({})
+  })
+
+  it('resultData.test conserva el test aunque playerState ya esté vacío', () => {
+    setupPlayer(store, [makeQuestion('single', [true, false])], { 0: [0] })
+    store.finishTest()
+    expect(store.resultData.test).toMatchObject({ id: 'test1', title: 'Test de ejemplo' })
+    expect(store.playerState.test).toBeNull()
+  })
+
+  it('el deadline y el intervalo también se limpian', () => {
+    store.playerState = {
+      test: { id: 't1', title: 'T' },
+      questions: [makeQuestion('single', [true, false])],
+      answers: { 0: [0] }, revealed: {}, current: 0,
+      timerInterval: 999, deadline: Date.now() + 60000,
+    }
+    store.finishTest()
+    expect(store.playerState.timerInterval).toBeNull()
+    expect(store.playerState.deadline).toBeNull()
+  })
+})
+
+describe('requestFinishTest — finalizar antes de llegar al final', () => {
+  let store
+
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    store = useAppStore()
+  })
+
+  it('con todo respondido, finaliza directamente sin pedir confirmación', () => {
+    setupPlayer(
+      store,
+      [makeQuestion('single', [true, false]), makeQuestion('single', [false, true])],
+      { 0: [0], 1: [1] },
+    )
+    store.requestFinishTest()
+    expect(store.modal.open).toBe(false)
+    expect(store.resultData).not.toBeNull()
+  })
+
+  it('con preguntas sin responder, pide confirmación en vez de finalizar ya', () => {
+    setupPlayer(
+      store,
+      [makeQuestion('single', [true, false]), makeQuestion('single', [false, true]), makeQuestion('single', [true, false])],
+      { 0: [0] }, // solo la primera respondida
+    )
+    store.requestFinishTest()
+    expect(store.modal.open).toBe(true)
+    expect(store.resultData).toBeNull() // no ha terminado todavía
+  })
+
+  it('el aviso dice cuántas preguntas faltan', () => {
+    setupPlayer(
+      store,
+      [makeQuestion('single', [true, false]), makeQuestion('single', [false, true]), makeQuestion('single', [true, false])],
+      { 0: [0] },
+    )
+    store.requestFinishTest()
+    expect(store.modal.body).toContain('2 preguntas sin responder')
+  })
+
+  it('el aviso usa singular cuando falta solo una', () => {
+    setupPlayer(
+      store,
+      [makeQuestion('single', [true, false]), makeQuestion('single', [false, true])],
+      { 0: [0] },
+    )
+    store.requestFinishTest()
+    expect(store.modal.body).toContain('1 pregunta sin responder')
+    expect(store.modal.body).not.toContain('1 pregunta sin responder.s')
+  })
+
+  it('al confirmar, finaliza el test', () => {
+    setupPlayer(
+      store,
+      [makeQuestion('single', [true, false]), makeQuestion('single', [false, true])],
+      { 0: [0] },
+    )
+    store.requestFinishTest()
+    store.modal.onConfirm()
+    expect(store.resultData).not.toBeNull()
+    expect(store.playerState.test).toBeNull()
+  })
+
+  it('una pregunta con array vacío cuenta como sin responder', () => {
+    setupPlayer(
+      store,
+      [makeQuestion('multiple', [true, true])],
+      { 0: [] },
+    )
+    store.requestFinishTest()
+    expect(store.modal.open).toBe(true)
+    expect(store.modal.body).toContain('1 pregunta')
+  })
+
+  it('una pregunta abierta sin texto cuenta como sin responder', () => {
+    setupPlayer(store, [makeQuestion('open', [], 'Abierta')], {})
+    store.requestFinishTest()
+    expect(store.modal.open).toBe(true)
+  })
+
+  it('una pregunta abierta con solo espacios en blanco cuenta como sin responder', () => {
+    setupPlayer(store, [makeQuestion('open', [], 'Abierta'), makeQuestion('single', [true, false])], { 1: [0] })
+    store.requestFinishTest('   ') // lo que el usuario ha escrito en la actual, sin guardar aún
+    expect(store.modal.open).toBe(true)
+    expect(store.modal.body).toContain('1 pregunta')
+  })
+
+  it('el texto abierto sin guardar sí cuenta como respondida si tiene contenido', () => {
+    setupPlayer(store, [makeQuestion('open', [], 'Abierta')], {})
+    store.requestFinishTest('mi respuesta sin guardar todavía')
+    expect(store.modal.open).toBe(false)
+    expect(store.resultData).not.toBeNull()
+  })
+
+  it('sin test en curso, no hace nada', () => {
+    store.playerState = { test: null, questions: [], answers: {}, revealed: {}, current: 0, timerInterval: null, deadline: null }
+    store.requestFinishTest()
+    expect(store.modal.open).toBe(false)
+    expect(store.resultData).toBeNull()
+  })
+
+  it('la confirmación no es de tipo peligro (es una acción normal, no destructiva)', () => {
+    setupPlayer(store, [makeQuestion('single', [true, false]), makeQuestion('single', [false, true])], { 0: [0] })
+    store.requestFinishTest()
+    expect(store.modal.danger).toBe(false)
+  })
+})

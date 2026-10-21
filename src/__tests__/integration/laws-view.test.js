@@ -202,3 +202,154 @@ describe('LawsView', () => {
     )
   })
 })
+
+describe('LawsView — importar varias leyes', () => {
+  let pinia, authStore, lawsStore, router
+
+  async function setup(role) {
+    pinia = createPinia()
+    setActivePinia(pinia)
+    authStore = useAuthStore()
+    lawsStore = useLawsStore()
+
+    authStore.authLocked = false
+    authStore.currentUser = { id: 'u1', email: 'u@test.com' }
+    authStore.isTeacher = role !== 'alumno'
+    authStore.isAdmin = role === 'admin'
+
+    lawsStore.laws = []
+    vi.spyOn(lawsStore, 'load').mockImplementation(() => {})
+
+    router = makeRouter()
+    await router.push('/laws')
+    await router.isReady()
+  }
+
+  async function mountAs(role) {
+    await setup(role)
+    const w = mount(LawsView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+    return w
+  }
+
+  const importBtn = w => w.findAll('button').find(b => b.text().includes('Importar .md'))
+
+  it('un alumno no ve el botón de importar', async () => {
+    const w = await mountAs('alumno')
+    expect(importBtn(w)).toBeUndefined()
+  })
+
+  it('el profesor sí ve el botón de importar', async () => {
+    const w = await mountAs('profesor')
+    expect(importBtn(w)).toBeDefined()
+  })
+
+  it('al pulsarlo se abre el modal de importación', async () => {
+    const w = await mountAs('profesor')
+    await importBtn(w).trigger('click')
+    expect(w.find('.pill-import-modal').exists()).toBe(true)
+    expect(w.find('.pill-import-modal h3').text()).toContain('Importar leyes')
+  })
+
+  it('el contador de previsualización cuenta las leyes detectadas', async () => {
+    const w = await mountAs('profesor')
+    await importBtn(w).trigger('click')
+    await w.find('.pill-import-modal textarea').setValue('## Ley uno\nContenido uno.\n\n## Ley dos\nContenido dos.')
+    expect(w.find('.import-count-badge').text()).toContain('2')
+  })
+
+  it('importar exige tema además del texto', async () => {
+    const w = await mountAs('profesor')
+    await importBtn(w).trigger('click')
+    await w.find('.pill-import-modal textarea').setValue('## Ley uno\nContenido.')
+
+    const go = w.findAll('.pill-import-modal button').find(b => b.text().includes('Importar'))
+    expect(go.attributes('disabled')).toBeDefined()
+
+    await w.find('.pill-import-modal input[type="text"]').setValue('Tema 10')
+    expect(go.attributes('disabled')).toBeUndefined()
+  })
+
+  it('importa varias leyes de golpe, todas con el mismo tema', async () => {
+    const w = await mountAs('profesor')
+    vi.spyOn(lawsStore, 'save').mockResolvedValue({ id: 'x' })
+
+    await importBtn(w).trigger('click')
+    await w.find('.pill-import-modal input[type="text"]').setValue('Tema 10. Mecánica básica')
+    await w.find('.pill-import-modal textarea').setValue(
+      '## Ley uno\nContenido primero.\n\n## Ley dos\nContenido segundo.\n\n## Ley tres\nContenido tercero.'
+    )
+    await w.findAll('.pill-import-modal button').find(b => b.text().includes('Importar')).trigger('click')
+    await flushPromises()
+
+    expect(lawsStore.save).toHaveBeenCalledTimes(3)
+    expect(lawsStore.save).toHaveBeenCalledWith(expect.objectContaining({
+      title: 'Ley uno', content: 'Contenido primero.', topic: 'Tema 10. Mecánica básica',
+    }))
+  })
+
+  it('solo el admin ve la opción de importar como secretas', async () => {
+    const w = await mountAs('profesor')
+    await importBtn(w).trigger('click')
+    expect(w.find('.pill-import-modal .law-secret-toggle').exists()).toBe(false)
+
+    const wa = await mountAs('admin')
+    await importBtn(wa).trigger('click')
+    expect(wa.find('.pill-import-modal .law-secret-toggle').exists()).toBe(true)
+  })
+
+  it('marcar «importar como secretas» lo aplica a todas', async () => {
+    const w = await mountAs('admin')
+    vi.spyOn(lawsStore, 'save').mockResolvedValue({ id: 'x' })
+
+    await importBtn(w).trigger('click')
+    await w.find('.pill-import-modal input[type="text"]').setValue('Tema 10')
+    await w.find('.pill-import-modal .law-secret-toggle input').setValue(true)
+    await w.find('.pill-import-modal textarea').setValue('## Ley A\nContenido.')
+    await w.findAll('.pill-import-modal button').find(b => b.text().includes('Importar')).trigger('click')
+    await flushPromises()
+
+    expect(lawsStore.save).toHaveBeenCalledWith(expect.objectContaining({ secret: true }))
+  })
+
+  it('un texto sin leyes reconocibles muestra un error y no llama a save', async () => {
+    const w = await mountAs('profesor')
+    const saveSpy = vi.spyOn(lawsStore, 'save')
+
+    await importBtn(w).trigger('click')
+    await w.find('.pill-import-modal input[type="text"]').setValue('Tema 10')
+    await w.find('.pill-import-modal textarea').setValue('texto suelto sin marcadores')
+    await w.findAll('.pill-import-modal button').find(b => b.text().includes('Importar')).trigger('click')
+    await flushPromises()
+
+    expect(w.find('.pill-import-modal .import-error').exists()).toBe(true)
+    expect(saveSpy).not.toHaveBeenCalled()
+  })
+
+  it('tras importar, el modal se cierra y aparece el aviso', async () => {
+    const w = await mountAs('profesor')
+    const appStore = (await import('@/stores/app')).useAppStore()
+    vi.spyOn(appStore, 'showToast')
+    vi.spyOn(lawsStore, 'save').mockResolvedValue({ id: 'x' })
+
+    await importBtn(w).trigger('click')
+    await w.find('.pill-import-modal input[type="text"]').setValue('Tema 10')
+    await w.find('.pill-import-modal textarea').setValue('## Ley A\nContenido.')
+    await w.findAll('.pill-import-modal button').find(b => b.text().includes('Importar')).trigger('click')
+    await flushPromises()
+
+    expect(w.find('.pill-import-modal').exists()).toBe(false)
+    expect(appStore.showToast).toHaveBeenCalledWith(expect.stringContaining('1 ley importada'))
+  })
+
+  it('al abrir el modal dentro de un tema, lo preselecciona', async () => {
+    await setup('profesor')
+    lawsStore.laws = [{ id: 'l1', title: 'Existente', content: 'c', topic: 'Tema 20', secret: false }]
+    const w = mount(LawsView, { global: { plugins: [pinia, router] } })
+    await flushPromises()
+    await w.findAll('.law-topic-card').find(c => c.text().includes('Tema 20')).trigger('click')
+
+    await importBtn(w).trigger('click')
+    expect(w.find('.pill-import-modal input[type="text"]').element.value).toBe('Tema 20')
+  })
+})

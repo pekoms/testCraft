@@ -8,6 +8,13 @@
         <span v-if="totalVisible" class="pills-count-badge">{{ totalVisible }}</span>
       </h1>
       <div class="laws-header-btns">
+        <button v-if="canManage" class="btn sm" @click="openImportModal">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+          Importar .md
+        </button>
         <button v-if="canManage" class="btn accent sm" @click="openCreate">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="14" height="14">
             <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
@@ -140,6 +147,67 @@
       </div>
     </div>
 
+    <!-- Import .md modal -->
+    <div v-if="importOpen" class="modal-overlay open" @click.self="importOpen = false">
+      <div class="modal pill-import-modal">
+        <h3>Importar leyes desde texto</h3>
+
+        <p class="pill-import-hint">
+          Pega el texto con tus leyes o reales decretos. Formatos admitidos:
+        </p>
+        <div class="pill-import-formats">
+          <pre class="pill-format-example">## Real Decreto 513/2017, de 22 de mayo
+Artículo 1. Objeto.
+
+Este reglamento tiene por objeto...
+
+## Ley 31/1995, de 8 de noviembre
+Artículo 1. Ámbito de aplicación.
+...</pre>
+          <pre class="pill-format-example">TÍTULO: Real Decreto 513/2017, de 22 de mayo
+Artículo 1. Objeto.
+...
+
+TÍTULO: Ley 31/1995, de 8 de noviembre
+Artículo 1. Ámbito de aplicación.
+...</pre>
+        </div>
+
+        <div class="field-group" style="margin-top:14px;margin-bottom:10px">
+          <label>Asignar al tema</label>
+          <input type="text" v-model="importTopic"
+            placeholder="Ej: Tema 07. CTE DB SI" maxlength="80"
+            list="lawImportTopicsList" autocomplete="off" class="pill-topic-input" />
+          <datalist id="lawImportTopicsList">
+            <option v-for="t in allTopics" :key="t" :value="t" />
+          </datalist>
+        </div>
+        <label v-if="authStore.isAdmin" class="law-secret-toggle" style="margin-bottom:10px">
+          <input type="checkbox" v-model="importSecret">
+          Importar como secretas — solo visibles para el profesorado
+        </label>
+        <div class="field-group" style="position:relative">
+          <textarea v-model="importText" rows="10" class="import-textarea"
+            placeholder="Pega aquí el texto..."></textarea>
+          <span v-if="importPreviewCount" class="import-count-badge">{{ importPreviewCount }} leyes</span>
+        </div>
+
+        <p v-if="importError" class="import-error">{{ importError }}</p>
+
+        <div class="modal-actions">
+          <button class="btn" @click="importOpen = false">Cancelar</button>
+          <button class="btn accent" @click="doImportLaws"
+            :disabled="importing || !importText.trim() || !importTopic.trim()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+              <polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+            </svg>
+            Importar
+          </button>
+        </div>
+      </div>
+    </div>
+
   </div>
 </template>
 
@@ -148,6 +216,7 @@ import { ref, computed, onMounted, nextTick } from 'vue'
 import { useAuthStore } from '@/stores/auth'
 import { useAppStore } from '@/stores/app'
 import { useLawsStore } from '@/stores/laws'
+import { parseMDLaws } from '@/utils/parseMDLaws'
 
 const authStore = useAuthStore()
 const appStore = useAppStore()
@@ -242,6 +311,48 @@ async function doSave() {
   } finally { saving.value = false }
   editOpen.value = false
   appStore.showToast(wasEditing ? 'Ley actualizada ✓' : 'Ley creada ✓')
+}
+
+// ── Import from .md ───────────────────────────────────────
+const importOpen = ref(false)
+const importText = ref('')
+const importTopic = ref('')
+const importSecret = ref(false)
+const importError = ref('')
+const importing = ref(false)
+
+const importPreviewCount = computed(() => {
+  if (!importText.value.trim()) return 0
+  return parseMDLaws(importText.value).length
+})
+
+function openImportModal() {
+  importText.value = ''
+  importTopic.value = openTopic.value && openTopic.value !== 'Sin tema' ? openTopic.value : ''
+  importSecret.value = false
+  importError.value = ''
+  importOpen.value = true
+}
+
+async function doImportLaws() {
+  importError.value = ''
+  const parsed = parseMDLaws(importText.value)
+  if (!parsed.length) {
+    importError.value = 'No se encontraron leyes. Usa el formato ## Título o TÍTULO: para cada una.'
+    return
+  }
+  const topic = importTopic.value.trim()
+  if (!topic) { importError.value = 'Elige un tema para las leyes importadas.'; return }
+
+  const secret = importSecret.value
+  importing.value = true
+  try {
+    await Promise.all(parsed.map(l => store.save({ id: null, title: l.title, content: l.content, topic, secret })))
+  } finally { importing.value = false }
+
+  importOpen.value = false
+  importText.value = ''
+  appStore.showToast(`${parsed.length} ley${parsed.length !== 1 ? 'es' : ''} importada${parsed.length !== 1 ? 's' : ''} ✓`)
 }
 
 function requestDelete(l) {
